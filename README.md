@@ -7,8 +7,7 @@ A real-time multiplayer word guessing game built with Firebase and Tailwind CSS.
 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd chatroom-app
+git clone git@github.com:prayush21/connect-a-fun-social-game.git
 ```
 
 2. Set up Firebase Configuration
