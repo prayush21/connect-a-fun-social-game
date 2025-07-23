@@ -36,6 +36,10 @@
             align-items: center;
             z-index: 100;
         }
+        /* Higher z-index for confirmation modal */
+        #remove-player-modal {
+            z-index: 110;
+        }
         .modal-content {
             transform: scale(0.95);
             transition: transform 0.3s ease-out;
@@ -112,6 +116,35 @@
             <p id="modal-body" class="text-slate-600 mb-6">The secret word was:</p>
             <p id="modal-secret-word" class="font-mono text-2xl bg-slate-100 text-indigo-600 py-2 px-4 rounded-lg inline-block mb-6"></p>
             <button id="play-again-btn" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Remove Player Confirmation Modal -->
+    <div id="remove-player-modal" class="modal-overlay">
+        <div class="modal-content bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">Remove Player</h2>
+            <p class="text-slate-600 mb-6">Are you sure you want to remove <span id="remove-player-name" class="font-semibold"></span> from the game?</p>
+            <div class="flex gap-3">
+                <button id="cancel-remove-btn" class="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 px-6 rounded-lg hover:bg-slate-300">Cancel</button>
+                <button id="confirm-remove-btn" class="flex-1 bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Players Modal (for game phase) -->
+    <div id="players-modal" class="modal-overlay">
+        <div class="modal-content bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-900">Players</h2>
+                <button id="close-players-modal" class="text-slate-400 hover:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="players-modal-content">
+                <!-- Players list will be populated here -->
+            </div>
         </div>
     </div>
 
@@ -319,6 +352,18 @@
                     return;
                 }
                 const gameData = doc.data();
+                
+                // Check if current player has been removed
+                if (!gameData.players[currentUserId]) {
+                    showToast("You were removed from the room.", "error");
+                    showView('lobby-view');
+                    currentGameId = null;
+                    if(unsubscribeFromGame) unsubscribeFromGame();
+                    hidePlayersModal();
+                    hideRemovePlayerModal();
+                    return;
+                }
+                
                 renderGame(gameData);
                 handleGamePhaseChange(gameData);
             }, (error) => {
@@ -360,9 +405,22 @@
 
         // --- 7. UI TEMPLATES ---
         function renderLobbyPhase(gameData, player) {
+            // Determine who the room creator is (the player who has setter role)
+            const roomCreatorId = Object.keys(gameData.players).find(uid => gameData.players[uid].role === 'setter');
+            const isRoomCreator = currentUserId === roomCreatorId;
+            
             const playersList = Object.keys(gameData.players).map(uid => {
                 const p = gameData.players[uid];
-                return `<li class="font-semibold p-2 rounded ${uid === currentUserId ? 'bg-indigo-100' : ''}">${p.name} (${p.role})</li>`;
+                const isCurrentPlayer = uid === currentUserId;
+                const canRemove = isRoomCreator && !isCurrentPlayer;
+                
+                const removeButton = canRemove ? 
+                    `<button class="remove-player-btn ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded" data-player-id="${uid}" data-player-name="${p.name}" title="Remove ${p.name}">🗑️</button>` : '';
+                
+                return `<li class="font-semibold p-2 rounded flex justify-between items-center ${isCurrentPlayer ? 'bg-indigo-100' : ''}">
+                    <span>${p.name} (${p.role})</span>
+                    ${removeButton}
+                </li>`;
             }).join('');
             let content = `
                 <div class="text-center">
@@ -429,7 +487,7 @@
             }).join('');
 
             const gameAreaContent = player.role === 'guesser' ? renderGuesserArea(gameData) : renderSetterArea(gameData);
-            return `<div class="flex justify-between items-center mb-4"><div><h2 class="text-2xl font-bold">Game In Progress</h2><div class="flex items-center gap-2 font-mono text-indigo-600"><span>Room Code:</span><button id="copy-share-link-btn" title="Copy Room Code" class="p-1 rounded-md hover:bg-indigo-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/></svg></button></div></div><div class="text-right"><p class="text-sm text-slate-600">Direct Guesses</p><p class="text-2xl font-bold">${gameData.directGuessesLeft}</p></div></div><div class="mb-6 p-4 bg-slate-50 rounded-lg flex justify-center gap-2 flex-wrap">${revealedWord}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-2 bg-white p-4 rounded-lg border">${gameAreaContent}</div><div class="bg-white p-4 rounded-lg border"><h3 class="font-bold text-lg mb-2">Players</h3><ul class="space-y-1">${playersList}</ul><h3 class="font-bold text-lg mt-4 mb-2">History</h3><ul class="text-xs text-slate-500 space-y-1 h-32 overflow-y-auto">${gameData.gameHistory.slice().reverse().map(h => `<li>- ${h}</li>`).join('')}</ul></div></div>`;
+            return `<div class="flex justify-between items-center mb-4"><div><h2 class="text-2xl font-bold">Game In Progress</h2><div class="flex items-center gap-2 font-mono text-indigo-600"><span>Room Code:</span><button id="copy-share-link-btn" title="Copy Room Code" class="p-1 rounded-md hover:bg-indigo-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/></svg></button></div></div><div class="flex items-center gap-4"><button id="show-players-btn" title="Show Players" class="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></button><div class="text-right"><p class="text-sm text-slate-600">Direct Guesses</p><p class="text-2xl font-bold">${gameData.directGuessesLeft}</p></div></div></div><div class="mb-6 p-4 bg-slate-50 rounded-lg flex justify-center gap-2 flex-wrap">${revealedWord}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-2 bg-white p-4 rounded-lg border">${gameAreaContent}</div><div class="bg-white p-4 rounded-lg border"><h3 class="font-bold text-lg mb-2">Players</h3><ul class="space-y-1">${playersList}</ul><h3 class="font-bold text-lg mt-4 mb-2">History</h3><ul class="text-xs text-slate-500 space-y-1 h-32 overflow-y-auto">${gameData.gameHistory.slice().reverse().map(h => `<li>- ${h}</li>`).join('')}</ul></div></div>`;
         }
         
         function renderGuesserArea(gameData) {
@@ -473,6 +531,27 @@
             document.getElementById('setter-guess-form')?.addEventListener('submit', handleSetterReferenceGuess);
             document.getElementById('direct-guess-form')?.addEventListener('submit', handleDirectGuess);
             document.getElementById('copy-share-link-btn')?.addEventListener('click', () => handleCopyShareCode(gameData.roomId));
+            
+            // Player removal event listeners
+            document.querySelectorAll('.remove-player-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const playerId = e.target.getAttribute('data-player-id');
+                    const playerName = e.target.getAttribute('data-player-name');
+                    showRemovePlayerConfirmation(playerId, playerName);
+                });
+            });
+            
+            // Players modal event listeners
+            document.getElementById('show-players-btn')?.addEventListener('click', () => showPlayersModal(gameData));
+            document.getElementById('close-players-modal')?.addEventListener('click', hidePlayersModal);
+            
+            // Close modals when clicking outside
+            document.getElementById('players-modal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'players-modal') hidePlayersModal();
+            });
+            document.getElementById('remove-player-modal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'remove-player-modal') hideRemovePlayerModal();
+            });
         }
 
         function handleCopyShareCode(roomId) {
@@ -489,6 +568,135 @@
                 showToast("Failed to copy code.", "error");
             }
             document.body.removeChild(textArea);
+        }
+
+        // Player removal functionality
+        function showPlayersModal(gameData) {
+            const roomCreatorId = Object.keys(gameData.players).find(uid => gameData.players[uid].role === 'setter');
+            const isRoomCreator = currentUserId === roomCreatorId;
+            
+            const playersListContent = Object.keys(gameData.players).map(uid => {
+                const p = gameData.players[uid];
+                const isCurrentPlayer = uid === currentUserId;
+                const canRemove = isRoomCreator && !isCurrentPlayer;
+                
+                let roleDisplay, roleClasses;
+                if (p.role === 'setter') {
+                    roleDisplay = 'setter';
+                    roleClasses = 'bg-red-100 text-red-800';
+                } else {
+                    roleDisplay = 'guesser';
+                    roleClasses = 'bg-blue-100 text-blue-800';
+                }
+                
+                const removeButton = canRemove ? 
+                    `<button class="remove-player-btn ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded" data-player-id="${uid}" data-player-name="${p.name}" title="Remove ${p.name}">🗑️</button>` : '';
+                
+                return `<li class="flex items-center justify-between p-3 rounded-lg ${isCurrentPlayer ? 'bg-indigo-50' : ''}">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold">${p.name}</span>
+                        <span class="text-xs font-mono px-2 py-1 rounded-full ${roleClasses}">${roleDisplay}</span>
+                    </div>
+                    ${removeButton}
+                </li>`;
+            }).join('');
+            
+            document.getElementById('players-modal-content').innerHTML = `<ul class="space-y-2">${playersListContent}</ul>`;
+            document.getElementById('players-modal').classList.add('active');
+            
+            // Add event listeners for remove buttons in the modal
+            document.querySelectorAll('#players-modal .remove-player-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const playerId = e.target.getAttribute('data-player-id');
+                    const playerName = e.target.getAttribute('data-player-name');
+                    showRemovePlayerConfirmation(playerId, playerName);
+                });
+            });
+        }
+        
+        function hidePlayersModal() {
+            document.getElementById('players-modal').classList.remove('active');
+        }
+        
+        function showRemovePlayerConfirmation(playerId, playerName) {
+            document.getElementById('remove-player-name').textContent = playerName;
+            document.getElementById('remove-player-modal').classList.add('active');
+            
+            // Store the player info for the confirmation action
+            document.getElementById('confirm-remove-btn').setAttribute('data-player-id', playerId);
+            document.getElementById('confirm-remove-btn').setAttribute('data-player-name', playerName);
+        }
+        
+        function hideRemovePlayerModal() {
+            document.getElementById('remove-player-modal').classList.remove('active');
+        }
+        
+        async function removePlayer(playerId, playerName) {
+            try {
+                const gameRef = getGameRef(currentGameId);
+                const gameDoc = await getDoc(gameRef);
+                if (!gameDoc.exists()) return;
+                
+                const gameData = gameDoc.data();
+                const updatedPlayers = { ...gameData.players };
+                delete updatedPlayers[playerId];
+                
+                // Check if the removed player was the current clue giver
+                const isCurrentClueGiver = gameData.currentReference?.clueGiverId === playerId;
+                const guesserIds = Object.keys(gameData.players).filter(id => gameData.players[id].role === 'guesser').sort();
+                const currentTurnIndex = gameData.clueGiverTurn || 0;
+                const expectedClueGiverId = guesserIds.length > 0 ? guesserIds[currentTurnIndex % guesserIds.length] : null;
+                const isExpectedClueGiver = expectedClueGiverId === playerId;
+                
+                let updateData = {
+                    players: updatedPlayers,
+                    gameHistory: arrayUnion(`${playerName} was removed from the game.`)
+                };
+                
+                // If the removed player was the clue giver, handle the transition
+                if (isCurrentClueGiver || isExpectedClueGiver) {
+                    // Clear any current reference since the clue giver is gone
+                    updateData.currentReference = null;
+                    
+                    // Calculate next clue giver turn from remaining guessers
+                    const remainingGuesserIds = Object.keys(updatedPlayers).filter(id => updatedPlayers[id].role === 'guesser').sort();
+                    
+                    if (remainingGuesserIds.length > 0) {
+                        // Find the next guesser after the removed one
+                        let nextTurnIndex = currentTurnIndex;
+                        
+                        // If we removed someone before or at the current turn, keep the same index (which will point to the next person)
+                        // If we removed someone after the current turn, no adjustment needed
+                        const removedPlayerIndex = guesserIds.indexOf(playerId);
+                        if (removedPlayerIndex !== -1 && removedPlayerIndex <= currentTurnIndex) {
+                            // The removed player was at or before current turn, so we need to adjust
+                            nextTurnIndex = currentTurnIndex; // This will now point to the next person
+                        }
+                        
+                        // Make sure the index is valid for the remaining players
+                        updateData.clueGiverTurn = nextTurnIndex % remainingGuesserIds.length;
+                        
+                        const nextClueGiver = updatedPlayers[remainingGuesserIds[updateData.clueGiverTurn]];
+                        updateData.gameHistory = arrayUnion(
+                            `${playerName} was removed from the game.`,
+                            `${nextClueGiver.name} is now the clue giver.`
+                        );
+                    } else {
+                        // No more guessers left, reset turn
+                        updateData.clueGiverTurn = 0;
+                    }
+                }
+                
+                await updateDoc(gameRef, updateData);
+                
+                hideRemovePlayerModal();
+                hidePlayersModal();
+                showToast(`${playerName} has been removed from the game.`, "success");
+                
+            } catch (error) {
+                console.error("Error removing player:", error);
+                showToast("Failed to remove player. Please try again.", "error");
+            }
         }
 
         async function startGameRound() { await updateDoc(getGameRef(currentGameId), { gamePhase: 'setting_word' }); }
@@ -614,6 +822,14 @@
         createGameBtn.addEventListener('click', createGame);
         joinGameBtn.addEventListener('click', joinGame);
         document.getElementById('play-again-btn').addEventListener('click', playAgain);
+        
+        // Remove player modal event listeners
+        document.getElementById('cancel-remove-btn').addEventListener('click', hideRemovePlayerModal);
+        document.getElementById('confirm-remove-btn').addEventListener('click', (e) => {
+            const playerId = e.target.getAttribute('data-player-id');
+            const playerName = e.target.getAttribute('data-player-name');
+            removePlayer(playerId, playerName);
+        });
         
         initializeAppAndAuth();
 
