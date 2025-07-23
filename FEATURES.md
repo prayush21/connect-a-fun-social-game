@@ -2,7 +2,7 @@
 
 | Feature                             | Details                                                     | State |
 | ----------------------------------- | ----------------------------------------------------------- | ----- |
-| Room creator can remove users       | [Story](USER_STORIES.md#room-creator-can-remove-users)      | wip   |
+| Room creator can remove users       | [Story](USER_STORIES.md#room-creator-can-remove-users)      | ready |
 | Ability to update user roles        | [Story](USER_STORIES.md#room-creator-can-update-user-roles) | todo  |
 | Only one setter in the game         | [Story](USER_STORIES.md#only-one-setter-in-the-game)        | todo  |
 | Persistent user sessions            | [Story](USER_STORIES.md#persistent-user-sessions)           | todo  |
