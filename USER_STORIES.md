@@ -27,7 +27,7 @@ As the room creator, I want to change a player’s role (Setter ↔ Guesser) so 
 1. The creator sees a “Change Role” dropdown next to each player.
 2. Only one player can hold the "setter" role at any time; selecting Setter for someone automatically demotes the current Setter to Guesser.
 3. Role changes update instantly in Firestore and all clients’ UIs.
-4. If the game is mid-round, role changes are disabled with a tooltip explaining why.
+4. If the game is mid-round, role changes are disabled.
 
 ---
 

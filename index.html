@@ -148,6 +148,18 @@
         </div>
     </div>
 
+    <!-- Role Selection Modal -->
+    <div id="role-modal" class="modal-overlay">
+        <div class="modal-content bg-white p-6 rounded-2xl shadow-xl max-w-md w-full text-center">
+            <h2 class="text-xl font-bold text-slate-900 mb-4">Select the Word Setter</h2>
+            <form id="role-form" class="space-y-2 mb-6 text-left"></form>
+            <div class="flex gap-3">
+                <button id="cancel-role-btn" type="button" class="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 px-6 rounded-lg hover:bg-slate-300">Cancel</button>
+                <button id="confirm-role-btn" type="button" class="flex-1 bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700" disabled>Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
@@ -416,11 +428,16 @@
                 
                 const removeButton = canRemove ? 
                     `<button class="remove-player-btn ml-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded" data-player-id="${uid}" data-player-name="${p.name}" title="Remove ${p.name}">🗑️</button>` : '';
-                
+
+                const roleBadge = `<span class="text-xs font-mono px-2 py-1 rounded ${p.role === 'setter' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${p.role}</span>`;
+
                 return `<li class="font-semibold p-2 rounded flex justify-between items-center ${isCurrentPlayer ? 'bg-indigo-100' : ''}">
-                    <span>${p.name} (${p.role})</span>
-                    ${removeButton}
-                </li>`;
+                        <span class="truncate">${p.name}</span>
+                        <div class="flex items-center gap-2">
+                            ${roleBadge}
+                            ${removeButton}
+                        </div>
+                    </li>`;
             }).join('');
             let content = `
                 <div class="text-center">
@@ -432,6 +449,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/></svg>
                         </button>
                     </div>
+                    ${isRoomCreator ? '<button id="edit-roles-btn" class="mb-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-lg">Edit Roles</button>' : ''}
                     <h3 class="font-bold text-lg mb-2">Players:</h3>
                     <ul class="space-y-1 mb-6">${playersList}</ul>`;
             if (player.role === 'setter') {
@@ -531,7 +549,8 @@
             document.getElementById('setter-guess-form')?.addEventListener('submit', handleSetterReferenceGuess);
             document.getElementById('direct-guess-form')?.addEventListener('submit', handleDirectGuess);
             document.getElementById('copy-share-link-btn')?.addEventListener('click', () => handleCopyShareCode(gameData.roomId));
-            
+            document.getElementById('edit-roles-btn')?.addEventListener('click', () => showRoleSelectionModal(gameData));
+
             // Player removal event listeners
             document.querySelectorAll('.remove-player-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -630,6 +649,46 @@
         function hideRemovePlayerModal() {
             document.getElementById('remove-player-modal').classList.remove('active');
         }
+
+        // Role selection modal helpers
+        function showRoleSelectionModal(gameData) {
+            const modal = document.getElementById('role-modal');
+            const form = document.getElementById('role-form');
+            // Build radio list
+            form.innerHTML = Object.keys(gameData.players).map(uid => {
+                const p = gameData.players[uid];
+                const isSetter = p.role === 'setter';
+                return `<label class="role-option flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-red-50 ${isSetter ? 'bg-red-100' : ''}">\n                            <input type="radio" name="selectedSetter" value="${uid}" class="text-indigo-600" ${isSetter ? 'checked' : ''}>\n                            <span class="flex-1 truncate font-semibold">${p.name}</span>\n                        </label>`;
+            }).join('');
+ 
+            const confirmBtn = document.getElementById('confirm-role-btn');
+            confirmBtn.disabled = false;
+ 
+            modal.classList.add('active');
+ 
+            // Attach one-time listeners
+            form.addEventListener('change', (e) => {
+                if (e.target.name === 'selectedSetter') {
+                    // Highlight selected row
+                    form.querySelectorAll('.role-option').forEach(l => l.classList.remove('bg-red-100'));
+                    e.target.closest('.role-option')?.classList.add('bg-red-100');
+                    confirmBtn.disabled = false;
+                }
+            });
+ 
+            // Save handler
+            confirmBtn.onclick = async () => {
+                const selected = form.querySelector('input[name="selectedSetter"]:checked')?.value;
+                if (selected) {
+                    await handleRoleChange(selected, 'setter');
+                }
+                hideRoleSelectionModal();
+            };
+        }
+
+        function hideRoleSelectionModal() {
+            document.getElementById('role-modal').classList.remove('active');
+        }
         
         async function removePlayer(playerId, playerName) {
             try {
@@ -696,6 +755,52 @@
             } catch (error) {
                 console.error("Error removing player:", error);
                 showToast("Failed to remove player. Please try again.", "error");
+            }
+        }
+
+        // Handle role updates by the room creator in lobby
+        async function handleRoleChange(playerId, newRole) {
+            try {
+                const gameRef = getGameRef(currentGameId);
+                const gameDoc = await getDoc(gameRef);
+                if (!gameDoc.exists()) return;
+
+                const gameData = gameDoc.data();
+
+                // Only allow role changes in lobby phase
+                if (gameData.gamePhase !== 'lobby') {
+                    showToast("You can only change roles in the lobby.", "error");
+                    return;
+                }
+
+                const currentRole = gameData.players[playerId]?.role;
+                if (currentRole === newRole) return; // no change
+
+                const updates = {};
+
+                if (newRole === 'setter') {
+                    // Demote existing setters (should only be one)
+                    Object.entries(gameData.players).forEach(([uid, pl]) => {
+                        if (pl.role === 'setter' && uid !== playerId) {
+                            updates[`players.${uid}.role`] = 'guesser';
+                        }
+                    });
+                } else {
+                    // Prevent removing the only setter
+                    const setterIds = Object.keys(gameData.players).filter(id => gameData.players[id].role === 'setter');
+                    if (setterIds.length === 1 && setterIds[0] === playerId) {
+                        showToast("There must be at least one setter. Promote another player first.", "error");
+                        return;
+                    }
+                }
+
+                updates[`players.${playerId}.role`] = newRole;
+                updates['gameHistory'] = arrayUnion(`${gameData.players[currentUserId].name} set ${gameData.players[playerId].name} as ${newRole}.`);
+
+                await updateDoc(gameRef, updates);
+            } catch (error) {
+                console.error("Error changing role:", error);
+                showToast("Failed to change role. Please try again.", "error");
             }
         }
 
@@ -830,6 +935,9 @@
             const playerName = e.target.getAttribute('data-player-name');
             removePlayer(playerId, playerName);
         });
+
+        // Role modal event listeners
+        document.getElementById('cancel-role-btn').addEventListener('click', hideRoleSelectionModal);
         
         initializeAppAndAuth();
 
