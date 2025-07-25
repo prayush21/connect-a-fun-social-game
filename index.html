@@ -81,7 +81,15 @@
         <div id="app-container" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 transition-all duration-500">
             <!-- Lobby View -->
             <div id="lobby-view" class="view active">
-                <h1 class="text-4xl font-bold text-center text-slate-900 mb-2">Connect</h1>
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <h1 class="text-4xl font-bold text-slate-900">Connect</h1>
+                    <button id="info-btn" class="text-slate-500 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition-colors" title="How to Play">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                        </svg>
+                    </button>
+                </div>
                 <p class="text-center text-slate-500 mb-8">A collaborative word guessing game.</p>
                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
                     <label for="username-input" class="block text-sm font-medium text-slate-700 mb-1 text-center">Your Nickname:</label>
@@ -156,6 +164,170 @@
             <div class="flex gap-3">
                 <button id="cancel-role-btn" type="button" class="flex-1 bg-slate-200 text-slate-700 font-semibold py-3 px-6 rounded-lg hover:bg-slate-300">Cancel</button>
                 <button id="confirm-role-btn" type="button" class="flex-1 bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700" disabled>Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- How to Play Info Modal -->
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal-content bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">How to Play</h2>
+                <button id="close-info-modal" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Step 1 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">1</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Setup <span class="text-xl">🎯</span>
+                        </h3>
+                        <p class="text-slate-600">One player becomes the Word Setter and chooses a secret word. Everyone else becomes Guessers.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">2</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Give Clues <span class="text-xl">💡</span>
+                        </h3>
+                        <p class="text-slate-600">Guessers take turns being the Clue Giver. They think of a reference word that fits the revealed letters and give a clue.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">3</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Match & Reveal <span class="text-xl">🔍</span>
+                        </h3>
+                        <p class="text-slate-600">Other Guessers try to guess the same reference word. If they match (and beat the Setter), a new letter is revealed!</p>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">4</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Win the Game <span class="text-xl">🏆</span>
+                        </h3>
+                        <p class="text-slate-600">Guessers win by revealing the full word or making a correct direct guess. Setter wins by blocking them!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress dots -->
+            <div class="flex justify-center gap-2 mt-6 mb-4">
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+            </div>
+            
+            <div class="text-center">
+                <button id="got-it-btn" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- How to Play Info Modal -->
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal-content bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">How to Play</h2>
+                <button id="close-info-modal" class="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Step 1 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">1</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Setup <span class="text-xl">🎯</span>
+                        </h3>
+                        <p class="text-slate-600">One player becomes the Word Setter and chooses a secret word. Everyone else becomes Guessers.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">2</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Give Clues <span class="text-xl">💡</span>
+                        </h3>
+                        <p class="text-slate-600">Guessers take turns being the Clue Giver. They think of a reference word that fits the revealed letters and give a clue.</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">3</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Match & Reveal <span class="text-xl">🔍</span>
+                        </h3>
+                        <p class="text-slate-600">Other Guessers try to guess the same reference word. If they match (and beat the Setter), a new letter is revealed!</p>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">4</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                            Win the Game <span class="text-xl">🏆</span>
+                        </h3>
+                        <p class="text-slate-600">Guessers win by revealing the full word or making a correct direct guess. Setter wins by blocking them!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress dots -->
+            <div class="flex justify-center gap-2 mt-6 mb-4">
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+            </div>
+            
+            <div class="text-center">
+                <button id="got-it-btn" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+                    Got it!
+                </button>
             </div>
         </div>
     </div>
@@ -441,7 +613,15 @@
             }).join('');
             let content = `
                 <div class="text-center">
-                    <h2 class="text-2xl font-bold mb-2">Game Lobby</h2>
+                    <div class="flex items-center justify-center gap-2 mb-2">
+                        <h2 class="text-2xl font-bold">Game Lobby</h2>
+                        <button id="lobby-info-btn" class="text-slate-500 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition-colors" title="How to Play">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="flex items-center justify-center gap-2 font-mono text-indigo-600 mb-4">
                         <span>Share this game:</span>
                         <button id="copy-share-link-btn" title="Copy Room Code" class="p-1 rounded-md hover:bg-indigo-100 flex items-center gap-1 bg-slate-100 border">
@@ -505,7 +685,7 @@
             }).join('');
 
             const gameAreaContent = player.role === 'guesser' ? renderGuesserArea(gameData) : renderSetterArea(gameData);
-            return `<div class="flex justify-between items-center mb-4"><div><h2 class="text-2xl font-bold">Game In Progress</h2><div class="flex items-center gap-2 font-mono text-indigo-600"><span>Room Code:</span><button id="copy-share-link-btn" title="Copy Room Code" class="p-1 rounded-md hover:bg-indigo-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/></svg></button></div></div><div class="flex items-center gap-4"><button id="show-players-btn" title="Show Players" class="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></button><div class="text-right"><p class="text-sm text-slate-600">Direct Guesses</p><p class="text-2xl font-bold">${gameData.directGuessesLeft}</p></div></div></div><div class="mb-6 p-4 bg-slate-50 rounded-lg flex justify-center gap-2 flex-wrap">${revealedWord}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-2 bg-white p-4 rounded-lg border">${gameAreaContent}</div><div class="bg-white p-4 rounded-lg border"><h3 class="font-bold text-lg mb-2">Players</h3><ul class="space-y-1">${playersList}</ul><h3 class="font-bold text-lg mt-4 mb-2">History</h3><ul class="text-xs text-slate-500 space-y-1 h-32 overflow-y-auto">${gameData.gameHistory.slice().reverse().map(h => `<li>- ${h}</li>`).join('')}</ul></div></div>`;
+            return `<div class="flex justify-between items-center mb-4"><div><h2 class="text-2xl font-bold">Game In Progress</h2><div class="flex items-center gap-2 font-mono text-indigo-600"><span>Room Code:</span><button id="copy-share-link-btn" title="Copy Room Code" class="p-1 rounded-md hover:bg-indigo-100"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/></svg></button></div></div><div class="flex items-center gap-3"><button id="show-players-btn" title="Show Players" class="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></button><button id="game-info-btn" title="How to Play" class="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-800"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></button><div class="text-right"><p class="text-sm text-slate-600">Direct Guesses</p><p class="text-2xl font-bold">${gameData.directGuessesLeft}</p></div></div></div><div class="mb-6 p-4 bg-slate-50 rounded-lg flex justify-center gap-2 flex-wrap">${revealedWord}</div><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-2 bg-white p-4 rounded-lg border">${gameAreaContent}</div><div class="bg-white p-4 rounded-lg border"><h3 class="font-bold text-lg mb-2">Players</h3><ul class="space-y-1">${playersList}</ul><h3 class="font-bold text-lg mt-4 mb-2">History</h3><ul class="text-xs text-slate-500 space-y-1 h-32 overflow-y-auto">${gameData.gameHistory.slice().reverse().map(h => `<li>- ${h}</li>`).join('')}</ul></div></div>`;
         }
         
         function renderGuesserArea(gameData) {
@@ -563,6 +743,10 @@
             // Players modal event listeners
             document.getElementById('show-players-btn')?.addEventListener('click', () => showPlayersModal(gameData));
             document.getElementById('close-players-modal')?.addEventListener('click', hidePlayersModal);
+            
+            // Game info modal event listeners (both game lobby and in-progress)
+            document.getElementById('game-info-btn')?.addEventListener('click', showInfoModal);
+            document.getElementById('lobby-info-btn')?.addEventListener('click', showInfoModal);
             
             // Close modals when clicking outside
             document.getElementById('players-modal')?.addEventListener('click', (e) => {
@@ -688,6 +872,15 @@
 
         function hideRoleSelectionModal() {
             document.getElementById('role-modal').classList.remove('active');
+        }
+        
+        // Info modal functions
+        function showInfoModal() {
+            document.getElementById('info-modal').classList.add('active');
+        }
+        
+        function hideInfoModal() {
+            document.getElementById('info-modal').classList.remove('active');
         }
         
         async function removePlayer(playerId, playerName) {
@@ -938,6 +1131,22 @@
 
         // Role modal event listeners
         document.getElementById('cancel-role-btn').addEventListener('click', hideRoleSelectionModal);
+        
+        // Info modal event listeners
+        document.getElementById('info-btn').addEventListener('click', showInfoModal);
+        document.getElementById('close-info-modal').addEventListener('click', hideInfoModal);
+        document.getElementById('got-it-btn').addEventListener('click', hideInfoModal);
+        
+        // Close info modal when clicking outside or pressing escape
+        document.getElementById('info-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'info-modal') hideInfoModal();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('info-modal').classList.contains('active')) {
+                hideInfoModal();
+            }
+        });
         
         initializeAppAndAuth();
 
