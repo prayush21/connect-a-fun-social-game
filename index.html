@@ -636,7 +636,14 @@
         
         function handleGamePhaseChange(gameData) {
             if (gameData.gamePhase === 'ended' && !endRoundModal.classList.contains('active')) {
-                const playerWon = gameData.winner === 'guessers';
+                const currentPlayer = gameData.players[currentUserId];
+                const currentPlayerRole = currentPlayer?.role;
+                const winner = gameData.winner;
+                
+                // Determine if the current player's team won
+                const playerWon = (currentPlayerRole === 'guesser' && winner === 'guessers') || 
+                                 (currentPlayerRole === 'setter' && winner === 'setter');
+                
                 showModal(
                     playerWon ? "You Win!" : "Round Over!",
                     `The ${gameData.winner} won. The secret word was:`,
