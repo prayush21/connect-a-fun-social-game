@@ -9,6 +9,6 @@
 | Re-join active room & recover state | [Story](USER_STORIES.md#re-join-active-room--recover-state) | todo  |
 | Auto-populate room code from URL    | [Story](USER_STORIES.md#auto-populate-room-code-from-url)   | todo  |
 | Info Modal with How to Play         | [Story](USER_STORIES.md#info-modal-with-how-to-play)        | ready |
-| Basic analytics instrumentation     | [Story](USER_STORIES.md#basic-analytics-instrumentation)    | todo  |
-| Round tracking analytics            | [Story](USER_STORIES.md#round-tracking-analytics)           | todo  |
-| Player count analytics              | [Story](USER_STORIES.md#player-count-analytics)             | todo  |
+| Basic analytics instrumentation     | [Story](USER_STORIES.md#basic-analytics-instrumentation)    | ready |
+| Round tracking analytics            | [Story](USER_STORIES.md#round-tracking-analytics)           | ready |
+| Player count analytics              | [Story](USER_STORIES.md#player-count-analytics)             | ready |

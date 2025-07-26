@@ -344,7 +344,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, arrayUnion, writeBatch } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-analytics.js";
         
 
         // --- 1. CONFIGURATION & INITIALIZATION ---
@@ -403,6 +403,77 @@
             return `${randomAdjective}${randomAnimal}${Math.floor(Math.random() * 900) + 100}`;
         }
 
+        // --- ANALYTICS FUNCTIONS ---
+        function getEnvironment() {
+            // Detect environment based on hostname
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('localhost')) {
+                return 'dev';
+            }
+            // You can add more specific staging/prod detection logic here
+            return 'prod';
+        }
+
+        function logAnalyticsEvent(eventName, parameters = {}) {
+            try {
+                if (analytics) {
+                    const environment = getEnvironment();
+                    const prefixedEventName = `${environment}_${eventName}`;
+                    
+                    // Add environment to parameters for additional filtering
+                    const enrichedParameters = {
+                        ...parameters,
+                        environment: environment
+                    };
+                    
+                    logEvent(analytics, prefixedEventName, enrichedParameters);
+                    console.log(`Analytics event logged: ${prefixedEventName}`, enrichedParameters);
+                }
+            } catch (error) {
+                console.error(`Failed to log analytics event ${eventName}:`, error);
+            }
+        }
+
+        function logAppSession() {
+            logAnalyticsEvent('app_session', {
+                timestamp: Date.now()
+            });
+        }
+
+        function logGameCreated(roomId, playersCount) {
+            logAnalyticsEvent('game_created', {
+                room_id: roomId,
+                players_count: playersCount
+            });
+        }
+
+        function logGameStarted(roomId, playersCount, roundNumber = 1) {
+            // Warn if player count is outside expected range
+            if (playersCount < 3 || playersCount > 18) {
+                console.warn(`Player count ${playersCount} is outside expected range (3-18) for room ${roomId}`);
+            }
+            
+            logAnalyticsEvent('game_started', {
+                room_id: roomId,
+                players_count: playersCount,
+                round_number: roundNumber
+            });
+        }
+
+        function logGameEnded(roomId, playersCount, winner, roundNumber = 1) {
+            // Warn if player count is outside expected range
+            if (playersCount < 3 || playersCount > 18) {
+                console.warn(`Player count ${playersCount} is outside expected range (3-18) for room ${roomId}`);
+            }
+            
+            logAnalyticsEvent('game_ended', {
+                room_id: roomId,
+                players_count: playersCount,
+                round_number: roundNumber,
+                winner: winner
+            });
+        }
+
         // --- 3. AUTHENTICATION ---
         async function initializeAppAndAuth() {
             try {
@@ -429,6 +500,9 @@
                         }
                         createGameBtn.disabled = false;
                         joinGameBtn.disabled = false;
+                        
+                        // Log app session analytics event
+                        logAppSession();
                     } else {
                         currentUserId = null;
                         createGameBtn.disabled = true;
@@ -476,9 +550,13 @@
                 await setDoc(gameRef, {
                     roomId: newRoomId,
                     gamePhase: 'lobby',
+                    roundNumber: 1,
                     players: { [currentUserId]: { role: 'setter', name: customName } },
                     gameHistory: [ `${customName} created the game.` ]
                 });
+                
+                // Log game created analytics event
+                logGameCreated(newRoomId, 1);
                 
                 // Creator directly enters the game view
                 currentGameId = newRoomId;
@@ -1005,7 +1083,26 @@
             if (!/^[A-Z]{5,12}$/.test(word)) { showToast("Word must be 5-12 letters.", "error"); return; }
             const gameRef = getGameRef(currentGameId);
             const gameData = (await getDoc(gameRef)).data();
-            await updateDoc(gameRef, { secretWord: word, revealedCount: 1, directGuessesLeft: 3, currentReference: null, gamePhase: 'guessing', clueGiverTurn: 0, gameHistory: arrayUnion(`${gameData.players[currentUserId].name} set the word.`) });
+            
+            // Increment round number every time a word is set (except for the very first round)
+            const currentRoundNumber = gameData.roundNumber || 1;
+            const isNewRound = gameData.secretWord && gameData.secretWord !== '';
+            const newRoundNumber = isNewRound ? currentRoundNumber + 1 : currentRoundNumber;
+            
+            // Log game started analytics event with round number
+            const playersCount = Object.keys(gameData.players).length;
+            logGameStarted(currentGameId, playersCount, newRoundNumber);
+            
+            await updateDoc(gameRef, { 
+                secretWord: word, 
+                revealedCount: 1, 
+                directGuessesLeft: 3, 
+                currentReference: null, 
+                gamePhase: 'guessing', 
+                clueGiverTurn: 0, 
+                roundNumber: newRoundNumber,
+                gameHistory: arrayUnion(`${gameData.players[currentUserId].name} set the word.`) 
+            });
         }
         
         async function handleSetClue(e) {
@@ -1055,11 +1152,22 @@
             const newGuessesLeft = gameData.directGuessesLeft - 1;
             const batch = writeBatch(db);
             const playerName = gameData.players[currentUserId].name;
+            const playersCount = Object.keys(gameData.players).length;
+            const currentRoundNumber = gameData.roundNumber || 1;
+            
             if (guess === gameData.secretWord) {
                 batch.update(gameRef, { gamePhase: 'ended', winner: 'guessers', gameHistory: arrayUnion(`${playerName} guessed the word: ${guess}!`) });
+                // Log game ended analytics event - guessers won
+                logGameEnded(currentGameId, playersCount, 'guessers', currentRoundNumber);
             } else {
                 const historyUpdate = [`${playerName} guessed ${guess}. Incorrect!`, `${newGuessesLeft} direct guesses left.`];
-                newGuessesLeft <= 0 ? batch.update(gameRef, { gamePhase: 'ended', winner: 'setter', directGuessesLeft: 0, gameHistory: arrayUnion(...historyUpdate, "Out of guesses.") }) : batch.update(gameRef, { directGuessesLeft: newGuessesLeft, gameHistory: arrayUnion(...historyUpdate) });
+                if (newGuessesLeft <= 0) {
+                    batch.update(gameRef, { gamePhase: 'ended', winner: 'setter', directGuessesLeft: 0, gameHistory: arrayUnion(...historyUpdate, "Out of guesses.") });
+                    // Log game ended analytics event - setter won
+                    logGameEnded(currentGameId, playersCount, 'setter', currentRoundNumber);
+                } else {
+                    batch.update(gameRef, { directGuessesLeft: newGuessesLeft, gameHistory: arrayUnion(...historyUpdate) });
+                }
             }
             await batch.commit();
         }
@@ -1100,9 +1208,15 @@
                     const nextLetter = secretWord[gameData.revealedCount];
                     if (nextLetter) {
                         const newRevealedCount = gameData.revealedCount + 1;
-                        newRevealedCount === secretWord.length 
-                            ? batch.update(gameRef, { gamePhase: 'ended', winner: 'guessers', revealedCount: newRevealedCount, gameHistory: arrayUnion(`All letters revealed!`) }) 
-                            : batch.update(gameRef, { revealedCount: newRevealedCount, currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`Success! Revealed '${nextLetter}'.`) });
+                        if (newRevealedCount === secretWord.length) {
+                            batch.update(gameRef, { gamePhase: 'ended', winner: 'guessers', revealedCount: newRevealedCount, gameHistory: arrayUnion(`All letters revealed!`) });
+                            // Log game ended analytics event - guessers won by revealing all letters
+                            const playersCount = Object.keys(gameData.players).length;
+                            const currentRoundNumber = gameData.roundNumber || 1;
+                            logGameEnded(currentGameId, playersCount, 'guessers', currentRoundNumber);
+                        } else {
+                            batch.update(gameRef, { revealedCount: newRevealedCount, currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`Success! Revealed '${nextLetter}'.`) });
+                        }
                     }
                 } else {
                     batch.update(gameRef, { currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`Guesses didn't match. Round failed.`) });

@@ -129,11 +129,13 @@ As the product owner, I want to log key funnel events and unique user sessions s
 **Acceptance Criteria**
 
 1. GA4 custom events `game_created`, `game_started`, `game_ended`, and `app_session` are triggered from the client.
-2. Each event includes these parameters:
+2. Events are prefixed with environment: `dev_*` for localhost/development and `prod_*` for production to prevent data mixing.
+3. Each event includes these parameters:
    - `room_id` – the 6-char code
    - `players_count` – current number of players (when applicable)
    - `round_number` – for `game_started` and `game_ended`
-3. Events appear in the Firebase Analytics DebugView during development and in standard GA4 reports in production.
+   - `environment` – 'dev' or 'prod' for additional filtering
+4. Events appear in the Firebase Analytics DebugView during development and in standard GA4 reports in production.
 
 ---
 
@@ -146,7 +148,8 @@ As the product owner, I want to measure how many rounds are played per game, inc
 
 1. Firestore field `roundNumber` increments every time the Word Setter submits a new secret word.
 2. The `round_number` parameter is included in both `game_started` and `game_ended` events.
-3. We can compute average and median rounds per game in GA4 or BigQuery.
+3. Events are prefixed with environment (`dev_*` or `prod_*`) and include `environment` parameter to prevent data mixing.
+4. We can compute average and median rounds per game in GA4 or BigQuery.
 
 ---
 
@@ -158,5 +161,6 @@ As the design team, we want insight into party sizes (3-18 players) so that UI a
 **Acceptance Criteria**
 
 1. The `players_count` parameter is logged with each `game_started` and `game_ended` event.
-2. Values outside the 3-18 range trigger a console warning for investigation.
-3. GA4 distribution report shows the frequency of each player count bucket.
+2. Events are prefixed with environment (`dev_*` or `prod_*`) and include `environment` parameter to prevent data mixing.
+3. Values outside the 3-18 range trigger a console warning for investigation.
+4. GA4 distribution report shows the frequency of each player count bucket.
