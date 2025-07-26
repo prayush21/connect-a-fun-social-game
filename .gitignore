@@ -11,6 +11,11 @@ config.js
 plan.md
 setup-guide.md
 
+# Firebase hosting
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
 #Ealier versions
 index-v1.html
 _*
@@ -24,3 +29,7 @@ _*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Personal Markdown files
+custom-domain-setup.md
+deploy.md
