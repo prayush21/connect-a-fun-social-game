@@ -1,0 +1,25 @@
+{
+  "name": "chatroom-app",
+  "version": "1.0.0",
+  "description": "A collaborative word guessing game built with Firebase",
+  "main": "public/index.html",
+  "scripts": {
+    "build": "node build-config.js",
+    "dev": "npm run build && npx serve public",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "serve": "npx serve public",
+    "validate-env": "node -e \"require('./build-config.js').validateEnvironment(); console.log('✅ Environment configuration is valid!')\""
+  },
+  "keywords": [
+    "firebase",
+    "game",
+    "collaborative",
+    "word-game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "dotenv": "^16.0.0",
+    "serve": "^14.0.0"
+  }
+} 

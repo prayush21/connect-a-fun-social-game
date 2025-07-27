@@ -3,14 +3,25 @@
 # Firebase Hosting Deployment Script
 echo "🚀 Starting Firebase Hosting deployment..."
 
-# Check if config.js exists
-if [ ! -f "config.js" ]; then
-    echo "❌ Error: config.js not found!"
-    echo "📝 Please copy config.example.js to config.js and add your Firebase credentials:"
-    echo "   cp config.example.js config.js"
-    echo "   # Then edit config.js with your Firebase project details"
+# Check if environment is configured
+if [ ! -f ".env" ] && [ -z "$FIREBASE_API_KEY" ]; then
+    echo "❌ Error: No environment configuration found!"
+    echo "📝 Please set up your environment:"
+    echo "   1. Copy .env.example to .env: cp .env.example .env"
+    echo "   2. Edit .env with your Firebase credentials"
+    echo "   3. Or set environment variables directly"
     exit 1
 fi
+
+# Install dependencies if needed
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing dependencies..."
+    npm install
+fi
+
+# Build configuration from environment variables
+echo "🔧 Building configuration..."
+npm run build
 
 # Check if Firebase CLI is installed
 if ! command -v firebase &> /dev/null; then

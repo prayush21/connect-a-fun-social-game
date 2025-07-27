@@ -2,48 +2,33 @@
 
 A real-time multiplayer word guessing game built with Firebase and Tailwind CSS.
 
-## Setup Instructions
+## 🚀 Quick Start
 
-1. Clone the repository
+1. **Setup Environment**
 
-```bash
-git clone git@github.com:prayush21/connect-a-fun-social-game.git
-```
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Firebase credentials
+   ```
 
-2. Set up Firebase Configuration
+2. **Install & Build**
 
-- Copy `config.example.js` to `config.js`:
+   ```bash
+   npm install
+   npm run build
+   ```
 
-```bash
-cp config.example.js config.js
-```
+3. **Development**
 
-- Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
-- Add a new Web App to your project
-- Replace the placeholder values in `config.js` with your Firebase project's configuration
+   ```bash
+   npm run dev
+   ```
 
-3. Run the application
+4. **Deploy**
+   ```bash
+   npm run deploy
+   ```
 
-- Open `index.html` in your browser
-- For development, you can use a local server:
+## 🔐 Environment Setup
 
-```bash
-# Using Python
-python -m http.server 8000
-
-# Using Node.js
-npx http-server
-```
-
-## Security Notes
-
-- The `config.js` file contains sensitive Firebase project credentials and is git-ignored
-- Never commit `config.js` to version control
-- Keep your Firebase credentials secure and don't share them publicly
-- For production deployment, consider using environment variables or a secure secrets management system
-
-## Development
-
-- Make changes to the code as needed
-- Test thoroughly before deploying
-- Don't modify `config.js` directly in production - use environment variables or your deployment platform's secrets management
+This project uses environment variables for secure Firebase configuration. See [ENV_SETUP.md](./ENV_SETUP.md) for detailed setup instructions.

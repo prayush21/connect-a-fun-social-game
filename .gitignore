@@ -6,8 +6,10 @@ node_modules/
 .env.local
 .env.*.local
 
-# Firebase config
-config.js
+# Auto-generated Firebase config (do not commit!)
+public/config.js
+
+# Firebase config (auto-generated, don't commit)
 plan.md
 setup-guide.md
 
