@@ -13,3 +13,6 @@
 | Basic analytics instrumentation     | [Story](USER_STORIES.md#basic-analytics-instrumentation)    | ready |
 | Round tracking analytics            | [Story](USER_STORIES.md#round-tracking-analytics)           | ready |
 | Player count analytics              | [Story](USER_STORIES.md#player-count-analytics)             | ready |
+| End-of-round satisfaction survey    | [Story](USER_STORIES.md#end-of-round-satisfaction-survey)   | ready |
+| Floating feedback button            | [Story](USER_STORIES.md#floating-feedback-button)           | ready |
+| UX pain-point analytics             | [Story](USER_STORIES.md#ux-pain-point-analytics)            | todo  |

@@ -188,3 +188,60 @@ As the design team, we want insight into party sizes (3-18 players) so that UI a
 2. Events are prefixed with environment (`dev_*` or `prod_*`) and include `environment` parameter to prevent data mixing.
 3. Values outside the 3-18 range trigger a console warning for investigation.
 4. GA4 distribution report shows the frequency of each player count bucket.
+
+## Feedback & Surveys
+
+### End-of-Round Satisfaction Survey
+
+**User Story**  
+As a player, I want to quickly rate my satisfaction at the end of each round so that the team can spot issues and improve the game.
+
+**Acceptance Criteria**
+
+1. Immediately after the “Round Over” modal, a survey modal appears (sampled 1-in-5 sessions or once per user per day).
+2. The survey contains:
+   - CES scale 1-7 (“How satisfied are you with this round?”).
+   - Optional open text “One thing we should fix”.
+3. Submit button is disabled until a scale value is chosen.
+4. On submit:
+   - A document is added to `round_feedback` with `roomId`, `roundNumber`, `winner`, `rating`, `comment`, `createdAt`, `userId` (or `null`), `sessionId`.
+   - The modal closes and a “Thanks for the feedback!” toast appears.
+5. Survey will not be shown again in the same browser for 24 h.
+6. Firestore security rules allow `create` only; clients cannot read or update feedback docs.
+
+---
+
+### Floating Feedback Button
+
+**User Story**  
+As any player, I want a persistent button to send feedback or report a bug at any time so that issues can be captured while they are fresh.
+
+**Acceptance Criteria**
+
+1. A circular “💬” button is fixed to the bottom-right corner on every view (desktop & mobile).
+2. Clicking the button opens a modal with:
+   - Category dropdown: Bug, Idea, Confusing.
+   - Multiline message box (min 10 characters).
+   - "Send" button (disabled until category & message provided).
+3. On send:
+   - A document is created in `feedback_detailed` with `category`, `message`, `createdAt`, `userAgent`, `gamePhase`, `roomId`, `userId`, `sessionId`.
+   - Modal closes and success toast appears.
+4. If Cloud Function forwarding is enabled, the function posts a summary to Slack `#player-feedback`.
+5. Works on small screens and remains keyboard accessible (focus trap & Esc to close).
+
+---
+
+### UX Pain-Point Analytics
+
+**User Story**  
+As the product owner, I want passive analytics that log “rage clicks”, uncaught JS errors, and time spent in each funnel step so that I can discover UX friction without extra user effort.
+
+**Acceptance Criteria**
+
+1. Rage-click detection:
+   - If a user clicks the same element ≥4 times within 2 s, log event `rage_click` with `element`, `clicks`, `sessionId`.
+2. Funnel instrumentation:
+   - Emit `funnel_step` events on transitions to `lobby`, `setting_word`, `guessing`, `ended` with `timestamp` and `sessionId`.
+3. All events are sent through existing `logAnalyticsEvent`, prefixed with environment (`dev_` / `prod_`).
+4. Events appear in GA4 DebugView locally; in production they aggregate in standard reports.
+5. No personally identifiable information (PII) is included in payloads.
