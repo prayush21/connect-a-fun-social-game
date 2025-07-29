@@ -87,6 +87,30 @@ As a new player receiving a game invitation link, I want the room code to be aut
 
 ---
 
+## Game Logic
+
+### Reference word equals secret word
+
+**User Story**
+As a player, I want the game to create a climactic moment when the clue giver's reference word is the same as the secret word, so that guessers can achieve an immediate victory if they reach consensus.
+
+**Acceptance Criteria**
+
+1. When the clue giver submits a reference word that exactly matches the secret word (case-insensitive), the game enters a special "climactic" mode.
+2. The word setter's guess input field is disabled and shows a tooltip/message: "You cannot intercept when the reference word matches the secret word."
+3. Once all active guessers have locked in their guesses with "I Know It!", the system checks if a majority guessed the reference word correctly.
+4. If the majority correctly guesses the reference word (which is the secret word):
+   - All guessers immediately win the round
+   - A special victory message displays to the guesser's: "🎉 The reference word IS the secret word! You won! 🎉"
+   - The word setter sees the message: "Guessers Won! Round Over."
+   - The secret word is revealed in its entirety
+   - The game proceeds to the end-of-round modal
+5. If the majority fails to guess correctly or time runs out, the victory message to the guesser's go as "🎉 The reference word IS the secret word! Guessers Won!🎉".
+6. The word setter cannot make any guess attempts during this climactic reference round.
+7. The UI clearly indicates to all players that this is a special situation (e.g., different visual styling, special indicator).
+
+---
+
 ## UI & User Experience
 
 ### Info Modal with How to Play

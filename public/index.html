@@ -652,11 +652,25 @@
                 const playerWon = (currentPlayerRole === 'guesser' && winner === 'guessers') || 
                                  (currentPlayerRole === 'setter' && winner === 'setter');
                 
-                showModal(
-                    playerWon ? "You Win!" : "Round Over!",
-                    `The ${gameData.winner} won. The secret word was:`,
-                    gameData.secretWord
-                );
+                // Check if this was a climactic victory (check recent game history)
+                const isClimaticVictory = gameData.gameHistory && 
+                    gameData.gameHistory.some(entry => entry.includes('🎉 The reference word IS the secret word!'));
+                
+                let title, body;
+                if (isClimaticVictory) {
+                    if (currentPlayerRole === 'guesser') {
+                        title = "🎉 Victory! 🎉";
+                        body = "The reference word IS the secret word! You won! The secret word was:";
+                    } else {
+                        title = "Guessers Won!";
+                        body = "Round Over. The secret word was:";
+                    }
+                } else {
+                    title = playerWon ? "You Win!" : "Round Over!";
+                    body = `The ${gameData.winner} won. The secret word was:`;
+                }
+                
+                showModal(title, body, gameData.secretWord);
             } else if (gameData.gamePhase !== 'ended') {
                 hideModal();
             }
@@ -799,9 +813,22 @@
                  referenceUI = isClueGiver ? `<h3 class="font-bold text-lg mb-2">You are the Clue Giver!</h3><p class="text-slate-600 mb-4">Give a clue for a reference word.</p><form id="set-clue-form"><input type="text" id="reference-word-input" placeholder="Your Reference Word" class="w-full px-4 py-2 mb-2 border rounded-lg" required><input type="text" id="clue-input" placeholder="Your Clue for the Word" class="w-full px-4 py-2 mb-4 border rounded-lg" required><button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg">Set Clue</button></form>` : `<p class="text-center text-slate-500">Waiting for ${players[clueGiverId]?.name || 'a Clue Giver'} to provide a clue...</p>`;
             } else {
                 const myGuess = currentReference.guesses?.[currentUserId];
-                if (myGuess) { referenceUI = `<p class="text-center text-lg text-green-600">Your guess '${myGuess}' is locked in! Waiting for others...</p>`; }
-                else if (currentUserId === currentReference.clueGiverId) { referenceUI = `<p class="text-center text-slate-500">You gave the clue. Waiting for guesses...</p>`; }
-                else { referenceUI = `<h3 class="font-bold text-lg mb-2">Clue from ${players[currentReference.clueGiverId].name}:</h3><p class="text-slate-600 mb-4 text-xl font-semibold">"${currentReference.clue}"</p><form id="guesser-guess-form"><input type="text" id="guesser-reference-guess-input" placeholder="What is the reference word?" class="w-full px-4 py-2 mb-4 border rounded-lg" required><button type="submit" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg">I Know It!</button></form>`; }
+                const isClimatic = currentReference.isClimactic;
+                
+                // Special styling for climactic rounds
+                const climaticStyle = isClimatic ? 'bg-orange-50 border-2 border-orange-200 rounded-lg p-4' : '';
+                const climaticHeader = isClimatic ? '<div class="text-center mb-3"><span class="inline-block bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-sm font-bold">🎯 CLIMACTIC ROUND!</span></div>' : '';
+                
+                if (myGuess) { 
+                    referenceUI = `<div class="${climaticStyle}">${climaticHeader}<p class="text-center text-lg text-green-600">Your guess '${myGuess}' is locked in! Waiting for others...</p></div>`; 
+                }
+                else if (currentUserId === currentReference.clueGiverId) { 
+                    referenceUI = `<div class="${climaticStyle}">${climaticHeader}<p class="text-center text-slate-500">You gave the clue. Waiting for guesses...</p></div>`; 
+                }
+                else { 
+                    const buttonText = isClimatic ? 'I Know It! (Final Chance!)' : 'I Know It!';
+                    referenceUI = `<div class="${climaticStyle}">${climaticHeader}<h3 class="font-bold text-lg mb-2">Clue from ${players[currentReference.clueGiverId].name}:</h3><p class="text-slate-600 mb-4 text-xl font-semibold">"${currentReference.clue}"</p><form id="guesser-guess-form"><input type="text" id="guesser-reference-guess-input" placeholder="What is the reference word?" class="w-full px-4 py-2 mb-4 border rounded-lg" required><button type="submit" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg">${buttonText}</button></form></div>`; 
+                }
             }
             return `<div class="mb-4">${referenceUI}</div><div class="mt-6 border-t pt-4"><h3 class="font-bold text-lg mb-2">Guess the Secret Word</h3><form id="direct-guess-form" class="flex gap-2"><input type="text" id="direct-guess-input" placeholder="Type the full secret word" class="flex-grow w-full px-4 py-2 border rounded-lg"><button type="submit" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg" ${gameData.directGuessesLeft <= 0 ? 'disabled' : ''}>Guess</button></form></div>`;
         }
@@ -810,6 +837,21 @@
             const { currentReference } = gameData;
             if (!currentReference) return `<p class="text-center text-slate-500">Waiting for the Guessers to start a reference...</p>`;
             if (currentReference.setterAttempt) return `<p class="text-center text-lg text-blue-600">You guessed '${currentReference.setterAttempt}'. Waiting for resolution...</p>`;
+            
+            // Handle climactic round - disable setter's ability to guess
+            if (currentReference.isClimactic) {
+                return `
+                    <div class="text-center p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2 text-orange-800">🎯 CLIMACTIC ROUND!</h3>
+                        <p class="text-slate-600 mb-2">Clue: <span class="font-semibold text-xl">"${currentReference.clue}"</span></p>
+                        <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mb-2">
+                            <p class="text-yellow-800 font-medium">⚠️ You cannot intercept when the reference word matches the secret word.</p>
+                        </div>
+                        <p class="text-slate-600 italic">The guessers hold the fate of this round...</p>
+                    </div>
+                `;
+            }
+            
             return `<h3 class="font-bold text-lg mb-2">Sabotage the Guessers!</h3><p class="text-slate-600 mb-2">Clue: <span class="font-semibold text-xl">"${currentReference.clue}"</span></p><p class="text-slate-600 mb-4">Guess the reference word to stop them!</p><form id="setter-guess-form" class="flex gap-2"><input type="text" id="setter-reference-guess-input" placeholder="Guess the reference word" class="flex-grow w-full px-4 py-2 border rounded-lg"><button type="submit" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Guess</button></form>`;
         }
         
@@ -1126,7 +1168,25 @@
             const clue = e.target.elements['clue-input'].value.trim();
             const gameRef = getGameRef(currentGameId);
             const gameData = (await getDoc(gameRef)).data();
-            await updateDoc(gameRef, { currentReference: { clueGiverId: currentUserId, referenceWord: referenceWord.toLowerCase(), clue: clue, guesses: {}, setterAttempt: '' }, gameHistory: arrayUnion(`${gameData.players[currentUserId].name} gave the clue: "${clue}"`) });
+            
+            // Check if this is a climactic round (reference word equals secret word)
+            const isClimactic = referenceWord.toLowerCase() === gameData.secretWord.toLowerCase();
+            
+            const historyMessage = isClimactic 
+                ? `${gameData.players[currentUserId].name} gave the clue: "${clue}"` 
+                : `${gameData.players[currentUserId].name} gave the clue: "${clue}"`;
+            
+            await updateDoc(gameRef, { 
+                currentReference: { 
+                    clueGiverId: currentUserId, 
+                    referenceWord: referenceWord.toLowerCase(), 
+                    clue: clue, 
+                    guesses: {}, 
+                    setterAttempt: '', 
+                    isClimactic: isClimactic 
+                }, 
+                gameHistory: arrayUnion(historyMessage) 
+            });
         }
         
         async function handleGuesserReferenceGuess(e) { e.preventDefault(); await updateDoc(getGameRef(currentGameId), { [`currentReference.guesses.${currentUserId}`]: e.target.elements['guesser-reference-guess-input'].value.trim().toLowerCase() }); checkReferenceResolution(); }
@@ -1200,6 +1260,34 @@
             const guesserIds = Object.keys(players).filter(id => players[id].role === 'guesser').sort();
             const nextTurn = guesserIds.length > 0 ? ((clueGiverTurn || 0) + 1) : 0;
 
+            // Handle climactic rounds specially
+            if (currentReference.isClimactic) {
+                const activeGuesserIds = guesserIds.filter(id => id !== currentReference.clueGiverId);
+                if (activeGuesserIds.length === 0) return;
+
+                const guesses = currentReference.guesses || {};
+                const allGuessed = activeGuesserIds.every(id => guesses[id]);
+                
+                if (allGuessed) {
+                    // In climactic rounds, guessers always win regardless of their actual guesses
+                    const playersCount = Object.keys(gameData.players).length;
+                    const currentRoundNumber = gameData.roundNumber || 1;
+                    
+                    batch.update(gameRef, { 
+                        gamePhase: 'ended', 
+                        winner: 'guessers', 
+                        revealedCount: secretWord.length, // Reveal the entire word
+                        gameHistory: arrayUnion('🎉 The reference word IS the secret word! Guessers Won! 🎉') 
+                    });
+                    
+                    // Log climactic victory
+                    logGameEnded(currentGameId, playersCount, 'guessers', currentRoundNumber);
+                    await batch.commit();
+                }
+                return; // Exit early for climactic rounds
+            }
+
+            // Normal (non-climactic) resolution logic
             if (currentReference.setterAttempt && currentReference.setterAttempt === currentReference.referenceWord) {
                 batch.update(gameRef, { currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`${setterName} guessed '${currentReference.referenceWord}'! Round failed.`) });
                 await batch.commit(); return;
