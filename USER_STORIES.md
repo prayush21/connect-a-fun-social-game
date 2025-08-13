@@ -111,6 +111,103 @@ As a player, I want the game to create a climactic moment when the clue giver's 
 
 ---
 
+### Prefix validation for guesses
+
+**User Story**
+As a player, I want the game to validate that my reference words and direct guesses start with the same letters that have been revealed from the secret word, so that the game maintains logical consistency and prevents invalid attempts.
+
+**Acceptance Criteria**
+
+1. **Reference Word Validation:**
+
+   - When a clue giver submits a reference word, the system checks if it starts with the revealed prefix of the secret word (case-insensitive).
+   - If the reference word doesn't match the revealed prefix, show an error message: "Your reference word must start with '[REVEALED_PREFIX]'" and prevent submission.
+   - The input field remains focused and the user can correct their entry.
+
+2. **Direct Guess Validation:**
+
+   - When any guesser submits a direct guess, the system validates it starts with the revealed prefix of the secret word (case-insensitive).
+   - If the direct guess doesn't match the revealed prefix, show an error message: "Your guess must start with '[REVEALED_PREFIX]'" and prevent submission.
+   - The direct guess counter is not decremented for invalid attempts.
+
+3. **Visual Feedback:**
+
+   - Error messages appear immediately below the respective input fields with red styling.
+   - Error messages automatically clear when the user starts typing again.
+   - The submit button remains disabled while there's a validation error.
+
+4. **Edge Cases:**
+
+   - Validation works correctly when only one letter is revealed (e.g., "E**\_**").
+   - Validation handles multiple revealed letters (e.g., "EL\_\_\_\_").
+   - Empty or whitespace-only inputs show appropriate validation messages.
+   - Validation is performed both on the client side (for immediate feedback) and server side (for security).
+
+5. **User Experience:**
+   - Clear visual indication of what the current revealed prefix is (displayed prominently in the game UI).
+   - Helpful placeholder text in input fields showing the required prefix (e.g., "Enter word starting with 'EL...'").
+
+---
+
+### Configurable majority threshold
+
+**User Story**
+As a word setter (room creator), I want to customize how many guessers need to click "I Know It" before the game checks reference word matches, so that I can adjust the game difficulty and flow based on my group's preferences and size.
+
+**Acceptance Criteria**
+
+1. **Lobby Configuration UI:**
+
+   - In the game lobby, below the players list, the word setter sees a configuration section titled "Game Settings".
+   - A horizontal slider labeled "Guessers needed to proceed: X of Y" where X is the selected threshold and Y is the current number of available guessers (excluding clue giver).
+   - The slider ranges from minimum 1 to maximum available guessers count.
+   - Default value is Math.ceil(availableGuessers / 2) to maintain current majority behavior.
+   - Real-time preview shows "X out of Y guessers must click 'I Know It' to check answers".
+
+2. **Dynamic Range Adjustment:**
+
+   - As players join/leave the lobby, the slider's maximum value automatically updates to reflect available guessers.
+   - If the current threshold becomes impossible (e.g., set to 4 but only 2 guessers available), it auto-adjusts down to the maximum possible value.
+   - Visual feedback shows when auto-adjustment occurs with a brief highlight or tooltip.
+
+3. **Data Storage & Persistence:**
+
+   - The threshold is stored as `majorityThreshold` field in the Firestore game document.
+   - Setting persists across game rounds until explicitly changed.
+   - Only updates when game is in lobby phase to prevent mid-game rule changes.
+
+4. **Visibility & Communication:**
+
+   - All players in lobby see the current setting displayed as "Game requires X of Y guessers to agree".
+   - Non-setters see the setting as read-only information, not an interactive control.
+   - During gameplay, the current threshold is visible in the game UI (e.g., in the players panel or status area).
+
+5. **Game Logic Integration:**
+
+   - Replace the hardcoded `Math.ceil(activeGuesserIds.length / 2)` majority calculation with the configured threshold.
+   - Apply to both normal reference rounds and climactic rounds.
+   - Game history messages include participation information: "Success! (3/5 required, 4/7 total guessers participated)".
+
+6. **Edge Case Handling:**
+
+   - Minimum threshold of 1 ensures game can always proceed even with very small groups.
+   - If all active guessers leave/disconnect mid-round, auto-adjust threshold to remaining count.
+   - Handle reconnections gracefully without breaking the threshold logic.
+   - If word setter changes roles mid-lobby, new setter inherits current threshold setting.
+
+7. **User Experience:**
+
+   - Slider has clear visual markers and smooth interaction.
+   - Tooltip explains the impact: "Lower = faster games, Higher = more consensus required".
+   - Mobile-friendly touch interaction for the slider.
+   - Setting changes are immediately reflected in the preview text.
+
+8. **Analytics Integration:**
+   - Track threshold selection in `game_created` analytics events as `majority_threshold` parameter.
+   - Monitor how different thresholds affect game completion rates and satisfaction.
+
+---
+
 ## UI & User Experience
 
 ### Info Modal with How to Play
