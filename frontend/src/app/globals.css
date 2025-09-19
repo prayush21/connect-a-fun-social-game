@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animations for game components */
+@keyframes letterReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation delay utilities */
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+/* Custom component animations */
+.letter-reveal {
+  animation: letterReveal 0.3s ease-out;
+}
+
+.game-card-enter {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+.modal-enter {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.status-indicator {
+  animation: pulseGlow 2s infinite;
+}
+
+/* Responsive text sizing for mobile */
+@media (max-width: 640px) {
+  .responsive-text-xs {
+    font-size: 0.75rem;
+  }
+  
+  .responsive-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .responsive-text-base {
+    font-size: 1rem;
+  }
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* Dark mode removed - light mode only for now
+@media (prefers-color-scheme: dark) { 
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+*/
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode only utilities */
+@layer base {
+  html {
+    @apply bg-white text-slate-900;
+  }
+  
+  /* Dark mode utilities removed - light mode only for now
+  @media (prefers-color-scheme: dark) {
+    html {
+      @apply bg-slate-900 text-slate-100;
+    }
+  }
+  */
+}
