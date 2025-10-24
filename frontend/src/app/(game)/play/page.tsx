@@ -218,7 +218,7 @@ export default function PlayRoute() {
               </span>
             </p>
           </div>
-          <Button onClick={handleReturnToLobby} size="lg" disabled={isLeaving}>
+          <Button className="bg-primary-500 text-white hover:bg-primary-600" onClick={handleReturnToLobby} size="lg" disabled={isLeaving}>
             {isLeaving ? "Returning..." : "Return to Lobby"}
           </Button>
         </div>

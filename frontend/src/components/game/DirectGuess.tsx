@@ -239,7 +239,7 @@ export const DirectGuess = memo<DirectGuessProps>(
                         guessWord.length !== secretWordLength ||
                         !!validateGuess(guessWord)
                       }
-                      className="flex-1"
+                      className="flex-1 bg-primary-500 text-white hover:bg-primary-600"
                     >
                       {isSubmitting ? "Submitting..." : "Submit Guess"}
                     </Button>

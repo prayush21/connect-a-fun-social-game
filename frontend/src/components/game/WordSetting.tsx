@@ -135,7 +135,7 @@ export const WordSetting = memo<WordSettingProps>(
             disabled={
               disabled || isSubmitting || !word.trim() || !!validateWord(word)
             }
-            className="w-full"
+            className="w-full bg-primary-500 text-white hover:bg-primary-600"
             size="lg"
           >
             {isSubmitting ? "Setting Word..." : "Set Secret Word"}

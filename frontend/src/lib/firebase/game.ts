@@ -364,7 +364,7 @@ export const submitGuess = async (
         message: `${
           majorityThreshold - (currentGuesses + 1) === 0
             ? "All connects received! Let's hope!"
-            : `Connect!🤚🏻 (${majorityThreshold - (currentGuesses + 1)} more needed)`
+            : `Connect!🤚🏻 (${activeGuesserIds.length - (currentGuesses + 1)} more needed)`
         }`,
         timestamp: new Date(),
         type: "info",
@@ -748,9 +748,8 @@ export const checkReferenceResolution = async (
     const majorityThreshold = Math.ceil(
       activeGuesserIds.length * (majorityPercentage / 100)
     );
-    const hasMajority = guessedCount >= majorityThreshold;
 
-    if (hasMajority) {
+    if (guessedCount >= majorityThreshold) {
       // In climactic rounds, guessers always win regardless of their actual guesses
       await updateDoc(docRef, {
         gamePhase: "ended",
@@ -795,19 +794,34 @@ export const checkReferenceResolution = async (
   const majorityThreshold = Math.ceil(
     activeGuesserIds.length * (majorityPercentage / 100)
   );
-  const hasMajority = guessedCount >= majorityThreshold;
 
-  if (hasMajority) {
-    const submittedGuessers = activeGuesserIds.filter((id) => guesses[id]);
-    const submittedGuesses = submittedGuessers.map((id) => guesses[id]);
+  // Group guesses by their value to find matches
+  const guessGroups: Record<string, string[]> = {};
+  activeGuesserIds.forEach((id) => {
+    const guess = guesses[id];
+    if (guess) {
+      if (!guessGroups[guess]) {
+        guessGroups[guess] = [];
+      }
+      guessGroups[guess].push(id);
+    }
+  });
 
-    if (submittedGuesses.length > 0) {
-      const firstGuess = submittedGuesses[0];
-      const allMatch = submittedGuesses.every((guess) => guess === firstGuess);
+  // Find the largest group of matching guesses
+  const largestGroup = Object.values(guessGroups).reduce(
+    (largest, current) => (current.length > largest.length ? current : largest),
+    []
+  );
+
+  // Check if the largest group meets the threshold and matches the reference word
+  if (largestGroup.length >= majorityThreshold) {
+      const matchingGuess = Object.keys(guessGroups).find(
+        (guess) => guessGroups[guess] === largestGroup
+      );
 
       if (
-        allMatch &&
-        firstGuess.toLowerCase() ===
+        matchingGuess &&
+        matchingGuess.toLowerCase() ===
           currentReference.referenceWord.toLowerCase()
       ) {
         const newRevealedCount = (data.revealedCount || 1) + 1;
@@ -841,7 +855,7 @@ export const checkReferenceResolution = async (
               ...(data.gameHistory || []),
               {
                 id: `connect_success_${Date.now()}`,
-                message: `✅ All connected on "${currentReference.referenceWord}" - Revealed '${nextLetter}'. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`,
+                message: `✅ All connected on "${currentReference.referenceWord}" - Revealed '${nextLetter}'. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`,
                 timestamp: new Date(),
                 type: "success",
                 alignment: "center",
@@ -851,21 +865,32 @@ export const checkReferenceResolution = async (
           });
         }
       } else {
-        const failureReason = allMatch
-          ? `Guesses matched but were incorrect. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`
-          : `Guesses didn't match. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`;
+        // Majority reached but guess was incorrect - fail immediately
+        const failureMessage = `Majority agreed on incorrect guess. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`;
 
-        // NOTE: On failure, we clear the reference AND advance clue giver turn
-        // Next clue giver gets their chance to provide a reference
         await updateDoc(docRef, {
           currentReference: null,
-          clueGiverTurn: nextTurn, // Advance turn on failure too
-          gameHistory: [...(data.gameHistory || []), failureReason],
+          clueGiverTurn: nextTurn,
+          gameHistory: [...(data.gameHistory || []), failureMessage],
           updatedAt: serverTimestamp(),
         });
       }
+    } else {
+      // Check if all active guessers have submitted their guesses
+      if (guessedCount >= activeGuesserIds.length) {
+        // All guesses received but no majority consensus - fail
+        const failureMessage = `No majority consensus reached. (${guessedCount}/${activeGuesserIds.length} submitted, ${majorityThreshold} needed)`;
+
+        await updateDoc(docRef, {
+          currentReference: null,
+          clueGiverTurn: nextTurn,
+          gameHistory: [...(data.gameHistory || []), failureMessage],
+          updatedAt: serverTimestamp(),
+        });
+      }
+      // If not all guesses received yet, wait for remaining guesses
+      // The UI will show progress: "Connect!🤚🏻 (X more needed)" from submitGuess function
     }
-  }
 };
 
 // Feedback and Survey functions

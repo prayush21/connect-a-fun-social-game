@@ -196,13 +196,6 @@ export const calculateReferenceResolution = (
   // Check if enough guessers have submitted
   const guesses = currentReference.guesses || {};
   const submittedGuessers = activeGuesserIds.filter((id) => guesses[id]);
-  const majorityThreshold = Math.ceil(
-    activeGuesserIds.length * (settings.majorityThreshold / 100)
-  );
-
-  if (submittedGuessers.length < majorityThreshold) {
-    return { shouldResolve: false };
-  }
 
   // Handle climactic round (reference word equals secret word)
   if (currentReference.isClimactic) {
@@ -217,56 +210,78 @@ export const calculateReferenceResolution = (
     };
   }
 
-  // Check if all submitted guesses match the reference word
-  const submittedGuesses = submittedGuessers.map((id) => guesses[id]);
-  const firstGuess = submittedGuesses[0];
-  const allMatch = submittedGuesses.every((guess) => guess === firstGuess);
+  // Group guesses by their value to find matches
+  const guessGroups: Record<string, string[]> = {};
+  submittedGuessers.forEach((id) => {
+    const guess = guesses[id];
+    if (!guessGroups[guess]) {
+      guessGroups[guess] = [];
+    }
+    guessGroups[guess].push(id);
+  });
 
-  if (allMatch && firstGuess === currentReference.referenceWord) {
-    const newRevealedCount = revealedCount + 1;
-    const nextTurn = (clueGiverTurn + 1) % guesserIds.length;
-    const nextClueGiver = guesserIds[nextTurn];
+  // Find the largest group of matching guesses
+  const largestGroup = Object.values(guessGroups).reduce(
+    (largest, current) => (current.length > largest.length ? current : largest),
+    []
+  );
 
-    // Check if game is won by revealing all letters
-    if (newRevealedCount >= secretWord.length) {
+  // Calculate majority threshold for matching guesses
+  const majorityThreshold = Math.ceil(
+    activeGuesserIds.length * (settings.majorityThreshold / 100)
+  );
+
+  // Check if the largest group meets the threshold and matches the reference word
+  if (largestGroup.length >= majorityThreshold) {
+    const matchingGuess = Object.keys(guessGroups).find(
+      (guess) => guessGroups[guess] === largestGroup
+    );
+
+    if (matchingGuess === currentReference.referenceWord) {
+      const newRevealedCount = revealedCount + 1;
+      const nextTurn = (clueGiverTurn + 1) % guesserIds.length;
+      const nextClueGiver = guesserIds[nextTurn];
+
+      // Check if game is won by revealing all letters
+      if (newRevealedCount >= secretWord.length) {
+        return {
+          shouldResolve: true,
+          resolution: {
+            type: "success",
+            winner: "guessers",
+            newRevealedCount,
+            message: "All letters revealed! Guessers won!",
+          },
+        };
+      }
+
       return {
         shouldResolve: true,
         resolution: {
           type: "success",
-          winner: "guessers",
           newRevealedCount,
-          message: "All letters revealed! Guessers won!",
+          message: `Success! Revealed '${secretWord[revealedCount].toUpperCase()}'. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`,
+          nextClueGiver,
         },
       };
     }
 
+    // Majority matched but guess was incorrect
+    const nextTurn = (clueGiverTurn + 1) % guesserIds.length;
+    const nextClueGiver = guesserIds[nextTurn];
+
     return {
       shouldResolve: true,
       resolution: {
-        type: "success",
-        newRevealedCount,
-        message: `Success! Revealed '${secretWord[revealedCount].toUpperCase()}'. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`,
+        type: "failure",
+        message: `Majority agreed on incorrect guess. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`,
         nextClueGiver,
       },
     };
   }
 
-  // Reference failed - guesses didn't match or were incorrect
-  // NOTE: On failure, we DO advance the clue giver turn - next person gets their chance
-  const nextTurn = (clueGiverTurn + 1) % guesserIds.length;
-  const nextClueGiver = guesserIds[nextTurn];
-  const failureReason = allMatch
-    ? `Guesses matched but were incorrect. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`
-    : `Guesses didn't match. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`;
-
-  return {
-    shouldResolve: true,
-    resolution: {
-      type: "failure",
-      message: failureReason,
-      nextClueGiver,
-    },
-  };
+  // No majority consensus reached - don't resolve yet
+  return { shouldResolve: false };
 };
 
 /**
