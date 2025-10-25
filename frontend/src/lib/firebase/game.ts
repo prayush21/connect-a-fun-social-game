@@ -277,11 +277,15 @@ export const setSecretWord = async (
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
 
+  // Fetch current game history first
+  const docSnap = await getDoc(docRef);
+  const currentGameHistory = docSnap.data()?.gameHistory || [];
+
   await updateDoc(docRef, {
     secretWord: word.toUpperCase(),
     gamePhase: "guessing",
     gameHistory: [
-      ...((await getDoc(docRef)).data()?.gameHistory || []),
+      ...currentGameHistory,
       "The word has been set. Game started!",
     ],
     updatedAt: serverTimestamp(),
@@ -639,11 +643,23 @@ export const subscribeToGameRoom = (
 
 // Utility functions
 export const generateRoomCode = (): string => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  // Use consonants and vowels for easier pronunciation/memorization
+  // Exclude confusing characters: I/L (looks like 1), O (looks like 0)
+  const consonants = "BCDFGHJKMNPQRSTVWXYZ"; // Removed L
+  const vowels = "AEUY"; // Removed I and O
+  const numbers = "23456789"; // Removed 0 and 1
+  
   let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  
+  // Generate pattern: C-V-C-V-N-N (Consonant-Vowel-Consonant-Vowel-Number-Number)
+  // This creates pronounceable-ish codes like "TAKE42" or "PUFE73"
+  result += consonants.charAt(Math.floor(Math.random() * consonants.length));
+  result += vowels.charAt(Math.floor(Math.random() * vowels.length));
+  result += consonants.charAt(Math.floor(Math.random() * consonants.length));
+  result += vowels.charAt(Math.floor(Math.random() * vowels.length));
+  result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  
   return result;
 };
 

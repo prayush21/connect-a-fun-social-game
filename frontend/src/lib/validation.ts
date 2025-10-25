@@ -59,6 +59,7 @@ export const joinGameSchema = z.object({
   gameCode: z
     .string()
     .trim()
+    .toUpperCase()
     .length(6, "Game code must be exactly 6 characters")
     .regex(/^[A-Z0-9]+$/, "Invalid game code format"),
 });
@@ -77,6 +78,7 @@ export const joinRoomSchema = z.object({
   roomId: z
     .string()
     .trim()
+    .toUpperCase()
     .length(6, "Room code must be exactly 6 characters")
     .regex(/^[A-Z0-9]+$/, "Invalid room code format"),
   username: z

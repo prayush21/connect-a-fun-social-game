@@ -305,16 +305,19 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
         const { error } = await withErrorHandling(async () => {
           set({ isLoading: true, error: null });
 
+          // Normalize room code: trim and convert to uppercase
+          const normalizedRoomId = roomId.trim().toUpperCase();
+
           const { sessionId } = get();
           const actionId = `join_room_${Date.now()}`;
 
           // Add optimistic action
-          get().addPendingAction(actionId, "JOIN_ROOM", { roomId, username });
+          get().addPendingAction(actionId, "JOIN_ROOM", { roomId: normalizedRoomId, username });
 
-          await joinGameRoom(roomId, sessionId, username);
+          await joinGameRoom(normalizedRoomId, sessionId, username);
 
           // Subscribe to the room with enhanced error handling
-          const unsubscribe = subscribeToGameRoom(roomId, (gameState) => {
+          const unsubscribe = subscribeToGameRoom(normalizedRoomId, (gameState) => {
             if (gameState) {
               // Check for new reference notifications (only if not the clue giver)
               get().checkForNewReferenceNotification(gameState);
@@ -331,7 +334,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           });
 
           set({
-            roomId,
+            roomId: normalizedRoomId,
             unsubscribe,
             isLoading: false,
             isConnected: true,

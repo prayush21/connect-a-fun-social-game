@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./button";
 import { Player } from "@/lib/types";
+import { Trash2 } from "lucide-react";
 
 interface RoomDropdownProps {
   roomId: string;
@@ -10,6 +11,9 @@ interface RoomDropdownProps {
   currentPlayerId: string;
   onLeaveRoom: () => void;
   isLeaving: boolean;
+  isRoomCreator?: boolean;
+  onRemovePlayer?: (playerId: string, playerName: string) => void;
+  thresholdMajority?: number; // Percentage (e.g., 51 for 51%)
 }
 
 export function RoomDropdown({
@@ -18,9 +22,16 @@ export function RoomDropdown({
   currentPlayerId,
   onLeaveRoom,
   isLeaving,
+  isRoomCreator = false,
+  onRemovePlayer,
+  thresholdMajority,
 }: RoomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [playerToRemove, setPlayerToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -55,8 +66,29 @@ export function RoomDropdown({
     onLeaveRoom();
   };
 
+  const handleRemovePlayer = (playerId: string, playerName: string) => {
+    setIsOpen(false);
+    setPlayerToRemove({ id: playerId, name: playerName });
+  };
+
+  const confirmRemovePlayer = () => {
+    if (playerToRemove && onRemovePlayer) {
+      onRemovePlayer(playerToRemove.id, playerToRemove.name);
+      setPlayerToRemove(null);
+    }
+  };
+
+  const cancelRemovePlayer = () => {
+    setPlayerToRemove(null);
+  };
+
   const playersList = Object.values(players);
   // const currentPlayer = players[currentPlayerId];
+
+  // Calculate minimum connections required
+  const totalGuessers = playersList.filter((p) => p.role === "guesser").length;
+  const minimumConnections =
+    thresholdMajority ;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -127,6 +159,12 @@ export function RoomDropdown({
                 )}
               </Button>
             </div>
+            {minimumConnections !== null && (
+              <div className="mt-1 text-sm text-slate-500">
+                Minimum Matching Connections: {minimumConnections} of{" "}
+                {totalGuessers} guesser{totalGuessers !== 1 ? "s" : ""}
+              </div>
+            )}
           </div>
 
           {/* Players List */}
@@ -135,50 +173,65 @@ export function RoomDropdown({
               Players ({playersList.length})
             </h4>
             <div className="max-h-48 space-y-2 overflow-y-auto">
-              {playersList.map((player) => (
-                <div
-                  key={player.id}
-                  className={`flex items-center justify-between rounded-md p-2 ${
-                    player.id === currentPlayerId
-                      ? "border border-indigo-200 bg-indigo-50"
-                      : "bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`h-2 w-2 rounded-full ${
-                        player.isOnline ? "bg-green-500" : "bg-slate-400"
-                      }`}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-slate-900">
-                          {player.name}
-                        </span>
-                        {player.id === currentPlayerId && (
-                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
-                            You
+              {playersList.map((player) => {
+                const isCurrentPlayer = player.id === currentPlayerId;
+                const canRemove =
+                  isRoomCreator && !isCurrentPlayer && onRemovePlayer;
+
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center justify-between rounded-md p-2 ${
+                      player.id === currentPlayerId
+                        ? "border border-indigo-200 bg-indigo-50"
+                        : "bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          player.isOnline ? "bg-green-500" : "bg-slate-400"
+                        }`}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-slate-900">
+                            {player.name}
                           </span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs ${
-                            player.role === "setter"
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {player.role === "setter" ? "Word Setter" : "Guesser"}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {player.isOnline ? "Online" : "Offline"}
-                        </span>
+                          {player.id === currentPlayerId && (
+                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs ${
+                              player.role === "setter"
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {player.role === "setter"
+                              ? "Word Setter"
+                              : "Guesser"}
+                          </span>
+                          
+                        </div>
                       </div>
                     </div>
+                    {canRemove && (
+                      <button
+                        onClick={() => handleRemovePlayer(player.id, player.name)}
+                        className="rounded p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                        title={`Remove ${player.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -233,6 +286,36 @@ export function RoomDropdown({
                 </>
               )}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Player Confirmation Modal */}
+      {playerToRemove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
+            <h2 className="mb-4 text-2xl font-bold text-slate-900">
+              Remove Player
+            </h2>
+            <p className="mb-6 text-slate-600">
+              Are you sure you want to remove{" "}
+              <span className="font-semibold">{playerToRemove.name}</span> from
+              the game?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={cancelRemovePlayer}
+                className="flex-1 rounded-lg bg-slate-200 px-6 py-3 font-semibold text-slate-700 hover:bg-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemovePlayer}
+                className="flex-1 rounded-lg bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       )}

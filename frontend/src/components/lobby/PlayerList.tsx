@@ -80,6 +80,18 @@ export function PlayerList({
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Remove Player Button */}
+                {canRemove && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onRemovePlayer(playerId, player.name)}
+                    className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
+                    title={`Remove ${player.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
                 {/* Role Badge */}
                 <span
                   className={`rounded-full px-3 py-1 font-mono text-xs font-bold ${
@@ -98,19 +110,6 @@ export function PlayerList({
                   }`}
                   title={player.isOnline ? "Online" : "Offline"}
                 />
-
-                {/* Remove Player Button */}
-                {canRemove && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemovePlayer(playerId, player.name)}
-                    className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
-                    title={`Remove ${player.name}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
             </li>
           );

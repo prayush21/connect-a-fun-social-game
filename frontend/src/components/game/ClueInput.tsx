@@ -51,8 +51,8 @@ export const ClueInput = memo<ClueInputProps>(
       const trimmedClue = clue.trim();
       if (!trimmedClue) {
         newErrors.clue = "Reference clue is required";
-      } else if (trimmedClue.length < 5) {
-        newErrors.clue = "Clue must be at least 5 characters long";
+      } else if (trimmedClue.length < 1) {
+        newErrors.clue = "Clue must be at least 1 character long";
       } else if (trimmedClue.length > 200) {
         newErrors.clue = "Clue must be less than 200 characters";
       }

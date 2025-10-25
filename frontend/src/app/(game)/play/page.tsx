@@ -11,7 +11,7 @@ import {
   ConnectSabotage,
   History,
   VolunteerClueGiver,
-  WaitingForClue,
+  WaitingState,
   WaitingForConnects,
   WordSetting,
 } from "@/components/game";
@@ -40,6 +40,7 @@ export default function PlayRoute() {
     leaveRoom,
     returnToLobby,
     initializeNotifications,
+    removePlayerFromRoom,
   } = useStore();
 
   // Derived game state
@@ -107,6 +108,16 @@ export default function PlayRoute() {
     } catch (err) {
       console.error("Failed to return to lobby:", err);
       setIsLeaving(false);
+    }
+  };
+
+  // Handle player removal
+  const handleRemovePlayer = async (playerId: string, playerName: string) => {
+    try {
+      await removePlayerFromRoom(playerId);
+      console.log(`Removed player: ${playerName}`);
+    } catch (err) {
+      console.error("Failed to remove player:", err);
     }
   };
 
@@ -241,6 +252,9 @@ export default function PlayRoute() {
                 currentPlayerId={currentPlayer.id}
                 onLeaveRoom={handleLeaveRoom}
                 isLeaving={isLeaving}
+                isRoomCreator={gameState.setterUid === sessionId}
+                onRemovePlayer={handleRemovePlayer}
+                thresholdMajority={gameState.thresholdMajority}
               />
             )}
             <div
@@ -306,12 +320,13 @@ export default function PlayRoute() {
             {gamePhase === "setting_word" &&
               currentPlayer.role === "guesser" && (
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <WaitingForClue
-                    clueGiverName={
+                  <WaitingState
+                    playerName={
                       Object.values(gameState.players).find(
                         (p) => p.role === "setter"
                       )?.name || "Word Setter"
                     }
+                    mode="word"
                   />
                 </div>
               )}
@@ -347,7 +362,7 @@ export default function PlayRoute() {
                   !isCurrentClueGiver &&
                   currentClueGiver && (
                     <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <WaitingForClue clueGiverName={currentClueGiver.name} />
+                      <WaitingState playerName={currentClueGiver.name} />
                     </div>
                   )}
 
@@ -396,6 +411,8 @@ export default function PlayRoute() {
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <ConnectSabotage
                       playerRole={currentPlayer.role}
+                      currentPlayerId={currentPlayer.id}
+                      currentReference={gameState.currentReference}
                       onConnect={
                         currentPlayer.role === "guesser"
                           ? handleConnect

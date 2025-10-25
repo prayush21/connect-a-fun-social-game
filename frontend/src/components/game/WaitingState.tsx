@@ -3,14 +3,14 @@
 import { memo } from "react";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 
-interface WaitingForClueProps {
-  clueGiverName: string;
+interface WaitingStateProps {
+  playerName: string;
   className?: string;
   mode?: "clue" | "word";
 }
 
-export const WaitingForClue = memo<WaitingForClueProps>(
-  ({ clueGiverName, className = "", mode = "clue" }) => {
+export const WaitingState = memo<WaitingStateProps>(
+  ({ playerName, className = "", mode = "clue" }) => {
     const isWaitingForWord = mode === "word";
 
     return (
@@ -25,7 +25,7 @@ export const WaitingForClue = memo<WaitingForClueProps>(
           </h3>
 
           <p className="text-slate-600">
-            <span className="font-medium text-indigo-600">{clueGiverName}</span>{" "}
+            <span className="font-medium text-indigo-600">{playerName}</span>{" "}
             {isWaitingForWord ? "is setting a secret word" : "is giving a clue"}
           </p>
 
@@ -40,4 +40,4 @@ export const WaitingForClue = memo<WaitingForClueProps>(
   }
 );
 
-WaitingForClue.displayName = "WaitingForClue";
+WaitingState.displayName = "WaitingState";

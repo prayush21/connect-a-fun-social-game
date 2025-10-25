@@ -6,6 +6,6 @@ export { ClueInput } from "./ClueInput";
 export { ConnectSabotage } from "./ConnectSabotage";
 export { History } from "./History";
 export { VolunteerClueGiver } from "./VolunteerClueGiver";
-export { WaitingForClue } from "./WaitingForClue";
+export { WaitingState } from "./WaitingState";
 export { WaitingForConnects } from "./WaitingForConnects";
 export { WordSetting } from "./WordSetting";

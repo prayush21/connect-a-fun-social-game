@@ -51,14 +51,13 @@ export default function Home() {
 
     setIsJoining(true);
     setError(null);
-    console.log("Joining game with code:", data.gameCode);
+    
+    // Normalize room code: trim and convert to uppercase
+    const normalizedGameCode = data.gameCode.trim().toUpperCase();
+    console.log("Joining game with code:", normalizedGameCode);
+    
     try {
-      console.log(
-        "Joining game with code:",
-        data.gameCode.toUpperCase(),
-        username
-      );
-      await joinRoom(data.gameCode.toUpperCase(), username);
+      await joinRoom(normalizedGameCode, username);
       router.push("/lobby");
     } catch (err) {
       console.error("Failed to join game:", err);
@@ -179,6 +178,11 @@ export default function Home() {
                   placeholder="Enter Code"
                   className="flex-1 rounded-md border border-gray-300 px-3 py-2 uppercase shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   maxLength={6}
+                  onChange={(e) => {
+                    // Convert to uppercase as user types
+                    e.target.value = e.target.value.toUpperCase();
+                    joinGameForm.setValue("gameCode", e.target.value);
+                  }}
                 />
                 <button
                   type="submit"

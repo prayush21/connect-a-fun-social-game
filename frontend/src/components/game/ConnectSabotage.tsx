@@ -2,9 +2,12 @@
 
 import { useState, memo } from "react";
 import { Button } from "../ui/button";
+import type { Reference } from "@/lib/types";
 
 interface ConnectSabotageProps {
   playerRole: "setter" | "guesser";
+  currentPlayerId: string;
+  currentReference: Reference | null;
   onConnect?: (guess: string) => Promise<void>;
   onSabotage?: (guess: string) => Promise<void>;
   disabled?: boolean;
@@ -15,6 +18,8 @@ interface ConnectSabotageProps {
 export const ConnectSabotage = memo<ConnectSabotageProps>(
   ({
     playerRole,
+    currentPlayerId,
+    currentReference,
     onConnect,
     onSabotage,
     disabled = false,
@@ -70,11 +75,80 @@ export const ConnectSabotage = memo<ConnectSabotageProps>(
     };
 
     // Don't render if there's no active reference
-    if (!hasActiveReference) {
+    if (!hasActiveReference || !currentReference) {
       return null;
     }
 
     const isGuesser = playerRole === "guesser";
+    const isClimactic = currentReference.isClimactic;
+
+    // Check if guesser has already submitted
+    const hasGuesserSubmitted =
+      isGuesser && currentPlayerId in currentReference.guesses;
+
+    // Check if setter has successfully sabotaged (their guess matches the reference word)
+    const hasSetterSucceeded =
+      !isGuesser &&
+      currentReference.setterAttempt &&
+      currentReference.setterAttempt.toLowerCase() ===
+        currentReference.referenceWord.toLowerCase();
+
+    // For setter in climactic round, hide the controls
+    if (!isGuesser && isClimactic) {
+      return (
+        <div className={`text-center ${className}`}>
+          <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
+            <p className="text-lg font-semibold text-amber-800">
+              🎯 Final Round
+            </p>
+            <p className="mt-2 text-sm text-amber-700">
+              Sabotage is disabled in the final round. Guessers must
+              directly connect to the secret word!
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // For guessers who have already submitted
+    if (hasGuesserSubmitted) {
+      return (
+        <div className={`text-center ${className}`}>
+          <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4">
+            <p className="text-lg font-semibold text-green-800">
+              Connect Raised! Let's see if it sticks.🤞
+            </p>
+            <p className="mt-2 text-sm text-green-700">
+              Your guess: <span className="font-mono font-bold">{currentReference.guesses[currentPlayerId]}</span>
+            </p>
+            <p className="mt-1 text-xs text-green-600">
+              Waiting for other players...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // For setter who has successfully sabotaged
+    if (hasSetterSucceeded) {
+      return (
+        <div className={`text-center ${className}`}>
+          <div className="rounded-lg border-2 border-red-300 bg-red-50 p-4">
+            <p className="text-lg font-semibold text-red-800">
+              💥 Sabotage Successful!
+            </p>
+            <p className="mt-2 text-sm text-red-700">
+              You correctly guessed the reference word:{" "}
+              <span className="font-mono font-bold">{currentReference.setterAttempt}</span>
+            </p>
+            <p className="mt-1 text-xs text-red-600">
+              Waiting for round to complete...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     const buttonText = isGuesser ? "Connect" : "Sabotage";
     const buttonEmoji = isGuesser ? "🤝" : "💥";
     const placeholderText = isGuesser
