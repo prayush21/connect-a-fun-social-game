@@ -93,8 +93,7 @@ export const joinRoomSchema = z.object({
 export const gameSettingsSchema = z.object({
   majorityThreshold: z
     .number()
-    .min(1, "Threshold must be at least 1%")
-    .max(100, "Threshold cannot exceed 100%")
+    .min(1, "Threshold must be at least 1")
     .int("Threshold must be a whole number"),
   timeLimit: z
     .number()

@@ -17,13 +17,15 @@ export interface Player {
 }
 
 export interface GameSettings {
-  majorityThreshold: number; // Percentage of guessers needed for successful reference
+  majorityThreshold: number; // ABSOLUTE count of guessers required (excludes current clue giver). Will be clamped to 1..eligible guessers
   timeLimit: number; // Time limit for reference setting in seconds
   maxPlayers: number;
   wordValidation: "strict" | "relaxed";
 }
 
 export interface Reference {
+  // Unique identifier for the reference to make resolution idempotent
+  id?: string;
   clueGiverId: PlayerId;
   referenceWord: string;
   clue: string;
@@ -43,7 +45,7 @@ export interface GameState {
   setterUid: PlayerId;
   players: Record<PlayerId, Player>;
   directGuessesLeft: number;
-  thresholdMajority: number; // Percentage (e.g., 51 for 51%)
+  thresholdMajority: number; // Absolute count mirror for UI (minimum matching connections)
   currentReference: Reference | null;
   winner: GameWinner;
   gameHistory: (

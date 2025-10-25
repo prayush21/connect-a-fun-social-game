@@ -28,6 +28,25 @@ const getGameRoomsCollection = () => collection(getDb(), "game_rooms");
 
 // Convert Firestore document to GameState
 export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
+  // Back-compat: convert legacy percent (thresholdMajority) to absolute using eligible guessers (G-1)
+  const playersObj = data.players || {};
+  const totalGuessers = Object.keys(playersObj).filter(
+    (id) => playersObj[id]?.role === "guesser"
+  ).length;
+  const eligibleGuessers = Math.max(totalGuessers - 1, 1);
+  const legacyPercent = data.thresholdMajority;
+  const absoluteFromLegacy =
+    typeof legacyPercent === "number"
+      ? Math.max(
+          1,
+          Math.min(
+            Math.ceil(eligibleGuessers * (legacyPercent / 100)),
+            eligibleGuessers
+          )
+        )
+      : undefined;
+  const pickedAbsolute =
+    data.settings?.majorityThreshold ?? absoluteFromLegacy ?? 2;
   return {
     roomId: data.roomId,
     gamePhase: data.gamePhase,
@@ -64,10 +83,11 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
         }
       : null,
     directGuessesLeft: data.directGuessesLeft ?? 3,
-    thresholdMajority: data.thresholdMajority ?? 51,
+    // Keep legacy percent available for display; if absent, mirror absolute
+    thresholdMajority:
+      typeof legacyPercent === "number" ? legacyPercent : pickedAbsolute,
     settings: {
-      majorityThreshold:
-        data.settings?.majorityThreshold ?? data.thresholdMajority ?? 51,
+      majorityThreshold: pickedAbsolute,
       timeLimit: data.settings?.timeLimit ?? 30,
       maxPlayers: data.settings?.maxPlayers ?? 8,
       wordValidation: data.settings?.wordValidation ?? "strict",
@@ -162,13 +182,15 @@ export const createRoom = async (
         lastActive: serverTimestamp(),
       },
     },
-    directGuessesLeft: 3,
-    thresholdMajority: 51,
+  directGuessesLeft: 3,
+  // Keep legacy field for compatibility; will mirror absolute count stored in settings
+  thresholdMajority: 2,
     currentReference: null,
     winner: null,
     gameHistory: [`${username} created the room.`],
     settings: {
-      majorityThreshold: 51,
+      // Default absolute required connects
+      majorityThreshold: 2,
       timeLimit: 30,
       maxPlayers: 8,
       wordValidation: "strict",
@@ -577,7 +599,6 @@ export const volunteerAsClueGiver = async (
   if (!player) {
     throw new Error("Player not found");
   }
-
   if (player.role !== "guesser") {
     throw new Error("Only guessers can volunteer to be clue giver");
   }
@@ -585,7 +606,6 @@ export const volunteerAsClueGiver = async (
   if (gameState.gamePhase !== "guessing") {
     throw new Error("Can only volunteer during guessing phase");
   }
-
   // Get ordered guesser list to find the new clue giver turn index
   const orderedGuesserIds = Object.keys(gameState.players)
     .filter((id) => gameState.players[id].role === "guesser")
@@ -806,9 +826,18 @@ export const checkReferenceResolution = async (
 
   const guesses = currentReference.guesses || {};
   const guessedCount = activeGuesserIds.filter((id) => guesses[id]).length;
-  const majorityPercentage = data.thresholdMajority || 51;
-  const majorityThreshold = Math.ceil(
-    activeGuesserIds.length * (majorityPercentage / 100)
+  // Prefer absolute from settings; fallback to legacy percent
+  const rawAbs2 = data.settings?.majorityThreshold;
+  const legacyPercent2 = data.thresholdMajority;
+  const interpretedThreshold2 =
+    typeof rawAbs2 === "number"
+      ? rawAbs2
+      : typeof legacyPercent2 === "number"
+      ? Math.ceil(Math.max(activeGuesserIds.length, 1) * (legacyPercent2 / 100))
+      : 2;
+  const majorityThreshold = Math.max(
+    1,
+    Math.min(interpretedThreshold2, Math.max(activeGuesserIds.length, 1))
   );
 
   // Group guesses by their value to find matches

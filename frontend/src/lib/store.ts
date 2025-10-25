@@ -999,10 +999,16 @@ export const useGameSelectors = () => {
     0,
     effectiveGameState.revealedCount
   );
-  const majorityNeeded = Math.ceil(
-    (activeGuessers.length * effectiveGameState.settings.majorityThreshold) /
-      100
+  // Eligible active guessers exclude the current clue giver
+  const eligibleActiveGuessers = activeGuessers.filter(
+    (guesser) => guesser.id !== currentClueGiver?.id
   );
+  const maxEligible = Math.max(eligibleActiveGuessers.length, 1);
+  // Interpret legacy percent values (>100) as percentage and convert to count
+  const rawThreshold = effectiveGameState.settings.majorityThreshold || 1;
+  const interpretedThreshold =
+    rawThreshold;
+  const majorityNeeded = Math.max(1, Math.min(interpretedThreshold, maxEligible));
   const guessesReceived = effectiveGameState.currentReference
     ? activeGuessers.filter(
         (guesser) =>

@@ -199,15 +199,26 @@ export const calculateReferenceResolution = (
 
   // Handle climactic round (reference word equals secret word)
   if (currentReference.isClimactic) {
-    return {
-      shouldResolve: true,
-      resolution: {
-        type: "climactic_win",
-        winner: "guessers",
-        newRevealedCount: secretWord.length,
-        message: "🎉 The reference word IS the secret word! Guessers Won! 🎉",
-      },
-    };
+    // Require majority submissions before resolving climactic win
+    const guesses = currentReference.guesses || {};
+    const submittedGuessers = activeGuesserIds.filter((id) => guesses[id]);
+    const rawThreshold = settings.majorityThreshold ?? 1;
+    const maxEligible = Math.max(activeGuesserIds.length, 1);
+    const interpretedThreshold = rawThreshold;
+    const majorityRequired = Math.max(1, Math.min(interpretedThreshold, maxEligible));
+
+    if (submittedGuessers.length >= majorityRequired) {
+      return {
+        shouldResolve: true,
+        resolution: {
+          type: "climactic_win",
+          winner: "guessers",
+          newRevealedCount: secretWord.length,
+          message: "🎉 The reference word IS the secret word! Guessers Won! 🎉",
+        },
+      };
+    }
+    return { shouldResolve: false };
   }
 
   // Group guesses by their value to find matches
@@ -226,9 +237,17 @@ export const calculateReferenceResolution = (
     []
   );
 
-  // Calculate majority threshold for matching guesses
-  const majorityThreshold = Math.ceil(
-    activeGuesserIds.length * (settings.majorityThreshold / 100)
+  // Absolute majority threshold: clamp to eligible active guessers; support legacy percent if >100
+  const rawThreshold = settings.majorityThreshold || 1;
+  const maxEligible = Math.max(activeGuesserIds.length, 1);
+  const majorityThreshold = Math.max(
+    1,
+    Math.min(
+      rawThreshold > 100
+        ? Math.ceil(maxEligible * (rawThreshold / 100))
+        : rawThreshold,
+      maxEligible
+    )
   );
 
   // Check if the largest group meets the threshold and matches the reference word

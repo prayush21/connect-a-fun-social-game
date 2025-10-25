@@ -13,7 +13,7 @@ interface RoomDropdownProps {
   isLeaving: boolean;
   isRoomCreator?: boolean;
   onRemovePlayer?: (playerId: string, playerName: string) => void;
-  thresholdMajority?: number; // Percentage (e.g., 51 for 51%)
+  thresholdMajority?: number; // Absolute required connects (back-compat: may be percent in legacy)
 }
 
 export function RoomDropdown({
@@ -85,10 +85,16 @@ export function RoomDropdown({
   const playersList = Object.values(players);
   // const currentPlayer = players[currentPlayerId];
 
-  // Calculate minimum connections required
+  // Calculate minimum connections required (best-effort display)
   const totalGuessers = playersList.filter((p) => p.role === "guesser").length;
-  const minimumConnections =
-    thresholdMajority ;
+  const eligibleGuessers = Math.max(totalGuessers - 1, 1);
+  // const minimumConnections = (() => {
+  //   if (typeof thresholdMajority !== "number") return null;
+  //   // If legacy percent (<=100), convert to count using eligible guessers; else assume absolute
+  //   return thresholdMajority <= 100
+  //     ? Math.max(1, Math.min(Math.ceil(eligibleGuessers * (thresholdMajority / 100)), eligibleGuessers))
+  //     : Math.max(1, Math.min(thresholdMajority, eligibleGuessers));
+  // })();
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -159,10 +165,9 @@ export function RoomDropdown({
                 )}
               </Button>
             </div>
-            {minimumConnections !== null && (
+            {thresholdMajority !== null && (
               <div className="mt-1 text-sm text-slate-500">
-                Minimum Matching Connections: {minimumConnections} of{" "}
-                {totalGuessers} guesser{totalGuessers !== 1 ? "s" : ""}
+                Minimum Matching Connections: {thresholdMajority} of {eligibleGuessers}
               </div>
             )}
           </div>

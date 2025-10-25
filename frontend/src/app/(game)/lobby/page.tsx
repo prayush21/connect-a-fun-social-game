@@ -48,24 +48,14 @@ export default function LobbyRoute() {
     router.push("/");
   };
 
-  // Handle threshold change
+  // Handle threshold change (absolute count)
   const handleThresholdChange = async (newRequiredPeople: number) => {
     if (!gameState) return;
 
-    // Calculate total guessers
-    const totalGuessers = Object.values(gameState.players).filter(
-      (player) => player.role === "guesser"
-    ).length;
-
-    // Convert people count to percentage
-    const newThreshold =
-      totalGuessers > 0
-        ? Math.ceil((newRequiredPeople / totalGuessers) * 100)
-        : 51; // Default fallback
-
     await updateGameSettings({
       ...gameState.settings,
-      majorityThreshold: newThreshold,
+      // store absolute count directly
+      majorityThreshold: newRequiredPeople,
     });
   };
 
@@ -138,17 +128,18 @@ export default function LobbyRoute() {
               (player) => player.role === "guesser"
             ).length;
 
-            // Convert percentage back to people count
-            const requiredPeople =
-              totalGuessers > 0
-                ? Math.ceil(
-                    (totalGuessers * gameState.settings.majorityThreshold) / 100
-                  )
-                : 1;
+            // Eligible guessers exclude the current clue giver (setter doesn't guess)
+            const eligibleGuessers = Math.max(totalGuessers - 1, 1);
+
+            // Majority threshold is stored as absolute count; clamp to eligible range
+            const requiredPeople = Math.max(
+              1,
+              Math.min(gameState.settings.majorityThreshold || 1, eligibleGuessers)
+            );
 
             return (
               <ThresholdControl
-                totalGuessers={totalGuessers}
+                totalGuessers={eligibleGuessers}
                 requiredPeople={requiredPeople}
                 onChange={handleThresholdChange}
               />

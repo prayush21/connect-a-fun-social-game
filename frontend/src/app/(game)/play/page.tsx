@@ -8,7 +8,8 @@ import {
   DirectGuess,
   ViewReference,
   ClueInput,
-  ConnectSabotage,
+  Connect,
+  Sabotage,
   History,
   VolunteerClueGiver,
   WaitingState,
@@ -406,26 +407,24 @@ export default function PlayRoute() {
                   </div>
                 )}
 
-                {/* Connect/Sabotage Buttons - Hide for clue giver while waiting */}
+                {/* Connect or Sabotage - Hide for clue giver while waiting */}
                 {gameState.currentReference && !isCurrentClueGiver && (
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <ConnectSabotage
-                      playerRole={currentPlayer.role}
-                      currentPlayerId={currentPlayer.id}
-                      currentReference={gameState.currentReference}
-                      onConnect={
-                        currentPlayer.role === "guesser"
-                          ? handleConnect
-                          : undefined
-                      }
-                      onSabotage={
-                        currentPlayer.role === "setter"
-                          ? handleSabotage
-                          : undefined
-                      }
-                      disabled={!isConnected}
-                      hasActiveReference={!!gameState.currentReference}
-                    />
+                    {currentPlayer.role === "guesser" ? (
+                      <Connect
+                        currentPlayerId={currentPlayer.id}
+                        currentReference={gameState.currentReference}
+                        onConnect={handleConnect}
+                        disabled={!isConnected}
+                        hasActiveReference={!!gameState.currentReference}
+                      />
+                    ) : (
+                      <Sabotage
+                        currentReference={gameState.currentReference}
+                        onSabotage={handleSabotage}
+                        disabled={!isConnected}
+                      />
+                    )}
                   </div>
                 )}
               </div>
