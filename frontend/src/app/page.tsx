@@ -24,7 +24,7 @@ export default function Home() {
   const [showJoinForm, setShowJoinForm] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  console.log("isCreating, isJoining", isCreating, isJoining);
+
   const nicknameForm = useForm<NicknameFormData>({
     resolver: zodResolver(nicknameSchema),
     defaultValues: { nickname: username },

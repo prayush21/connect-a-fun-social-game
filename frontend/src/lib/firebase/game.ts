@@ -365,7 +365,8 @@ export const submitGuess = async (
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
 
-  await runTransaction(getDb(), async (transaction) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await runTransaction(getDb(), async (transaction: any) => {
     // Read current state inside transaction
     const docSnap = await transaction.get(docRef);
     if (!docSnap.exists()) throw new Error("Room not found");
@@ -663,7 +664,8 @@ export const subscribeToGameRoom = (
 
   return onSnapshot(
     docRef,
-    (doc) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (doc: any) => {
       if (doc.exists()) {
         const data = doc.data() as FirestoreGameRoom;
         const gameState = firestoreToGameState(data);
@@ -672,7 +674,8 @@ export const subscribeToGameRoom = (
         callback(null);
       }
     },
-    (error) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error: any) => {
       console.error("Error listening to game room:", error);
       callback(null);
     }
@@ -711,7 +714,8 @@ export const submitSetterGuess = async (
   let shouldResolve = false;
   const guessLower = guess.toLowerCase();
 
-  await runTransaction(getDb(), async (transaction) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await runTransaction(getDb(), async (transaction: any) => {
     // Read current state inside transaction
     const docSnap = await transaction.get(docRef);
     if (!docSnap.exists()) throw new Error("Room not found");
@@ -787,7 +791,8 @@ export const checkReferenceResolution = async (
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
 
-  await runTransaction(getDb(), async (transaction) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await runTransaction(getDb(), async (transaction: any) => {
     // Read current state inside transaction
     const docSnap = await transaction.get(docRef);
     if (!docSnap.exists()) return;

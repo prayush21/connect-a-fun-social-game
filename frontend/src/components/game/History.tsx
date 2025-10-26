@@ -26,7 +26,7 @@ export const History = memo<HistoryProps>(
     className = "",
     maxHeight = "h-64",
     autoScroll = true,
-    currentUserId,
+    currentUserId: _currentUserId,
   }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
 

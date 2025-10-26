@@ -72,7 +72,7 @@ export const Connect = memo<ConnectProps>(
         <div className={`text-center ${className}`}>
           <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4">
             <p className="text-lg font-semibold text-green-800">
-              Connect Raised! Let's see if it sticks.🤞
+              Connect Raised! Let&apos;s see if it sticks.🤞
             </p>
             <p className="mt-2 text-sm text-green-700">
               Your guess: <span className="font-mono font-bold">{currentReference.guesses[currentPlayerId]}</span>
