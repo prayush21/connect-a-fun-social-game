@@ -46,6 +46,13 @@ import {
 } from "./notifications";
 import type { Unsubscribe } from "firebase/firestore";
 
+interface ActionLogEntry {
+  actionId: string;
+  action: string;
+  actor: string;
+  timestamp: number;
+}
+
 // Generate a random nickname
 const generateRandomNickname = (): string => {
   const adjectives = [
@@ -74,6 +81,73 @@ const generateRandomNickname = (): string => {
   return `${adj}${animal}${number}`;
 };
 
+const sanitizeForId = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 30);
+
+const extractTimestamp = (value: unknown): number => {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    "toMillis" in value &&
+    typeof (value as { toMillis: () => number }).toMillis === "function"
+  ) {
+    try {
+      return (value as { toMillis: () => number }).toMillis();
+    } catch (error) {
+      console.warn("Failed to convert timestamp to millis", error);
+    }
+  }
+
+  return Date.now();
+};
+
+const historyEntriesToActionLog = (
+  history: GameState["gameHistory"] | undefined,
+  players: GameState["players"] | undefined,
+  startIndex: number
+): ActionLogEntry[] => {
+  if (!history?.length) {
+    return [];
+  }
+
+  return history.slice(startIndex).map((entry, offset) => {
+    const index = startIndex + offset;
+
+    if (typeof entry === "string") {
+      return {
+        actionId: `history_${index}_${sanitizeForId(entry) || index}`,
+        action: entry,
+        actor: "system",
+        timestamp: Date.now(),
+      };
+    }
+
+    const actionId = entry.id
+      ? entry.id
+      : `history_${index}_${sanitizeForId(entry.message || "event") || index}`;
+
+    const actor = entry.playerId
+      ? players?.[entry.playerId]?.name ?? "system"
+      : "system";
+
+    return {
+      actionId,
+      action: entry.message,
+      actor,
+      timestamp: extractTimestamp(entry.timestamp),
+    };
+  });
+};
+
 // UI State interface
 export interface UiState extends UiStateType {
   // setTheme removed - light mode only for now
@@ -99,6 +173,8 @@ export interface GameStateStore {
   // Core game state
   gameState: GameState | null;
   roomId: RoomId | null;
+  actionLog: ActionLogEntry[];
+  lastHistoryLength: number;
 
   // Connection state
   isConnected: boolean;
@@ -133,6 +209,8 @@ export interface GameStateStore {
   removePlayer: (playerId: PlayerId) => Promise<void>;
   changeSetter: (playerId: PlayerId) => Promise<void>;
   volunteerAsClueGiver: () => Promise<void>;
+  recordAction: (actionId: string, action: string, actor?: string) => void;
+  clearActionLog: () => void;
 
   // Convenience aliases for lobby components
   startGame: () => Promise<void>;
@@ -227,6 +305,8 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       // Game State
       gameState: null,
       roomId: null,
+      actionLog: [],
+  lastHistoryLength: 0,
       isConnected: false,
       isLoading: false,
       error: null,
@@ -236,6 +316,23 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       optimisticState: null,
       unsubscribe: null,
 
+      recordAction: (actionId, action, actorName) =>
+        set((state) => {
+          const actor =
+            actorName ??
+            state.gameState?.players?.[state.sessionId]?.name ??
+            state.username ??
+            "system";
+          const updatedLog = [
+            ...state.actionLog,
+            { actionId, action, actor, timestamp: Date.now() },
+          ];
+          console.log("[ActionLog]", updatedLog);
+          return { actionLog: updatedLog };
+        }),
+
+  clearActionLog: () => set({ actionLog: [] }),
+
       // Actions
       async createRoom(username: string) {
         const { error } = await withErrorHandling(async () => {
@@ -244,6 +341,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           const roomCode = generateRoomCode();
           const { sessionId } = get();
           const actionId = `create_room_${Date.now()}`;
+          get().recordAction(actionId, "CREATE_ROOM", username);
 
           // Add optimistic action
           get().addPendingAction(actionId, "CREATE_ROOM", {
@@ -278,7 +376,33 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
               get().clearOptimisticState();
               get().resetRetries();
               get().updateLastSync();
-              set({ gameState, isConnected: true });
+
+              set((state) => {
+                const historyLength = gameState.gameHistory?.length ?? 0;
+                const startIndex =
+                  state.lastHistoryLength > historyLength
+                    ? 0
+                    : state.lastHistoryLength;
+                const newEntries = historyEntriesToActionLog(
+                  gameState.gameHistory,
+                  gameState.players,
+                  startIndex
+                );
+                const updatedLog =
+                  newEntries.length > 0
+                    ? [...state.actionLog, ...newEntries]
+                    : state.actionLog;
+                if (newEntries.length > 0) {
+                  console.log("[ActionLog]", updatedLog);
+                }
+
+                return {
+                  gameState,
+                  isConnected: true,
+                  actionLog: updatedLog,
+                  lastHistoryLength: historyLength,
+                };
+              });
             } else {
               set({ isConnected: false });
               get().incrementRetries();
@@ -310,6 +434,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
 
           const { sessionId } = get();
           const actionId = `join_room_${Date.now()}`;
+          get().recordAction(actionId, "JOIN_ROOM", username);
 
           // Add optimistic action
           get().addPendingAction(actionId, "JOIN_ROOM", { roomId: normalizedRoomId, username });
@@ -326,7 +451,33 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
               get().clearOptimisticState();
               get().resetRetries();
               get().updateLastSync();
-              set({ gameState, isConnected: true });
+
+              set((state) => {
+                const historyLength = gameState.gameHistory?.length ?? 0;
+                const startIndex =
+                  state.lastHistoryLength > historyLength
+                    ? 0
+                    : state.lastHistoryLength;
+                const newEntries = historyEntriesToActionLog(
+                  gameState.gameHistory,
+                  gameState.players,
+                  startIndex
+                );
+                const updatedLog =
+                  newEntries.length > 0
+                    ? [...state.actionLog, ...newEntries]
+                    : state.actionLog;
+                if (newEntries.length > 0) {
+                  console.log("[ActionLog]", updatedLog);
+                }
+
+                return {
+                  gameState,
+                  isConnected: true,
+                  actionLog: updatedLog,
+                  lastHistoryLength: historyLength,
+                };
+              });
             } else {
               set({ isConnected: false });
               get().incrementRetries();
@@ -355,6 +506,12 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
         if (!currentRoomId) return;
 
         const { error } = await withErrorHandling(async () => {
+          const { gameState, username } = get();
+          const actorName =
+            gameState?.players?.[sessionId]?.name ?? username ?? "system";
+          const actionId = `leave_room_${Date.now()}`;
+          get().recordAction(actionId, "LEAVE_ROOM", actorName);
+
           await leaveRoom(currentRoomId, sessionId);
 
           // Cleanup subscription
@@ -368,6 +525,8 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             unsubscribe: null,
             isConnected: false,
             error: null,
+            actionLog: [],
+            lastHistoryLength: 0,
           });
         }, "leaveRoom");
 
@@ -378,7 +537,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async returnToLobby() {
-        const { roomId: currentRoomId, gameState } = get();
+  const { roomId: currentRoomId, gameState, sessionId, username } = get();
 
         if (!currentRoomId || !gameState) return;
 
@@ -392,6 +551,9 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           }
 
           const actionId = `return_to_lobby_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "RETURN_TO_LOBBY", actorName);
 
           // Add optimistic action
           get().addPendingAction(actionId, "RETURN_TO_LOBBY", {});
@@ -422,7 +584,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async setWord(word: string) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+  const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -445,6 +607,9 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           }
 
           const actionId = `set_word_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "SET_WORD", actorName);
 
           // Add optimistic action
           get().addPendingAction(actionId, "SET_WORD", { word });
@@ -474,7 +639,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async setReference(referenceWord: string, clue: string) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+  const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -504,6 +669,9 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             referenceWord.toLowerCase() === gameState.secretWord.toLowerCase();
 
           const actionId = `set_reference_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "SET_REFERENCE", actorName);
 
           // Add optimistic action
           get().addPendingAction(actionId, "SET_REFERENCE", {
@@ -539,11 +707,14 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async submitGuess(guess: string) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState?.currentReference) return;
 
         const { error } = await withErrorHandling(async () => {
           const actionId = `submit_guess_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "SUBMIT_GUESS", actorName);
 
           // Add optimistic action
           get().addPendingAction(actionId, "SUBMIT_GUESS", { guess });
@@ -604,7 +775,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async submitDirectGuess(word: string) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -631,6 +802,11 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
 
           // Calculate the result of this guess
           const guessResult = resolveDirectGuess(gameState, word, sessionId);
+
+          const actionId = `submit_direct_guess_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "SUBMIT_DIRECT_GUESS", actorName);
 
           // Apply optimistic update based on the result
           const optimisticUpdate: Partial<GameState> = {
@@ -663,6 +839,11 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
         if (!currentRoomId) return;
 
         const { error } = await withErrorHandling(async () => {
+          const { gameState, sessionId, username } = get();
+          const actorName =
+            gameState?.players?.[sessionId]?.name ?? username ?? "system";
+          const actionId = `update_settings_${Date.now()}`;
+          get().recordAction(actionId, "UPDATE_SETTINGS", actorName);
           await updateSettings(currentRoomId, settings);
         }, "updateGameSettings");
 
@@ -673,7 +854,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async removePlayer(playerId: PlayerId) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+  const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -690,6 +871,11 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             );
           }
 
+          const actionId = `remove_player_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "REMOVE_PLAYER", actorName);
+
           await removePlayer(currentRoomId, playerId);
         }, "removePlayer");
 
@@ -700,7 +886,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async changeSetter(playerId: PlayerId) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+  const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -718,6 +904,11 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             );
           }
 
+          const actionId = `change_setter_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "CHANGE_SETTER", actorName);
+
           await changeSetter(currentRoomId, playerId, sessionId);
         }, "changeSetter");
 
@@ -728,11 +919,14 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async submitSetterGuess(guess: string) {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState?.currentReference) return;
 
         const { error } = await withErrorHandling(async () => {
           const actionId = `submit_setter_guess_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "SUBMIT_SETTER_GUESS", actorName);
 
           // Add optimistic action
           get().addPendingAction(actionId, "SUBMIT_SETTER_GUESS", { guess });
@@ -790,7 +984,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async volunteerAsClueGiver() {
-        const { roomId: currentRoomId, sessionId, gameState } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -817,6 +1011,11 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             );
           }
 
+          const actionId = `volunteer_clue_giver_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "VOLUNTEER_CLUE_GIVER", actorName);
+
           await volunteerAsClueGiver(currentRoomId, sessionId);
         }, "volunteerAsClueGiver");
 
@@ -828,11 +1027,15 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
 
       // Convenience aliases for lobby components
       async startGame() {
-        const { roomId: currentRoomId, gameState } = get();
+        const { roomId: currentRoomId, gameState, sessionId, username } = get();
         if (!currentRoomId || !gameState || gameState.gamePhase !== "lobby")
           return;
 
         const { error } = await withErrorHandling(async () => {
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          const actionId = `start_game_${Date.now()}`;
+          get().recordAction(actionId, "START_GAME", actorName);
           // Transition to setting_word phase
           await startGameRound(currentRoomId);
         }, "startGame");
@@ -901,12 +1104,41 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
         const { error } = await withErrorHandling(async () => {
           set({ isLoading: true, error: null });
 
+          const actionId = `reconnect_${Date.now()}`;
+          get().recordAction(actionId, "RECONNECT", "system");
+
           // Resubscribe to the room
           const unsubscribe = subscribeToGameRoom(roomId, (gameState) => {
             if (gameState) {
               get().resetRetries();
               get().updateLastSync();
-              set({ gameState, isConnected: true });
+
+              set((state) => {
+                const historyLength = gameState.gameHistory?.length ?? 0;
+                const startIndex =
+                  state.lastHistoryLength > historyLength
+                    ? 0
+                    : state.lastHistoryLength;
+                const newEntries = historyEntriesToActionLog(
+                  gameState.gameHistory,
+                  gameState.players,
+                  startIndex
+                );
+                const updatedLog =
+                  newEntries.length > 0
+                    ? [...state.actionLog, ...newEntries]
+                    : state.actionLog;
+                if (newEntries.length > 0) {
+                  console.log("[ActionLog]", updatedLog);
+                }
+
+                return {
+                  gameState,
+                  isConnected: true,
+                  actionLog: updatedLog,
+                  lastHistoryLength: historyLength,
+                };
+              });
             } else {
               set({ isConnected: false });
               get().incrementRetries();
@@ -942,6 +1174,8 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           lastSyncTime: null,
           pendingActions: new Map(),
           optimisticState: null,
+          actionLog: [],
+          lastHistoryLength: 0,
         });
       },
 

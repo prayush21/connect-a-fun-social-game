@@ -188,7 +188,7 @@ export const createRoom = async (
   thresholdMajority: 2,
     currentReference: null,
     winner: null,
-    gameHistory: [`${username} created the room.`],
+    gameHistory: [`Room created by ${username}`],
     settings: {
       // Default absolute required connects
       majorityThreshold: 2,
@@ -220,7 +220,7 @@ export const joinRoom = async (
     },
     gameHistory: [
       ...((await getDoc(docRef)).data()?.gameHistory || []),
-      `${username} joined the room.`,
+      `${username} joined`,
     ],
     updatedAt: serverTimestamp(),
   });
@@ -249,8 +249,8 @@ export const leaveRoom = async (
 
   // Add leave message to game history
   const leaveMessage = leavingPlayer
-    ? `${leavingPlayer.name} left the room.`
-    : "A player left the room.";
+    ? `${leavingPlayer.name} left`
+    : "A player left";
 
   const newGameHistory = [...(data.gameHistory || []), leaveMessage];
 
@@ -269,8 +269,8 @@ export const leaveRoom = async (
     // Add setter change messages
     const finalGameHistory = [
       ...newGameHistory,
-      `${newSetter.name} is now the word setter.`,
-      "Game reset to lobby due to setter leaving.",
+      `${newSetter.name} is now the setter`,
+      "Game reset to lobby (setter left)",
     ];
 
     // Create update with setter reassignment and game reset
@@ -303,13 +303,18 @@ export const setSecretWord = async (
   // Fetch current game history first
   const docSnap = await getDoc(docRef);
   const currentGameHistory = docSnap.data()?.gameHistory || [];
+  const data = docSnap.data() as FirestoreGameRoom;
+  
+  // Get setter name
+  const setter = Object.values(data.players || {}).find(p => p.role === "setter");
+  const setterName = setter?.name || "Setter";
 
   await updateDoc(docRef, {
     secretWord: word.toUpperCase(),
     gamePhase: "guessing",
     gameHistory: [
       ...currentGameHistory,
-      "The word has been set. Game started!",
+      `${setterName} has set the secret word`,
     ],
     updatedAt: serverTimestamp(),
   });
@@ -335,8 +340,8 @@ export const setReference = async (
   const isClimactic = referenceWordUpper === secretWord;
 
   const historyMessage = isClimactic
-    ? `${player.name} gave the clue: "${clue}" (🎯 CLIMACTIC ROUND!)`
-    : `${player.name} gave the clue: "${clue}"`;
+    ? `${player.name}: "${clue}" [FINAL ROUND]`
+    : `${player.name}: "${clue}"`;
 
   await updateDoc(docRef, {
     currentReference: {
@@ -399,11 +404,10 @@ export const submitGuess = async (
         ...(data.gameHistory || []),
         {
           id: `guess_${playerId}_${Date.now()}`,
-          message: `${
+          message:
             majorityThreshold - (currentGuesses + 1) === 0
-              ? "All connects received! Let's hope!"
-              : `Connect!🤚🏻 (${activeGuesserIds.length - (currentGuesses + 1)} more needed)`
-          }`,
+              ? "All connections in! Resolving in 3...2...1!"
+              : "Connection received",
           timestamp: new Date(),
           type: "info",
           alignment: "right",
@@ -445,7 +449,7 @@ export const submitDirectGuess = async (
       directGuessesLeft: newDirectGuessesLeft,
       gameHistory: [
         ...(data.gameHistory || []),
-        `${playerName} guessed the word: ${guessUpper}!`,
+        `${playerName} guessed it: ${guessUpper}!`,
       ],
       updatedAt: serverTimestamp(),
     });
@@ -457,19 +461,20 @@ export const submitDirectGuess = async (
       directGuessesLeft: 0,
       gameHistory: [
         ...(data.gameHistory || []),
-        `${playerName} guessed ${guessUpper}. Incorrect!`,
-        "Out of guesses. Setter wins!",
+        `${playerName} tried ${guessUpper} (incorrect)`,
+        "No guesses left → Setter wins!",
       ],
       updatedAt: serverTimestamp(),
     });
   } else {
     // Incorrect guess, continue game
+    const guessPlural = newDirectGuessesLeft > 1 ? 'guesses' : 'guess';
     await updateDoc(docRef, {
       directGuessesLeft: newDirectGuessesLeft,
       gameHistory: [
         ...(data.gameHistory || []),
-        `${playerName} guessed ${guessUpper}. Incorrect!`,
-        `${newDirectGuessesLeft} direct guesses left.`,
+        `${playerName} tried ${guessUpper} (incorrect)`,
+        `${newDirectGuessesLeft} direct ${guessPlural} remaining`,
       ],
       updatedAt: serverTimestamp(),
     });
@@ -544,7 +549,7 @@ export const removePlayer = async (
     }
 
     // Add history messages
-    const historyMessages = [`${playerToRemove.name} left the game.`];
+    const historyMessages = [`${playerToRemove.name} left during game`];
 
     if (needsNewClueGiver) {
       // Get remaining guessers to find the new clue giver
@@ -558,7 +563,7 @@ export const removePlayer = async (
         const newClueGiverId = remainingGuessers[newClueGiverTurn];
         const newClueGiver = gameState.players[newClueGiverId];
         if (newClueGiver) {
-          historyMessages.push(`${newClueGiver.name} is now the clue giver.`);
+          historyMessages.push(`${newClueGiver.name} is now giving clues`);
         }
       }
     }
@@ -571,7 +576,7 @@ export const removePlayer = async (
     // For non-guesser removals or lobby phase, just add a simple message
     updateData.gameHistory = [
       ...(gameState.gameHistory || []),
-      `${playerToRemove.name} left the game.`,
+      `${playerToRemove.name} left`,
     ];
   }
 
@@ -630,7 +635,7 @@ export const volunteerAsClueGiver = async (
   }
 
   // Update clue giver turn to point to the volunteer
-  const historyMessage = `${player.name} volunteered to be the clue giver.`;
+  const historyMessage = `${player.name} volunteered as clue giver`;
 
   await updateDoc(docRef, {
     clueGiverTurn: volunteerIndex,
@@ -736,7 +741,7 @@ export const submitSetterGuess = async (
       transaction.update(docRef, {
         gameHistory: [
           ...(data.gameHistory || []),
-          `${setter?.name || "Setter"} incorrectly guessed '${guess}'.`,
+          `${setter?.name || "Setter"} guessed '${guess}' (incorrect)`,
         ],
         updatedAt: serverTimestamp(),
       });
@@ -771,7 +776,7 @@ export const returnToLobby = async (roomId: RoomId): Promise<void> => {
     winner: null,
     gameHistory: [
       ...(data.gameHistory || []),
-      "Game ended. Returned to lobby for next round.",
+      "Returned to lobby for next round",
     ],
     updatedAt: serverTimestamp(),
   });
@@ -824,7 +829,7 @@ export const checkReferenceResolution = async (
           revealedCount: secretWord.length, // Reveal the entire word
           gameHistory: [
             ...(data.gameHistory || []),
-            "🎉 The reference word IS the secret word! Guessers Won! 🎉",
+            "Final round hit! Guessers win!",
           ],
           updatedAt: serverTimestamp(),
         });
@@ -843,7 +848,7 @@ export const checkReferenceResolution = async (
         clueGiverTurn: nextTurn,
         gameHistory: [
           ...(data.gameHistory || []),
-          `${setterName} guessed '${currentReference.referenceWord}'! Round failed.`,
+          `${setterName} blocked with '${currentReference.referenceWord}' → Round failed`,
         ],
         updatedAt: serverTimestamp(),
       });
@@ -913,7 +918,7 @@ export const checkReferenceResolution = async (
               ...(data.gameHistory || []),
               {
                 id: `connect_success_${Date.now()}`,
-                message: `✅ All connected on "${currentReference.referenceWord}" - All letters revealed! Guessers win!`,
+                message: `Connected on "${currentReference.referenceWord}" → Word complete! Guessers win!`,
                 timestamp: new Date(),
                 type: "success",
                 alignment: "center",
@@ -931,7 +936,7 @@ export const checkReferenceResolution = async (
               ...(data.gameHistory || []),
               {
                 id: `connect_success_${Date.now()}`,
-                message: `✅ All connected on "${currentReference.referenceWord}" - Revealed '${nextLetter}'. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`,
+                message: `Connected on "${currentReference.referenceWord}" → Revealed '${nextLetter}' (${largestGroup.length}/${activeGuesserIds.length})`,
                 timestamp: new Date(),
                 type: "success",
                 alignment: "center",
@@ -942,7 +947,7 @@ export const checkReferenceResolution = async (
         }
       } else {
         // Majority reached but guess was incorrect - fail immediately
-        const failureMessage = `Majority agreed on incorrect guess. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`;
+        const failureMessage = `Majority wrong (${largestGroup.length}/${activeGuesserIds.length}) → Round failed`;
 
         transaction.update(docRef, {
           currentReference: null,
@@ -955,7 +960,7 @@ export const checkReferenceResolution = async (
       // Check if all active guessers have submitted their guesses
       if (guessedCount >= activeGuesserIds.length) {
         // All guesses received but no majority consensus - fail
-        const failureMessage = `No majority consensus reached. (${guessedCount}/${activeGuesserIds.length} submitted, ${majorityThreshold} needed)`;
+        const failureMessage = `No consensus (${guessedCount}/${activeGuesserIds.length} submitted, ${majorityThreshold} needed)`;
 
         transaction.update(docRef, {
           currentReference: null,
@@ -965,7 +970,7 @@ export const checkReferenceResolution = async (
         });
       }
       // If not all guesses received yet, wait for remaining guesses
-      // The UI will show progress: "Connect!🤚🏻 (X more needed)" from submitGuess function
+      // The UI will show progress: "Connection received" from submitGuess function
     }
   });
 };

@@ -45,73 +45,37 @@ export const History = memo<HistoryProps>(
           message: entry,
           timestamp: new Date(),
           type: "info",
-          alignment: "center", // Default system messages to center
+          alignment: "left",
         };
       }
       return {
         ...entry,
-        alignment:
-          entry.alignment ||
-          (entry.playerId === currentUserId
-            ? "right"
-            : entry.playerId
-              ? "left"
-              : "center"),
+        alignment: "left", // All entries left-aligned like terminal
       };
     });
 
-    // Currently unused but kept for future use
-    // const getEntryIcon = (type: HistoryEntry["type"]) => {
-    //   switch (type) {
-    //     case "success":
-    //       return "✅";
-    //     case "warning":
-    //       return "⚠️";
-    //     case "error":
-    //       return "❌";
-    //     default:
-    //       return "ℹ️";
-    //   }
-    // };
-
-    const getEntryColorClasses = (type: HistoryEntry["type"]) => {
+    const getMessageColor = (type: HistoryEntry["type"]) => {
       switch (type) {
         case "success":
-          return "text-green-700 bg-green-50 border-green-200";
+          return "text-green-300";
         case "warning":
-          return "text-yellow-700 bg-yellow-50 border-yellow-200";
+          return "text-yellow-300";
         case "error":
-          return "text-red-700 bg-red-50 border-red-200";
+          return "text-red-300";
         default:
-          return "text-slate-700 bg-slate-50 border-slate-200";
+          return "text-slate-300";
       }
     };
-
-    // Currently unused but kept for future use
-    // const formatTimestamp = (timestamp: Date | Timestamp | FieldValue) => {
-    //   let date: Date;
-    //   if (timestamp instanceof Timestamp) {
-    //     date = timestamp.toDate();
-    //   } else if (timestamp instanceof Date) {
-    //     date = timestamp;
-    //   } else {
-    //     date = new Date(); // Fallback for FieldValue
-    //   }
-    //
-    //   return date.toLocaleTimeString([], {
-    //     hour: "2-digit",
-    //     minute: "2-digit",
-    //     second: "2-digit",
-    //   });
-    // };
 
     if (normalizedEntries.length === 0) {
       return (
         <div className={`${maxHeight} ${className}`}>
-          <div className="flex h-full items-center justify-center text-slate-500">
-            <div className="text-center">
-              <div className="mb-2 text-2xl">📜</div>
-              <p className="text-sm">Game history will appear here</p>
+          <div className="flex h-full items-center justify-center">
+            <div className="font-mono text-sm text-slate-500">
+              <div className="mb-2 text-center">$ waiting for logs...</div>
+              <div className="text-center text-xs opacity-60">
+                Game history will appear here
+              </div>
             </div>
           </div>
         </div>
@@ -120,99 +84,79 @@ export const History = memo<HistoryProps>(
 
     return (
       <div className={`${className}`}>
-        <div className="mb-3">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-slate-700">
-            <span className="text-base" aria-hidden="true">
-              📜
-            </span>
-            Game History
-          </h3>
+        {/* Terminal Header */}
+        <div className="mb-2 rounded-t-lg border border-b-0 border-slate-700 bg-slate-800 px-4 py-2">
+          <span className="font-mono text-sm text-slate-400">
+            game-session.log
+          </span>
         </div>
 
+        {/* Terminal Body */}
         <div
           ref={scrollRef}
           className={`
           ${maxHeight} overflow-y-auto
-          rounded-lg border border-slate-200
-          bg-white shadow-sm
+          border border-slate-700 bg-slate-950
+          font-mono text-sm
         `}
           role="log"
           aria-label="Game history"
           aria-live="polite"
         >
-          <div className="space-y-2 p-3">
-            {normalizedEntries.map((entry) => {
-              const getAlignmentClasses = () => {
-                switch (entry.alignment) {
-                  case "right":
-                    return "flex justify-end";
-                  case "center":
-                    return "flex justify-center";
-                  default:
-                    return "flex justify-start";
-                }
-              };
-
-              const getMessageClasses = () => {
-                switch (entry.alignment) {
-                  case "right":
-                    return "max-w-[80%] rounded-l-lg rounded-tr-sm";
-                  case "center":
-                    return "max-w-[90%] rounded-lg";
-                  default:
-                    return "max-w-[80%] rounded-r-lg rounded-tl-sm";
-                }
-              };
-
+          <div className="p-4 space-y-1">
+            {normalizedEntries.map((entry, index) => {
+              const messageColor = getMessageColor(entry.type);
+              
               return (
-                <div key={entry.id} className={getAlignmentClasses()}>
-                  <div
-                    className={`
-                    flex items-start gap-3 border p-2
-                    ${getEntryColorClasses(entry.type)}
-                    ${getMessageClasses()}
-                    transition-colors duration-200
-                  `}
-                  >
-                    {/* <span
-                      className="mt-0.5 flex-shrink-0 text-sm"
-                      aria-hidden="true"
-                    >
-                      {getEntryIcon(entry.type)}
-                    </span> */}
+                <div
+                  key={entry.id}
+                  className="group flex items-start gap-3 hover:bg-slate-900/50 px-2 py-1 rounded transition-colors"
+                  style={{ 
+                    animation: `fadeIn 0.3s ease-out ${index * 0.05}s both`
+                  }}
+                >
+                  {/* Dash prefix */}
+                  <span className="text-slate-500 flex-shrink-0 select-none mt-0.5">
+                    -
+                  </span>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="break-words text-sm leading-relaxed">
-                        {entry.message}
-                      </p>
-                    </div>
-
-                    {/* <span className="mt-0.5 flex-shrink-0 text-xs text-slate-500">
-                      {formatTimestamp(entry.timestamp)}
-                    </span> */}
-                  </div>
+                  {/* Message */}
+                  <span className={`${messageColor} flex-1 break-words leading-relaxed`}>
+                    {entry.message}
+                  </span>
                 </div>
               );
             })}
+            
+            {/* Cursor blink effect */}
+            <div className="flex items-center gap-2 px-2 py-1">
+              <span className="text-slate-500 text-xs">$</span>
+              <span className="inline-block h-4 w-2 bg-green-400 animate-pulse"></span>
+            </div>
           </div>
         </div>
 
-        {/* Scroll to bottom button */}
-        {normalizedEntries.length > 5 && (
-          <div className="mt-2 text-center">
+        {/* Terminal Footer with controls */}
+        <div className="flex items-center justify-between rounded-b-lg border border-t-0 border-slate-700 bg-slate-800 px-3 py-1.5">
+          <span className="font-mono text-xs text-slate-500">
+            {normalizedEntries.length} {normalizedEntries.length === 1 ? 'entry' : 'entries'}
+          </span>
+          
+          {normalizedEntries.length > 5 && (
             <button
               onClick={() => {
                 if (scrollRef.current) {
                   scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                 }
               }}
-              className="text-xs text-slate-500 transition-colors hover:text-slate-700"
+              className="font-mono text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1"
               title="Scroll to latest"
             >
-              ↓ Scroll to latest
+              <span>↓</span>
+              <span>scroll to bottom</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }

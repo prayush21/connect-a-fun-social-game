@@ -187,7 +187,7 @@ export const calculateReferenceResolution = (
       shouldResolve: true,
       resolution: {
         type: "setter_blocked",
-        message: `Setter guessed '${currentReference.referenceWord}' correctly! Round failed.`,
+        message: `Setter blocked with '${currentReference.referenceWord}' → Round failed`,
         nextClueGiver,
       },
     };
@@ -214,7 +214,7 @@ export const calculateReferenceResolution = (
           type: "climactic_win",
           winner: "guessers",
           newRevealedCount: secretWord.length,
-          message: "🎉 The reference word IS the secret word! Guessers Won! 🎉",
+          message: "Final round hit! Guessers win!",
         },
       };
     }
@@ -269,7 +269,7 @@ export const calculateReferenceResolution = (
             type: "success",
             winner: "guessers",
             newRevealedCount,
-            message: "All letters revealed! Guessers won!",
+            message: "Word complete! Guessers win!",
           },
         };
       }
@@ -279,7 +279,7 @@ export const calculateReferenceResolution = (
         resolution: {
           type: "success",
           newRevealedCount,
-          message: `Success! Revealed '${secretWord[revealedCount].toUpperCase()}'. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`,
+          message: `Connected on "${currentReference.referenceWord}" → Revealed '${secretWord[revealedCount].toUpperCase()}' (${largestGroup.length}/${activeGuesserIds.length})`,
           nextClueGiver,
         },
       };
@@ -293,7 +293,7 @@ export const calculateReferenceResolution = (
       shouldResolve: true,
       resolution: {
         type: "failure",
-        message: `Majority agreed on incorrect guess. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`,
+        message: `Majority wrong (${largestGroup.length}/${activeGuesserIds.length}) → Round failed`,
         nextClueGiver,
       },
     };
@@ -324,7 +324,7 @@ export const resolveDirectGuess = (
       isCorrect: true,
       winner: "guessers",
       newDirectGuessesLeft,
-      message: `${player.name} guessed the word: ${guess}!`,
+      message: `${player.name} guessed it: ${guess}!`,
     };
   }
 
@@ -333,14 +333,15 @@ export const resolveDirectGuess = (
       isCorrect: false,
       winner: "setter",
       newDirectGuessesLeft: 0,
-      message: `${player.name} guessed ${guess}. Incorrect! Out of guesses.`,
+      message: `${player.name} tried ${guess} (incorrect)`,
     };
   }
 
+  const guessPlural = newDirectGuessesLeft > 1 ? 'guesses' : 'guess';
   return {
     isCorrect: false,
     newDirectGuessesLeft,
-    message: `${player.name} guessed ${guess}. Incorrect! ${newDirectGuessesLeft} direct guesses left.`,
+    message: `${player.name} tried ${guess} (incorrect). ${newDirectGuessesLeft} direct ${guessPlural} remaining`,
   };
 };
 
