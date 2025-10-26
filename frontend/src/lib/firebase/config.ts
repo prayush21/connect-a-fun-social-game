@@ -32,21 +32,21 @@ let authInstance: Auth | null = null;
 let analyticsInstance: Analytics | null = null;
 
 const getFirebaseConfig = () => {
-  console.log("--- DEBUG: Checking Environment Variables ---");
-  console.log("NODE_ENV:", process.env.NODE_ENV);
-  console.log(
-    "NEXT_PUBLIC_FIREBASE_API_KEY:",
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-  );
-  console.log(
-    "NEXT_PUBLIC_FIREBASE_PROJECT_ID:",
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  );
-  console.log(
-    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:",
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-  );
-  console.log("--- End of DEBUG ---");
+  // console.log("--- DEBUG: Checking Environment Variables ---");
+  // console.log("NODE_ENV:", process.env.NODE_ENV);
+  // console.log(
+  //   "NEXT_PUBLIC_FIREBASE_API_KEY:",
+  //   process.env.NEXT_PUBLIC_FIREBASE_API_KEY
+  // );
+  // console.log(
+  //   "NEXT_PUBLIC_FIREBASE_PROJECT_ID:",
+  //   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  // );
+  // console.log(
+  //   "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:",
+  //   process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+  // );
+  // console.log("--- End of DEBUG ---");
 
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

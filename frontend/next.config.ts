@@ -4,13 +4,8 @@ const nextConfig: NextConfig = {
   // Handle Firebase SDK properly
   transpilePackages: ['firebase'],
   
-  // Optimize for production deployment
-  output: 'standalone',
-  
-  // Environment variable validation
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
+  // Optimize for production deployment (uncomment for Docker/container deployments)
+  // output: 'standalone',
   
   // Performance optimizations
   experimental: {
