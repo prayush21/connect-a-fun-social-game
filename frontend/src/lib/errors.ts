@@ -29,6 +29,7 @@ export const ERROR_CODES = {
   NO_GUESSES_LEFT: "NO_GUESSES_LEFT",
   REFERENCE_IN_PROGRESS: "REFERENCE_IN_PROGRESS",
   NOT_YOUR_TURN: "NOT_YOUR_TURN",
+  ROUND_ENDED: "ROUND_ENDED",
 
   // System errors
   FIREBASE_ERROR: "FIREBASE_ERROR",
@@ -71,6 +72,8 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ERROR_CODES.REFERENCE_IN_PROGRESS]:
     "A reference round is already in progress.",
   [ERROR_CODES.NOT_YOUR_TURN]: "It's not your turn to give a clue.",
+  [ERROR_CODES.ROUND_ENDED]:
+    "This round has already been completed by another player.",
 
   [ERROR_CODES.FIREBASE_ERROR]: "Database error occurred. Please try again.",
   [ERROR_CODES.VALIDATION_ERROR]:

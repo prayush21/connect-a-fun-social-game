@@ -11,6 +11,7 @@ import {
   Timestamp,
   FieldValue,
   Unsubscribe,
+  runTransaction,
 } from "firebase/firestore";
 import { getDb } from "./config";
 import { calculateClueGiverTurnAfterRemoval } from "../game-logic";
@@ -359,49 +360,61 @@ export const submitGuess = async (
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
 
-  // Get current game state to add individual guesser logging
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) throw new Error("Room not found");
+  await runTransaction(getDb(), async (transaction) => {
+    // Read current state inside transaction
+    const docSnap = await transaction.get(docRef);
+    if (!docSnap.exists()) throw new Error("Room not found");
 
-  const data = docSnap.data() as FirestoreGameRoom;
-  const { players, currentReference } = data;
+    const data = docSnap.data() as FirestoreGameRoom;
+    const { players, currentReference } = data;
 
-  if (!currentReference) throw new Error("No active reference");
+    // Validate that round is still active
+    if (!currentReference) {
+      throw new Error("ROUND_ENDED:No active reference");
+    }
 
-  const player = players?.[playerId];
-  if (!player) throw new Error("Player not found");
+    const player = players?.[playerId];
+    if (!player) throw new Error("Player not found");
 
-  // Count current guesses and calculate threshold
-  const activeGuesserIds = Object.keys(players || {}).filter(
-    (id) =>
-      players?.[id]?.role === "guesser" && id !== currentReference.clueGiverId
-  );
-  const currentGuesses = Object.keys(currentReference.guesses || {}).length;
-  const majorityThreshold = Math.ceil(
-    (activeGuesserIds.length * (data.thresholdMajority || 51)) / 100
-  );
+    // Check if player already submitted a guess (idempotency)
+    if (currentReference.guesses?.[playerId]) {
+      // Already submitted, this is a duplicate - silently succeed
+      return;
+    }
 
-  await updateDoc(docRef, {
-    [`currentReference.guesses.${playerId}`]: guess.toLowerCase(),
-    gameHistory: [
-      ...(data.gameHistory || []),
-      {
-        id: `guess_${playerId}_${Date.now()}`,
-        message: `${
-          majorityThreshold - (currentGuesses + 1) === 0
-            ? "All connects received! Let's hope!"
-            : `Connect!🤚🏻 (${activeGuesserIds.length - (currentGuesses + 1)} more needed)`
-        }`,
-        timestamp: new Date(),
-        type: "info",
-        alignment: "right",
-        playerId: playerId,
-      },
-    ],
-    updatedAt: serverTimestamp(),
+    // Count current guesses and calculate threshold
+    const activeGuesserIds = Object.keys(players || {}).filter(
+      (id) =>
+        players?.[id]?.role === "guesser" && id !== currentReference.clueGiverId
+    );
+    const currentGuesses = Object.keys(currentReference.guesses || {}).length;
+    const majorityThreshold = Math.ceil(
+      (activeGuesserIds.length * (data.thresholdMajority || 51)) / 100
+    );
+
+    // Update the guess atomically
+    transaction.update(docRef, {
+      [`currentReference.guesses.${playerId}`]: guess.toLowerCase(),
+      gameHistory: [
+        ...(data.gameHistory || []),
+        {
+          id: `guess_${playerId}_${Date.now()}`,
+          message: `${
+            majorityThreshold - (currentGuesses + 1) === 0
+              ? "All connects received! Let's hope!"
+              : `Connect!🤚🏻 (${activeGuesserIds.length - (currentGuesses + 1)} more needed)`
+          }`,
+          timestamp: new Date(),
+          type: "info",
+          alignment: "right",
+          playerId: playerId,
+        },
+      ],
+      updatedAt: serverTimestamp(),
+    });
   });
 
-  // Trigger resolution check
+  // Trigger resolution check after successful transaction
   await checkReferenceResolution(roomId);
 };
 
@@ -689,36 +702,50 @@ export const submitSetterGuess = async (
   guess: string
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.data() as FirestoreGameRoom;
 
-  const currentReference = data.currentReference;
-  if (!currentReference) throw new Error("No active reference");
-
+  let shouldResolve = false;
   const guessLower = guess.toLowerCase();
-  const referenceWord = currentReference.referenceWord.toLowerCase();
 
-  if (guessLower === referenceWord) {
-    // Setter guessed correctly - update and let resolution logic handle it
-    await updateDoc(docRef, {
-      "currentReference.setterAttempt": guessLower,
-      updatedAt: serverTimestamp(),
-    });
+  await runTransaction(getDb(), async (transaction) => {
+    // Read current state inside transaction
+    const docSnap = await transaction.get(docRef);
+    if (!docSnap.exists()) throw new Error("Room not found");
 
-    // Trigger resolution
+    const data = docSnap.data() as FirestoreGameRoom;
+    const currentReference = data.currentReference;
+
+    // Validate that round is still active
+    if (!currentReference) {
+      throw new Error("ROUND_ENDED:No active reference");
+    }
+
+    const referenceWord = currentReference.referenceWord.toLowerCase();
+
+    if (guessLower === referenceWord) {
+      // Setter guessed correctly - update and flag for resolution
+      transaction.update(docRef, {
+        "currentReference.setterAttempt": guessLower,
+        updatedAt: serverTimestamp(),
+      });
+      shouldResolve = true;
+    } else {
+      // Incorrect guess - just log it
+      const setter = Object.values(data.players || {}).find(
+        (p) => p.role === "setter"
+      );
+      transaction.update(docRef, {
+        gameHistory: [
+          ...(data.gameHistory || []),
+          `${setter?.name || "Setter"} incorrectly guessed '${guess}'.`,
+        ],
+        updatedAt: serverTimestamp(),
+      });
+    }
+  });
+
+  // Trigger resolution if setter guessed correctly
+  if (shouldResolve) {
     await checkReferenceResolution(roomId);
-  } else {
-    // Incorrect guess - just log it
-    const setter = Object.values(data.players || {}).find(
-      (p) => p.role === "setter"
-    );
-    await updateDoc(docRef, {
-      gameHistory: [
-        ...(data.gameHistory || []),
-        `${setter?.name || "Setter"} incorrectly guessed '${guess}'.`,
-      ],
-      updatedAt: serverTimestamp(),
-    });
   }
 };
 
@@ -754,25 +781,75 @@ export const checkReferenceResolution = async (
   roomId: RoomId
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) return;
 
-  const data = docSnap.data() as FirestoreGameRoom;
-  const { currentReference, players, secretWord, clueGiverTurn } = data;
+  await runTransaction(getDb(), async (transaction) => {
+    // Read current state inside transaction
+    const docSnap = await transaction.get(docRef);
+    if (!docSnap.exists()) return;
 
-  if (!currentReference) return;
+    const data = docSnap.data() as FirestoreGameRoom;
+    const { currentReference, players, secretWord, clueGiverTurn } = data;
 
-  const guesserIds = Object.keys(players || {})
-    .filter((id) => players?.[id]?.role === "guesser")
-    .sort();
-  const nextTurn =
-    guesserIds.length > 0 ? ((clueGiverTurn || 0) + 1) % guesserIds.length : 0;
-  const setterName =
-    Object.values(players || {}).find((p) => p.role === "setter")?.name ||
-    "Setter";
+    // Check if reference still exists (may have been resolved already)
+    if (!currentReference) return;
 
-  // Handle climactic rounds specially
-  if (currentReference.isClimactic) {
+    const guesserIds = Object.keys(players || {})
+      .filter((id) => players?.[id]?.role === "guesser")
+      .sort();
+    const nextTurn =
+      guesserIds.length > 0 ? ((clueGiverTurn || 0) + 1) % guesserIds.length : 0;
+    const setterName =
+      Object.values(players || {}).find((p) => p.role === "setter")?.name ||
+      "Setter";
+
+    // Handle climactic rounds specially
+    if (currentReference.isClimactic) {
+      const activeGuesserIds = guesserIds.filter(
+        (id) => id !== currentReference.clueGiverId
+      );
+      if (activeGuesserIds.length === 0) return;
+
+      const guesses = currentReference.guesses || {};
+      const guessedCount = activeGuesserIds.filter((id) => guesses[id]).length;
+      const majorityPercentage = data.thresholdMajority || 51;
+      const majorityThreshold = Math.ceil(
+        activeGuesserIds.length * (majorityPercentage / 100)
+      );
+
+      if (guessedCount >= majorityThreshold) {
+        // In climactic rounds, guessers always win regardless of their actual guesses
+        transaction.update(docRef, {
+          gamePhase: "ended",
+          winner: "guessers",
+          revealedCount: secretWord.length, // Reveal the entire word
+          gameHistory: [
+            ...(data.gameHistory || []),
+            "🎉 The reference word IS the secret word! Guessers Won! 🎉",
+          ],
+          updatedAt: serverTimestamp(),
+        });
+      }
+      return; // Exit early for climactic rounds
+    }
+
+    // Normal (non-climactic) resolution logic
+    if (
+      currentReference.setterAttempt &&
+      currentReference.setterAttempt ===
+        currentReference.referenceWord.toLowerCase()
+    ) {
+      transaction.update(docRef, {
+        currentReference: null,
+        clueGiverTurn: nextTurn,
+        gameHistory: [
+          ...(data.gameHistory || []),
+          `${setterName} guessed '${currentReference.referenceWord}'! Round failed.`,
+        ],
+        updatedAt: serverTimestamp(),
+      });
+      return;
+    }
+
     const activeGuesserIds = guesserIds.filter(
       (id) => id !== currentReference.clueGiverId
     );
@@ -780,86 +857,40 @@ export const checkReferenceResolution = async (
 
     const guesses = currentReference.guesses || {};
     const guessedCount = activeGuesserIds.filter((id) => guesses[id]).length;
-    const majorityPercentage = data.thresholdMajority || 51;
-    const majorityThreshold = Math.ceil(
-      activeGuesserIds.length * (majorityPercentage / 100)
+    // Prefer absolute from settings; fallback to legacy percent
+    const rawAbs2 = data.settings?.majorityThreshold;
+    const legacyPercent2 = data.thresholdMajority;
+    const interpretedThreshold2 =
+      typeof rawAbs2 === "number"
+        ? rawAbs2
+        : typeof legacyPercent2 === "number"
+        ? Math.ceil(Math.max(activeGuesserIds.length, 1) * (legacyPercent2 / 100))
+        : 2;
+    const majorityThreshold = Math.max(
+      1,
+      Math.min(interpretedThreshold2, Math.max(activeGuesserIds.length, 1))
     );
 
-    if (guessedCount >= majorityThreshold) {
-      // In climactic rounds, guessers always win regardless of their actual guesses
-      await updateDoc(docRef, {
-        gamePhase: "ended",
-        winner: "guessers",
-        revealedCount: secretWord.length, // Reveal the entire word
-        gameHistory: [
-          ...(data.gameHistory || []),
-          "🎉 The reference word IS the secret word! Guessers Won! 🎉",
-        ],
-        updatedAt: serverTimestamp(),
-      });
-    }
-    return; // Exit early for climactic rounds
-  }
-
-  // Normal (non-climactic) resolution logic
-  if (
-    currentReference.setterAttempt &&
-    currentReference.setterAttempt ===
-      currentReference.referenceWord.toLowerCase()
-  ) {
-    await updateDoc(docRef, {
-      currentReference: null,
-      clueGiverTurn: nextTurn,
-      gameHistory: [
-        ...(data.gameHistory || []),
-        `${setterName} guessed '${currentReference.referenceWord}'! Round failed.`,
-      ],
-      updatedAt: serverTimestamp(),
-    });
-    return;
-  }
-
-  const activeGuesserIds = guesserIds.filter(
-    (id) => id !== currentReference.clueGiverId
-  );
-  if (activeGuesserIds.length === 0) return;
-
-  const guesses = currentReference.guesses || {};
-  const guessedCount = activeGuesserIds.filter((id) => guesses[id]).length;
-  // Prefer absolute from settings; fallback to legacy percent
-  const rawAbs2 = data.settings?.majorityThreshold;
-  const legacyPercent2 = data.thresholdMajority;
-  const interpretedThreshold2 =
-    typeof rawAbs2 === "number"
-      ? rawAbs2
-      : typeof legacyPercent2 === "number"
-      ? Math.ceil(Math.max(activeGuesserIds.length, 1) * (legacyPercent2 / 100))
-      : 2;
-  const majorityThreshold = Math.max(
-    1,
-    Math.min(interpretedThreshold2, Math.max(activeGuesserIds.length, 1))
-  );
-
-  // Group guesses by their value to find matches
-  const guessGroups: Record<string, string[]> = {};
-  activeGuesserIds.forEach((id) => {
-    const guess = guesses[id];
-    if (guess) {
-      if (!guessGroups[guess]) {
-        guessGroups[guess] = [];
+    // Group guesses by their value to find matches
+    const guessGroups: Record<string, string[]> = {};
+    activeGuesserIds.forEach((id) => {
+      const guess = guesses[id];
+      if (guess) {
+        if (!guessGroups[guess]) {
+          guessGroups[guess] = [];
+        }
+        guessGroups[guess].push(id);
       }
-      guessGroups[guess].push(id);
-    }
-  });
+    });
 
-  // Find the largest group of matching guesses
-  const largestGroup = Object.values(guessGroups).reduce(
-    (largest, current) => (current.length > largest.length ? current : largest),
-    []
-  );
+    // Find the largest group of matching guesses
+    const largestGroup = Object.values(guessGroups).reduce(
+      (largest, current) => (current.length > largest.length ? current : largest),
+      []
+    );
 
-  // Check if the largest group meets the threshold and matches the reference word
-  if (largestGroup.length >= majorityThreshold) {
+    // Check if the largest group meets the threshold and matches the reference word
+    if (largestGroup.length >= majorityThreshold) {
       const matchingGuess = Object.keys(guessGroups).find(
         (guess) => guessGroups[guess] === largestGroup
       );
@@ -874,7 +905,7 @@ export const checkReferenceResolution = async (
 
         if (newRevealedCount >= secretWord.length) {
           // All letters revealed - guessers win!
-          await updateDoc(docRef, {
+          transaction.update(docRef, {
             gamePhase: "ended",
             winner: "guessers",
             revealedCount: secretWord.length,
@@ -892,7 +923,7 @@ export const checkReferenceResolution = async (
           });
         } else {
           // Reveal next letter
-          await updateDoc(docRef, {
+          transaction.update(docRef, {
             revealedCount: newRevealedCount,
             currentReference: null,
             clueGiverTurn: nextTurn,
@@ -913,7 +944,7 @@ export const checkReferenceResolution = async (
         // Majority reached but guess was incorrect - fail immediately
         const failureMessage = `Majority agreed on incorrect guess. (${largestGroup.length}/${activeGuesserIds.length} guessers agreed)`;
 
-        await updateDoc(docRef, {
+        transaction.update(docRef, {
           currentReference: null,
           clueGiverTurn: nextTurn,
           gameHistory: [...(data.gameHistory || []), failureMessage],
@@ -926,7 +957,7 @@ export const checkReferenceResolution = async (
         // All guesses received but no majority consensus - fail
         const failureMessage = `No majority consensus reached. (${guessedCount}/${activeGuesserIds.length} submitted, ${majorityThreshold} needed)`;
 
-        await updateDoc(docRef, {
+        transaction.update(docRef, {
           currentReference: null,
           clueGiverTurn: nextTurn,
           gameHistory: [...(data.gameHistory || []), failureMessage],
@@ -936,6 +967,7 @@ export const checkReferenceResolution = async (
       // If not all guesses received yet, wait for remaining guesses
       // The UI will show progress: "Connect!🤚🏻 (X more needed)" from submitGuess function
     }
+  });
 };
 
 // Feedback and Survey functions

@@ -561,7 +561,35 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             });
           }
 
-          await submitGameGuess(currentRoomId, sessionId, guess);
+          try {
+            await submitGameGuess(currentRoomId, sessionId, guess);
+          } catch (err) {
+            // Check if this is a ROUND_ENDED error
+            if (err instanceof Error && err.message.includes("ROUND_ENDED")) {
+              // Clear pending actions and optimistic state
+              get().removePendingAction(actionId);
+              get().clearOptimisticState();
+              
+              // Set a friendly error message but don't throw
+              set({
+                error: createGameError(
+                  ERROR_CODES.ROUND_ENDED,
+                  "This round has already been completed. Your guess was not needed."
+                ),
+              });
+              
+              // Clear the error after 3 seconds
+              setTimeout(() => {
+                if (get().error?.code === ERROR_CODES.ROUND_ENDED) {
+                  set({ error: null });
+                }
+              }, 3000);
+              
+              return; // Exit gracefully
+            }
+            // Re-throw other errors
+            throw err;
+          }
 
           // Remove pending action after successful operation
           setTimeout(() => get().removePendingAction(actionId), 1000);
@@ -719,7 +747,35 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             });
           }
 
-          await submitGameSetterGuess(currentRoomId, sessionId, guess);
+          try {
+            await submitGameSetterGuess(currentRoomId, sessionId, guess);
+          } catch (err) {
+            // Check if this is a ROUND_ENDED error
+            if (err instanceof Error && err.message.includes("ROUND_ENDED")) {
+              // Clear pending actions and optimistic state
+              get().removePendingAction(actionId);
+              get().clearOptimisticState();
+              
+              // Set a friendly error message but don't throw
+              set({
+                error: createGameError(
+                  ERROR_CODES.ROUND_ENDED,
+                  "This round has already been completed. Your sabotage was not needed."
+                ),
+              });
+              
+              // Clear the error after 3 seconds
+              setTimeout(() => {
+                if (get().error?.code === ERROR_CODES.ROUND_ENDED) {
+                  set({ error: null });
+                }
+              }, 3000);
+              
+              return; // Exit gracefully
+            }
+            // Re-throw other errors
+            throw err;
+          }
 
           // Remove pending action after successful operation
           setTimeout(() => get().removePendingAction(actionId), 1000);
