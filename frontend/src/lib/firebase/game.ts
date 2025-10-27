@@ -408,7 +408,7 @@ export const submitGuess = async (
           message:
             majorityThreshold - (currentGuesses + 1) === 0
               ? "All connections in! Resolving in 3...2...1!"
-              : "Connection received",
+              : `${player.name} raised a connect!`,
           timestamp: new Date(),
           type: "info",
           alignment: "right",
