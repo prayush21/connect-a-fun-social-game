@@ -15,17 +15,17 @@ export const LetterReveal = memo<LetterRevealProps>(
     // Calculate responsive block size based on word length to fit in one line
     const getBlockSizeClasses = (wordLength: number) => {
       if (wordLength <= 4) {
-        return "w-16 h-16 text-2xl sm:w-20 sm:h-20 sm:text-3xl md:w-24 md:h-24 md:text-4xl";
+        return "w-12 h-16 text-2xl sm:w-16 sm:h-20 sm:text-3xl md:w-20 md:h-24 md:text-4xl";
       } else if (wordLength <= 6) {
-        return "w-12 h-12 text-xl sm:w-16 sm:h-16 sm:text-2xl md:w-18 md:h-18 md:text-3xl";
+        return "w-10 h-12 text-xl sm:w-12 sm:h-16 sm:text-2xl md:w-14 md:h-18 md:text-3xl";
       } else if (wordLength <= 8) {
-        return "w-10 h-10 text-lg sm:w-12 sm:h-12 sm:text-xl md:w-14 md:h-14 md:text-2xl";
+        return "w-8 h-10 text-lg sm:w-10 sm:h-12 sm:text-xl md:w-12 md:h-14 md:text-2xl";
       } else if (wordLength <= 10) {
-        return "w-8 h-8 text-base sm:w-10 sm:h-10 sm:text-lg md:w-12 md:h-12 md:text-xl";
+        return "w-6 h-8 text-base sm:w-8 sm:h-10 sm:text-lg md:w-10 md:h-12 md:text-xl";
       } else if (wordLength <= 12) {
-        return "w-7 h-7 text-sm sm:w-8 sm:h-8 sm:text-base md:w-10 md:h-10 md:text-lg";
+        return "w-5 h-7 text-sm sm:w-6 sm:h-8 sm:text-base md:w-8 md:h-10 md:text-lg";
       } else {
-        return "w-6 h-6 text-xs sm:w-7 sm:h-7 sm:text-sm md:w-8 md:h-8 md:text-base";
+        return "w-4 h-6 text-xs sm:w-5 sm:h-7 sm:text-sm md:w-6 md:h-8 md:text-base";
       }
     };
 
@@ -34,26 +34,13 @@ export const LetterReveal = memo<LetterRevealProps>(
     // Always keep letters in one row
     const allLetters = letters;
 
-    // Calculate gap size based on word length to fit better
-    const getGapClasses = (wordLength: number) => {
-      if (wordLength <= 6) {
-        return "gap-2 sm:gap-3";
-      } else if (wordLength <= 10) {
-        return "gap-1 sm:gap-2";
-      } else {
-        return "gap-0.5 sm:gap-1";
-      }
-    };
-
-    const gapClasses = getGapClasses(letters.length);
-
     return (
       <div
         className={`${className}`}
         role="region"
         aria-label="Secret word display"
       >
-        <div className={`flex justify-center ${gapClasses} overflow-x-auto`}>
+        <div className={`flex justify-center overflow-x-auto`}>
           {allLetters.map((letter, index) => {
             const isRevealed = index < revealedCount;
 
@@ -63,7 +50,8 @@ export const LetterReveal = memo<LetterRevealProps>(
                 className={`
                 ${blockSizeClasses}
                 flex flex-shrink-0 items-center justify-center
-                rounded-lg border-2 border-slate-300
+                border-2 border-slate-300 
+                -ml-px first:ml-0
                 font-bold transition-all duration-300
                 ${
                   isRevealed
