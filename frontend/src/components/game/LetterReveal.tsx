@@ -50,7 +50,7 @@ export const LetterReveal = memo<LetterRevealProps>(
                 className={`
                 ${blockSizeClasses}
                 flex flex-shrink-0 items-center justify-center
-                border-2 border-slate-300 first:rounded-l-lg last:rounded-r-lg
+                border-2 border-slate-300 
                 -ml-px first:ml-0
                 font-bold transition-all duration-300
                 ${
