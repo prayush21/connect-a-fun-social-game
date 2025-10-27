@@ -388,16 +388,6 @@ export const submitGuess = async (
       return;
     }
 
-    // Count current guesses and calculate threshold
-    const activeGuesserIds = Object.keys(players || {}).filter(
-      (id) =>
-        players?.[id]?.role === "guesser" && id !== currentReference.clueGiverId
-    );
-    const currentGuesses = Object.keys(currentReference.guesses || {}).length;
-    const majorityThreshold = Math.ceil(
-      (activeGuesserIds.length * (data.thresholdMajority || 51)) / 100
-    );
-
     // Update the guess atomically
     transaction.update(docRef, {
       [`currentReference.guesses.${playerId}`]: guess.toLowerCase(),
@@ -405,10 +395,7 @@ export const submitGuess = async (
         ...(data.gameHistory || []),
         {
           id: `guess_${playerId}_${Date.now()}`,
-          message:
-            majorityThreshold - (currentGuesses + 1) === 0
-              ? "All connections in! Resolving in 3...2...1!"
-              : `${player.name} raised a connect!`,
+          message: `${player.name} raised a connect!`,
           timestamp: new Date(),
           type: "info",
           alignment: "right",
@@ -922,6 +909,13 @@ export const checkReferenceResolution = async (
             gameHistory: [
               ...(data.gameHistory || []),
               {
+                id: `all_connections_in_${Date.now()}`,
+                message: "All connections in! Resolving in 3...2...1!",
+                timestamp: new Date(),
+                type: "info",
+                alignment: "center",
+              },
+              {
                 id: `connect_success_${Date.now()}`,
                 message: `Connected on "${currentReference.referenceWord}" → Word complete! Guessers win!`,
                 timestamp: new Date(),
@@ -940,6 +934,13 @@ export const checkReferenceResolution = async (
             gameHistory: [
               ...(data.gameHistory || []),
               {
+                id: `all_connections_in_${Date.now()}`,
+                message: "All connections in! Resolving in 3...2...1!",
+                timestamp: new Date(),
+                type: "info",
+                alignment: "center",
+              },
+              {
                 id: `connect_success_${Date.now()}`,
                 message: `Connected on "${currentReference.referenceWord}" → Revealed '${nextLetter}' (${largestGroup.length}/${activeGuesserIds.length})`,
                 timestamp: new Date(),
@@ -957,7 +958,17 @@ export const checkReferenceResolution = async (
         transaction.update(docRef, {
           currentReference: null,
           clueGiverTurn: nextTurn,
-          gameHistory: [...(data.gameHistory || []), failureMessage],
+          gameHistory: [
+            ...(data.gameHistory || []),
+            {
+              id: `all_connections_in_${Date.now()}`,
+              message: "All connections in! Resolving in 3...2...1!",
+              timestamp: new Date(),
+              type: "info",
+              alignment: "center",
+            },
+            failureMessage,
+          ],
           updatedAt: serverTimestamp(),
         });
       }
@@ -970,7 +981,17 @@ export const checkReferenceResolution = async (
         transaction.update(docRef, {
           currentReference: null,
           clueGiverTurn: nextTurn,
-          gameHistory: [...(data.gameHistory || []), failureMessage],
+          gameHistory: [
+            ...(data.gameHistory || []),
+            {
+              id: `all_connections_in_${Date.now()}`,
+              message: "All connections in! Resolving in 3...2...1!",
+              timestamp: new Date(),
+              type: "info",
+              alignment: "center",
+            },
+            failureMessage,
+          ],
           updatedAt: serverTimestamp(),
         });
       }
