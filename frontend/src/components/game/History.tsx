@@ -122,7 +122,20 @@ export const History = memo<HistoryProps>(
 
                   {/* Message */}
                   <span className={`${messageColor} flex-1 break-words leading-relaxed`}>
-                    {entry.message}
+                    {(() => {
+                      const connectMessageRegex = /^(.*?) raised a connect!$/;
+                      const match = entry.message.match(connectMessageRegex);
+                      if (match) {
+                        const playerName = match[1];
+                        return (
+                          <>
+                            <span className="font-bold text-cyan-300">{playerName}</span>
+                            <span> raised a connect!</span>
+                          </>
+                        );
+                      }
+                      return entry.message;
+                    })()}
                   </span>
                 </div>
               );
