@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Users } from "lucide-react";
+import { Play, Users, Bot } from "lucide-react";
+import { AddAiPlayerModal } from "./AddAiPlayerModal";
 
 interface GameControlsProps {
   canStartGame: boolean;
   isRoomCreator: boolean;
   playerCount: number;
   onStartGame: () => void;
+  onAddAiPlayer: (model: string, name: string) => void;
 }
 
 export function GameControls({
@@ -15,32 +18,56 @@ export function GameControls({
   isRoomCreator,
   playerCount,
   onStartGame,
+  onAddAiPlayer,
 }: GameControlsProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const minPlayersNeeded = Math.max(0, 3 - playerCount);
 
   return (
     <div className="text-center">
       {isRoomCreator ? (
         canStartGame ? (
-          <Button
-            onClick={onStartGame}
-            size="lg"
-            className="bg-green-600 px-8 py-3 text-lg font-semibold text-white hover:bg-green-700"
-          >
-            <Play className="mr-2 h-5 w-5" />
-            Start Game
-          </Button>
-        ) : (
-          <div className="space-y-3">
-            {/* Start Game Button (disabled) */}
+          <div className="flex justify-center gap-4">
             <Button
-              disabled
+              onClick={onStartGame}
               size="lg"
-              className="px-8 py-3 text-lg font-semibold"
+              className="bg-green-600 px-8 py-3 text-lg font-semibold text-white hover:bg-green-700"
             >
               <Play className="mr-2 h-5 w-5" />
               Start Game
             </Button>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              size="lg"
+              variant="outline"
+              className="px-8 py-3 text-lg font-semibold"
+            >
+              <Bot className="mr-2 h-5 w-5" />
+              Play with AI
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex justify-center gap-4">
+              {/* Start Game Button (disabled) */}
+              <Button
+                disabled
+                size="lg"
+                className="px-8 py-3 text-lg font-semibold"
+              >
+                <Play className="mr-2 h-5 w-5" />
+                Start Game
+              </Button>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                size="lg"
+                variant="outline"
+                className="px-8 py-3 text-lg font-semibold"
+              >
+                <Bot className="mr-2 h-5 w-5" />
+                Play with AI
+              </Button>
+            </div>
 
             {/* Status Messages */}
             {playerCount < 3 ? (
@@ -81,6 +108,12 @@ export function GameControls({
           <li>• Guessers get 3 direct guesses to win</li>
         </ul>
       </div>
+
+      <AddAiPlayerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddAiPlayer={onAddAiPlayer}
+      />
     </div>
   );
 }

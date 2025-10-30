@@ -226,6 +226,41 @@ export const joinRoom = async (
   });
 };
 
+export const addAiPlayer = async (
+  roomId: RoomId,
+  model: string,
+  name: string
+): Promise<void> => {
+  const docRef = doc(getGameRoomsCollection(), roomId);
+  const aiPlayerId = `ai-${model}-${generateUUID().slice(0, 8)}`;
+
+  await runTransaction(getDb(), async (transaction) => {
+    const docSnap = await transaction.get(docRef);
+    if (!docSnap.exists()) {
+      throw new Error("Room not found");
+    }
+
+    const data = docSnap.data() as FirestoreGameRoom;
+    const newGameHistory = [
+      ...(data.gameHistory || []),
+      `${name} (AI) joined the game`,
+    ];
+
+    transaction.update(docRef, {
+      [`players.${aiPlayerId}`]: {
+        name: `${name} (AI)`,
+        role: "guesser",
+        isOnline: true,
+        lastActive: serverTimestamp(),
+        isBot: true,
+        model,
+      },
+      gameHistory: newGameHistory,
+      updatedAt: serverTimestamp(),
+    });
+  });
+};
+
 export const leaveRoom = async (
   roomId: RoomId,
   playerId: PlayerId

@@ -25,6 +25,7 @@ import {
   volunteerAsClueGiver,
   startGameRound,
   generateRoomCode,
+  addAiPlayer as addAiPlayerFirebase,
 } from "./firebase";
 import { initializeAuth, logAnalyticsEvent } from "./firebase/config";
 import { getOrderedGuesserIds } from "./game-logic";
@@ -203,6 +204,7 @@ export interface GameStateStore {
   submitGuess: (guess: string) => Promise<void>;
   submitDirectGuess: (word: string) => Promise<void>;
   submitSetterGuess: (guess: string) => Promise<void>;
+  addAiPlayer: (model: string, name: string) => Promise<void>;
   updateGameSettings: (
     settings: Partial<GameState["settings"]>
   ) => Promise<void>;
@@ -416,6 +418,31 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             isConnected: true,
           });
         }, "createRoom");
+
+        if (error) {
+          get().clearPendingActions();
+          get().clearOptimisticState();
+          set({ error });
+          throw error;
+        }
+      },
+
+      async addAiPlayer(model: string, name: string) {
+        const { roomId: currentRoomId, gameState, sessionId, username } = get();
+        if (!currentRoomId || !gameState) return;
+
+        const { error } = await withErrorHandling(async () => {
+          const actionId = `add_ai_player_${Date.now()}`;
+          const actorName =
+            gameState.players[sessionId]?.name ?? username ?? "system";
+          get().recordAction(actionId, "ADD_AI_PLAYER", actorName);
+
+          get().addPendingAction(actionId, "ADD_AI_PLAYER", { model, name });
+
+          await addAiPlayerFirebase(currentRoomId, model, name);
+
+          setTimeout(() => get().removePendingAction(actionId), 1000);
+        }, "addAiPlayer");
 
         if (error) {
           get().clearPendingActions();

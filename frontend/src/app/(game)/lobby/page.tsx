@@ -24,6 +24,7 @@ export default function LobbyRoute() {
     changePlayerRole,
     startGame,
     setError,
+    addAiPlayer,
   } = useStore();
 
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -84,6 +85,11 @@ export default function LobbyRoute() {
 
     await startGame();
     router.push("/play");
+  };
+
+  const handleAddAiPlayer = async (model: string, name: string) => {
+    if (!gameState) return;
+    await addAiPlayer(model, name);
   };
 
   if (isLoading) {
@@ -152,6 +158,7 @@ export default function LobbyRoute() {
           isRoomCreator={isRoomCreator}
           playerCount={Object.keys(gameState.players).length}
           onStartGame={handleStartGame}
+          onAddAiPlayer={handleAddAiPlayer}
         />
 
         {/* Role Selection Modal */}
