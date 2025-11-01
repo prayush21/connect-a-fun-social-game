@@ -70,14 +70,19 @@ export const Connect = memo<ConnectProps>(
     if (hasGuesserSubmitted) {
       return (
         <div className={`text-center ${className}`}>
-          <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4">
-            <p className="text-lg font-semibold text-green-800">
+          <div className="rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4">
+            <p className="text-lg font-semibold text-yellow-800">
               Connect Raised! Let&apos;s see if it sticks.🤞
             </p>
-            <p className="mt-2 text-sm text-green-700">
-              Your guess: <span className="font-mono font-bold">{currentReference.guesses[currentPlayerId]}</span>
+            <p className="mt-2 text-sm text-yellow-700">
+              Your guess:{" "}
+              <span className="font-mono font-bold">
+                {currentReference.guesses[currentPlayerId]}
+              </span>
             </p>
-            <p className="mt-1 text-xs text-green-600">Waiting for other players...</p>
+            <p className="mt-1 text-xs text-yellow-600">
+              Waiting for other players...
+            </p>
           </div>
         </div>
       );
@@ -120,11 +125,13 @@ export const Connect = memo<ConnectProps>(
         <Button
           onClick={handleSubmit}
           disabled={disabled || isSubmitting || !guess.trim()}
-          className="w-full font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full bg-green-600 font-medium text-white hover:bg-green-700 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-50"
           size="lg"
         >
           <span className="flex items-center justify-center gap-2">
-            <span className="text-lg" aria-hidden="true">🤝</span>
+            <span className="text-lg" aria-hidden="true">
+              🤝
+            </span>
             {isSubmitting ? "Submitting..." : "Connect"}
           </span>
         </Button>

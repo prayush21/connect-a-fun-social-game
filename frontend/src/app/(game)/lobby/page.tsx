@@ -7,6 +7,7 @@ import { LobbyHeader } from "@/components/lobby/LobbyHeader";
 import { PlayerList } from "@/components/lobby/PlayerList";
 import { RoleSelectionModal } from "@/components/lobby/RoleSelectionModal";
 import { ThresholdControl } from "@/components/lobby/ThresholdControl";
+import { ConnectsRequiredControl } from "@/components/lobby/ConnectsRequiredControl";
 import { GameControls } from "@/components/lobby/GameControls";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ErrorToast } from "@/components/error-toast";
@@ -56,6 +57,16 @@ export default function LobbyRoute() {
       ...gameState.settings,
       // store absolute count directly
       majorityThreshold: newRequiredPeople,
+    });
+  };
+
+  // Handle connects required change
+  const handleConnectsRequiredChange = async (newConnectsRequired: number) => {
+    if (!gameState) return;
+
+    await updateGameSettings({
+      ...gameState.settings,
+      connectsRequired: newConnectsRequired,
     });
   };
 
@@ -134,7 +145,10 @@ export default function LobbyRoute() {
             // Majority threshold is stored as absolute count; clamp to eligible range
             const requiredPeople = Math.max(
               1,
-              Math.min(gameState.settings.majorityThreshold || 1, eligibleGuessers)
+              Math.min(
+                gameState.settings.majorityThreshold || 1,
+                eligibleGuessers
+              )
             );
 
             return (
@@ -145,6 +159,26 @@ export default function LobbyRoute() {
               />
             );
           })()}
+
+        {/* Connects Required Control */}
+        {(() => {
+          const totalGuessers = Object.values(gameState.players).filter(
+            (player) => player.role === "guesser"
+          ).length;
+
+          // Maximum connects possible is activeGuessers - 1
+          // During gameplay, one guesser is the clue giver, so max is totalGuessers - 1
+          const maxConnectsPossible = Math.max(totalGuessers - 1, 1);
+
+          return (
+            <ConnectsRequiredControl
+              connectsRequired={gameState.settings.connectsRequired || 1}
+              maxConnectsPossible={maxConnectsPossible}
+              onChange={handleConnectsRequiredChange}
+              isWordSetter={currentPlayer?.role === "setter"}
+            />
+          );
+        })()}
 
         {/* Game Controls */}
         <GameControls

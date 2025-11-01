@@ -42,6 +42,7 @@ export default function PlayRoute() {
     returnToLobby,
     initializeNotifications,
     removePlayerFromRoom,
+    updateGameSettings,
   } = useStore();
 
   // Derived game state
@@ -110,6 +111,16 @@ export default function PlayRoute() {
       console.error("Failed to return to lobby:", err);
       setIsLeaving(false);
     }
+  };
+
+  // Handle connects required change
+  const handleConnectsRequiredChange = async (newConnectsRequired: number) => {
+    if (!gameState) return;
+
+    await updateGameSettings({
+      ...gameState.settings,
+      connectsRequired: newConnectsRequired,
+    });
   };
 
   // Handle player removal
@@ -256,6 +267,8 @@ export default function PlayRoute() {
                 isRoomCreator={gameState.setterUid === sessionId}
                 onRemovePlayer={handleRemovePlayer}
                 thresholdMajority={gameState.thresholdMajority}
+                connectsRequired={gameState.settings.connectsRequired || 1}
+                onConnectsRequiredChange={handleConnectsRequiredChange}
               />
             )}
             <div

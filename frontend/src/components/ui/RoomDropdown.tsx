@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "./button";
 import { Player } from "@/lib/types";
 import { Trash2 } from "lucide-react";
+import { ConnectsRequiredControl } from "@/components/lobby/ConnectsRequiredControl";
 
 interface RoomDropdownProps {
   roomId: string;
@@ -14,6 +15,8 @@ interface RoomDropdownProps {
   isRoomCreator?: boolean;
   onRemovePlayer?: (playerId: string, playerName: string) => void;
   thresholdMajority?: number; // Absolute required connects (back-compat: may be percent in legacy)
+  connectsRequired?: number; // Number of connects required
+  onConnectsRequiredChange?: (newConnectsRequired: number) => void;
 }
 
 export function RoomDropdown({
@@ -25,6 +28,8 @@ export function RoomDropdown({
   isRoomCreator = false,
   onRemovePlayer,
   thresholdMajority,
+  connectsRequired,
+  onConnectsRequiredChange,
 }: RoomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -167,7 +172,8 @@ export function RoomDropdown({
             </div>
             {thresholdMajority !== null && (
               <div className="mt-1 text-sm text-slate-500">
-                Minimum Matching Connections: {thresholdMajority} of {eligibleGuessers}
+                Minimum Matching Connections: {thresholdMajority} of{" "}
+                {eligibleGuessers}
               </div>
             )}
           </div>
@@ -221,13 +227,14 @@ export function RoomDropdown({
                               ? "Word Setter"
                               : "Guesser"}
                           </span>
-                          
                         </div>
                       </div>
                     </div>
                     {canRemove && (
                       <button
-                        onClick={() => handleRemovePlayer(player.id, player.name)}
+                        onClick={() =>
+                          handleRemovePlayer(player.id, player.name)
+                        }
                         className="rounded p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                         title={`Remove ${player.name}`}
                       >
@@ -239,6 +246,18 @@ export function RoomDropdown({
               })}
             </div>
           </div>
+
+          {/* Connects Required Control */}
+          {connectsRequired !== undefined && onConnectsRequiredChange && (
+            <div className="border-t border-slate-200 px-4 pt-4">
+              <ConnectsRequiredControl
+                maxConnectsPossible={Math.max(totalGuessers - 1, 1)}
+                connectsRequired={connectsRequired}
+                onChange={onConnectsRequiredChange}
+                isWordSetter={false}
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="border-t border-slate-200 p-4">

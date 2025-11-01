@@ -92,6 +92,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
       timeLimit: data.settings?.timeLimit ?? 30,
       maxPlayers: data.settings?.maxPlayers ?? 8,
       wordValidation: data.settings?.wordValidation ?? "strict",
+      connectsRequired: data.settings?.connectsRequired ?? 1, // Default to 1 for backward compatibility
     },
     clueGiverTurn: data.clueGiverTurn || 0,
     roundNumber: data.roundNumber || 1,
@@ -195,6 +196,7 @@ export const createRoom = async (
       timeLimit: 30,
       maxPlayers: 8,
       wordValidation: "strict",
+      connectsRequired: 1, // Default number of connections required
     },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),

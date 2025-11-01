@@ -21,6 +21,7 @@ export interface GameSettings {
   timeLimit: number; // Time limit for reference setting in seconds
   maxPlayers: number;
   wordValidation: "strict" | "relaxed";
+  connectsRequired: number; // Number of connections required for game progression
 }
 
 export interface Reference {
@@ -110,6 +111,7 @@ export interface FirestoreGameRoom {
     timeLimit: number;
     maxPlayers: number;
     wordValidation: "strict" | "relaxed";
+    connectsRequired?: number; // Optional for backward compatibility with existing rooms
   };
   createdAt?: Timestamp | FieldValue; // Firestore Timestamp
   updatedAt?: Timestamp | FieldValue; // Firestore Timestamp
