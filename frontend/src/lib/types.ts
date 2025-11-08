@@ -7,6 +7,8 @@ export type RoomId = string;
 export type GamePhase = "lobby" | "setting_word" | "guessing" | "ended";
 export type PlayerRole = "setter" | "guesser";
 export type GameWinner = null | "guessers" | "setter";
+export type PlayMode = "round_robin" | "signull";
+export type ReferenceStatus = "pending" | "resolved" | "failed";
 
 export interface Player {
   id: PlayerId;
@@ -22,6 +24,7 @@ export interface GameSettings {
   maxPlayers: number;
   wordValidation: "strict" | "relaxed";
   connectsRequired: number; // Number of connections required for game progression
+  playMode: PlayMode; // Play mode: round_robin or signull
 }
 
 export interface Reference {
@@ -31,9 +34,28 @@ export interface Reference {
   referenceWord: string;
   clue: string;
   guesses: Record<PlayerId, string>;
+  connects?: ReferenceConnect[];
   setterAttempt: string;
-  isClimactic: boolean;
+  isFinal: boolean;
   timestamp: Date;
+}
+
+export interface ReferenceConnect {
+  playerId: PlayerId;
+  role: PlayerRole;
+  guess: string;
+  timestamp: Date;
+}
+
+export interface ReferenceEntry extends Reference {
+  status: ReferenceStatus;
+  resolvedAt?: Date | Timestamp | FieldValue;
+}
+
+export interface ReferenceState {
+  order: string[]; // insertion order - array of reference IDs
+  itemsById: Record<string, ReferenceEntry>;
+  activeIndex: number | null; // deterministic pointer for round_robin, null for signull
 }
 
 export interface GameState {
@@ -47,7 +69,8 @@ export interface GameState {
   players: Record<PlayerId, Player>;
   directGuessesLeft: number;
   thresholdMajority: number; // Absolute count mirror for UI (minimum matching connections)
-  currentReference: Reference | null;
+  currentReference: Reference | null; // DEPRECATED: Will be replaced by referenceState
+  referenceState: ReferenceState; // New unified reference management
   winner: GameWinner;
   gameHistory: (
     | string
@@ -90,10 +113,12 @@ export interface FirestoreGameRoom {
     clue: string;
     referenceWord: string;
     guesses: Record<string, string>;
+    connects?: FirestoreReferenceConnect[];
     setterAttempt: string;
-    isClimactic: boolean;
+    isFinal: boolean;
     timestamp?: Timestamp | FieldValue; // Firestore Timestamp
-  } | null;
+  } | null; // DEPRECATED: Will be replaced by referenceState
+  referenceState?: FirestoreReferenceState; // New unified reference management (optional for backward compatibility)
   winner: GameWinner;
   gameHistory: (
     | string
@@ -112,9 +137,37 @@ export interface FirestoreGameRoom {
     maxPlayers: number;
     wordValidation: "strict" | "relaxed";
     connectsRequired?: number; // Optional for backward compatibility with existing rooms
+    playMode?: PlayMode; // Optional for backward compatibility with existing rooms
   };
   createdAt?: Timestamp | FieldValue; // Firestore Timestamp
   updatedAt?: Timestamp | FieldValue; // Firestore Timestamp
+}
+
+export interface FirestoreReferenceConnect {
+  playerId: string;
+  role: PlayerRole;
+  guess: string;
+  timestamp?: Timestamp | FieldValue;
+}
+
+export interface FirestoreReferenceEntry {
+  id?: string;
+  clueGiverId: string;
+  referenceWord: string;
+  clue: string;
+  guesses: Record<string, string>;
+  connects?: FirestoreReferenceConnect[];
+  setterAttempt: string;
+  isFinal: boolean;
+  timestamp?: Timestamp | FieldValue;
+  status: ReferenceStatus;
+  resolvedAt?: Timestamp | FieldValue;
+}
+
+export interface FirestoreReferenceState {
+  order: string[];
+  activeIndex: number | null;
+  itemsById: Record<string, FirestoreReferenceEntry>;
 }
 
 // UI-specific types
