@@ -76,7 +76,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
           clue: data.currentReference.clue,
           guesses: data.currentReference.guesses || {},
           setterAttempt: data.currentReference.setterAttempt || "",
-          isClimactic: data.currentReference.isClimactic || false,
+          isFinal: data.currentReference.isFinal || false,
           timestamp:
             data.currentReference.timestamp instanceof Timestamp
               ? data.currentReference.timestamp.toDate()
@@ -93,6 +93,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
       maxPlayers: data.settings?.maxPlayers ?? 8,
       wordValidation: data.settings?.wordValidation ?? "strict",
       connectsRequired: data.settings?.connectsRequired ?? 1, // Default to 1 for backward compatibility
+      playMode: data.settings?.playMode ?? "round_robin", // Default to round_robin for backward compatibility
     },
     clueGiverTurn: data.clueGiverTurn || 0,
     roundNumber: data.roundNumber || 1,
@@ -151,7 +152,7 @@ export const gameStateToFirestore = (
           clue: gameState.currentReference.clue,
           guesses: gameState.currentReference.guesses,
           setterAttempt: gameState.currentReference.setterAttempt,
-          isClimactic: gameState.currentReference.isClimactic,
+          isFinal: gameState.currentReference.isFinal,
           timestamp: serverTimestamp(),
         }
       : null,
@@ -184,9 +185,9 @@ export const createRoom = async (
         lastActive: serverTimestamp(),
       },
     },
-  directGuessesLeft: 3,
-  // Keep legacy field for compatibility; will mirror absolute count stored in settings
-  thresholdMajority: 2,
+    directGuessesLeft: 3,
+    // Keep legacy field for compatibility; will mirror absolute count stored in settings
+    thresholdMajority: 2,
     currentReference: null,
     winner: null,
     gameHistory: [`Room created by ${username}`],
@@ -306,9 +307,11 @@ export const setSecretWord = async (
   const docSnap = await getDoc(docRef);
   const currentGameHistory = docSnap.data()?.gameHistory || [];
   const data = docSnap.data() as FirestoreGameRoom;
-  
+
   // Get setter name
-  const setter = Object.values(data.players || {}).find(p => p.role === "setter");
+  const setter = Object.values(data.players || {}).find(
+    (p) => p.role === "setter"
+  );
   const setterName = setter?.name || "Setter";
 
   await updateDoc(docRef, {
@@ -338,10 +341,10 @@ export const setReference = async (
   const referenceWordUpper = referenceWord.toUpperCase();
   const secretWord = data.secretWord;
 
-  // Check if this is a climactic round (reference word equals secret word)
-  const isClimactic = referenceWordUpper === secretWord;
+  // Check if this is a final round (reference word equals secret word)
+  const isFinal = referenceWordUpper === secretWord;
 
-  const historyMessage = isClimactic
+  const historyMessage = isFinal
     ? `${player.name}: "${clue}" [FINAL ROUND]`
     : `${player.name}: "${clue}"`;
 
@@ -352,11 +355,51 @@ export const setReference = async (
       clue,
       guesses: {},
       setterAttempt: "",
-      isClimactic,
+      isFinal,
       timestamp: serverTimestamp(),
     },
     gameHistory: [...(data.gameHistory || []), historyMessage],
     updatedAt: serverTimestamp(),
+  });
+};
+
+export const submitConnect = async (
+  roomId: RoomId,
+  playerId: PlayerId,
+  guess: string
+): Promise<void> => {
+  const docRef = doc(getGameRoomsCollection(), roomId);
+  void playerId;
+  void guess;
+  void docRef;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await runTransaction(getDb(), async (transaction: any) => {
+    void transaction;
+    /**
+     * 1. Read the current room document.
+     * 2. Validate round is active, player exists, and is eligible to connect.
+     * 3. Append a guess entry (playerId, role, timestamp, guess string) to currentReference.connects array.
+     * 4. Run calculateReferenceResolution-style helper against updated state.
+     * 5. Apply resolution outcome (success/fail/setter block) to the document.
+     */
+
+    // Read current state inside transaction
+    const docSnap = await transaction.get(docRef);
+    if (!docSnap.exists()) throw new Error("Room not found");
+
+    const data = docSnap.data() as FirestoreGameRoom;
+    const { players, currentReference } = data;
+
+    // Validate that round is still active
+    if (!currentReference) {
+      throw new Error("ROUND_ENDED:No active reference");
+    }
+
+    const player = players?.[playerId];
+    if (!player) throw new Error("Player not found");
+
+    currentReference.connects = currentReference.connects || [];
   });
 };
 
@@ -458,7 +501,7 @@ export const submitDirectGuess = async (
     });
   } else {
     // Incorrect guess, continue game
-    const guessPlural = newDirectGuessesLeft > 1 ? 'guesses' : 'guess';
+    const guessPlural = newDirectGuessesLeft > 1 ? "guesses" : "guess";
     await updateDoc(docRef, {
       directGuessesLeft: newDirectGuessesLeft,
       gameHistory: [
@@ -678,9 +721,9 @@ export const generateRoomCode = (): string => {
   const consonants = "BCDFGHJKMNPQRSTVWXYZ"; // Removed L
   const vowels = "AEUY"; // Removed I and O
   const numbers = "23456789"; // Removed 0 and 1
-  
+
   let result = "";
-  
+
   // Generate pattern: C-V-C-V-N-N (Consonant-Vowel-Consonant-Vowel-Number-Number)
   // This creates pronounceable-ish codes like "TAKE42" or "PUFE73"
   result += consonants.charAt(Math.floor(Math.random() * consonants.length));
@@ -689,7 +732,7 @@ export const generateRoomCode = (): string => {
   result += vowels.charAt(Math.floor(Math.random() * vowels.length));
   result += numbers.charAt(Math.floor(Math.random() * numbers.length));
   result += numbers.charAt(Math.floor(Math.random() * numbers.length));
-  
+
   return result;
 };
 
@@ -796,13 +839,15 @@ export const checkReferenceResolution = async (
       .filter((id) => players?.[id]?.role === "guesser")
       .sort();
     const nextTurn =
-      guesserIds.length > 0 ? ((clueGiverTurn || 0) + 1) % guesserIds.length : 0;
+      guesserIds.length > 0
+        ? ((clueGiverTurn || 0) + 1) % guesserIds.length
+        : 0;
     const setterName =
       Object.values(players || {}).find((p) => p.role === "setter")?.name ||
       "Setter";
 
-    // Handle climactic rounds specially
-    if (currentReference.isClimactic) {
+    // Handle final rounds specially
+    if (currentReference.isFinal) {
       const activeGuesserIds = guesserIds.filter(
         (id) => id !== currentReference.clueGiverId
       );
@@ -863,8 +908,10 @@ export const checkReferenceResolution = async (
       typeof rawAbs2 === "number"
         ? rawAbs2
         : typeof legacyPercent2 === "number"
-        ? Math.ceil(Math.max(activeGuesserIds.length, 1) * (legacyPercent2 / 100))
-        : 2;
+          ? Math.ceil(
+              Math.max(activeGuesserIds.length, 1) * (legacyPercent2 / 100)
+            )
+          : 2;
     const majorityThreshold = Math.max(
       1,
       Math.min(interpretedThreshold2, Math.max(activeGuesserIds.length, 1))
@@ -884,7 +931,8 @@ export const checkReferenceResolution = async (
 
     // Find the largest group of matching guesses
     const largestGroup = Object.values(guessGroups).reduce(
-      (largest, current) => (current.length > largest.length ? current : largest),
+      (largest, current) =>
+        current.length > largest.length ? current : largest,
       []
     );
 

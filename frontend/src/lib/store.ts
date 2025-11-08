@@ -136,7 +136,7 @@ const historyEntriesToActionLog = (
       : `history_${index}_${sanitizeForId(entry.message || "event") || index}`;
 
     const actor = entry.playerId
-      ? players?.[entry.playerId]?.name ?? "system"
+      ? (players?.[entry.playerId]?.name ?? "system")
       : "system";
 
     return {
@@ -306,7 +306,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       gameState: null,
       roomId: null,
       actionLog: [],
-  lastHistoryLength: 0,
+      lastHistoryLength: 0,
       isConnected: false,
       isLoading: false,
       error: null,
@@ -331,7 +331,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           return { actionLog: updatedLog };
         }),
 
-  clearActionLog: () => set({ actionLog: [] }),
+      clearActionLog: () => set({ actionLog: [] }),
 
       // Actions
       async createRoom(username: string) {
@@ -437,52 +437,58 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           get().recordAction(actionId, "JOIN_ROOM", username);
 
           // Add optimistic action
-          get().addPendingAction(actionId, "JOIN_ROOM", { roomId: normalizedRoomId, username });
+          get().addPendingAction(actionId, "JOIN_ROOM", {
+            roomId: normalizedRoomId,
+            username,
+          });
 
           await joinGameRoom(normalizedRoomId, sessionId, username);
 
           // Subscribe to the room with enhanced error handling
-          const unsubscribe = subscribeToGameRoom(normalizedRoomId, (gameState) => {
-            if (gameState) {
-              // Check for new reference notifications (only if not the clue giver)
-              get().checkForNewReferenceNotification(gameState);
+          const unsubscribe = subscribeToGameRoom(
+            normalizedRoomId,
+            (gameState) => {
+              if (gameState) {
+                // Check for new reference notifications (only if not the clue giver)
+                get().checkForNewReferenceNotification(gameState);
 
-              get().removePendingAction(actionId);
-              get().clearOptimisticState();
-              get().resetRetries();
-              get().updateLastSync();
+                get().removePendingAction(actionId);
+                get().clearOptimisticState();
+                get().resetRetries();
+                get().updateLastSync();
 
-              set((state) => {
-                const historyLength = gameState.gameHistory?.length ?? 0;
-                const startIndex =
-                  state.lastHistoryLength > historyLength
-                    ? 0
-                    : state.lastHistoryLength;
-                const newEntries = historyEntriesToActionLog(
-                  gameState.gameHistory,
-                  gameState.players,
-                  startIndex
-                );
-                const updatedLog =
-                  newEntries.length > 0
-                    ? [...state.actionLog, ...newEntries]
-                    : state.actionLog;
-                if (newEntries.length > 0) {
-                  console.log("[ActionLog]", updatedLog);
-                }
+                set((state) => {
+                  const historyLength = gameState.gameHistory?.length ?? 0;
+                  const startIndex =
+                    state.lastHistoryLength > historyLength
+                      ? 0
+                      : state.lastHistoryLength;
+                  const newEntries = historyEntriesToActionLog(
+                    gameState.gameHistory,
+                    gameState.players,
+                    startIndex
+                  );
+                  const updatedLog =
+                    newEntries.length > 0
+                      ? [...state.actionLog, ...newEntries]
+                      : state.actionLog;
+                  if (newEntries.length > 0) {
+                    console.log("[ActionLog]", updatedLog);
+                  }
 
-                return {
-                  gameState,
-                  isConnected: true,
-                  actionLog: updatedLog,
-                  lastHistoryLength: historyLength,
-                };
-              });
-            } else {
-              set({ isConnected: false });
-              get().incrementRetries();
+                  return {
+                    gameState,
+                    isConnected: true,
+                    actionLog: updatedLog,
+                    lastHistoryLength: historyLength,
+                  };
+                });
+              } else {
+                set({ isConnected: false });
+                get().incrementRetries();
+              }
             }
-          });
+          );
 
           set({
             roomId: normalizedRoomId,
@@ -537,7 +543,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async returnToLobby() {
-  const { roomId: currentRoomId, gameState, sessionId, username } = get();
+        const { roomId: currentRoomId, gameState, sessionId, username } = get();
 
         if (!currentRoomId || !gameState) return;
 
@@ -584,7 +590,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async setWord(word: string) {
-  const { roomId: currentRoomId, sessionId, gameState, username } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -639,7 +645,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async setReference(referenceWord: string, clue: string) {
-  const { roomId: currentRoomId, sessionId, gameState, username } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -664,8 +670,8 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
             );
           }
 
-          // Check if this is a climactic round
-          const isClimactic =
+          // Check if this is a final round
+          const isFinal =
             referenceWord.toLowerCase() === gameState.secretWord.toLowerCase();
 
           const actionId = `set_reference_${Date.now()}`;
@@ -687,7 +693,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
               clue,
               guesses: {},
               setterAttempt: "",
-              isClimactic,
+              isFinal,
               timestamp: new Date(),
             },
           });
@@ -740,7 +746,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
               // Clear pending actions and optimistic state
               get().removePendingAction(actionId);
               get().clearOptimisticState();
-              
+
               // Set a friendly error message but don't throw
               set({
                 error: createGameError(
@@ -748,14 +754,14 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
                   "This round has already been completed. Your guess was not needed."
                 ),
               });
-              
+
               // Clear the error after 3 seconds
               setTimeout(() => {
                 if (get().error?.code === ERROR_CODES.ROUND_ENDED) {
                   set({ error: null });
                 }
               }, 3000);
-              
+
               return; // Exit gracefully
             }
             // Re-throw other errors
@@ -854,7 +860,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async removePlayer(playerId: PlayerId) {
-  const { roomId: currentRoomId, sessionId, gameState, username } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -886,7 +892,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
       },
 
       async changeSetter(playerId: PlayerId) {
-  const { roomId: currentRoomId, sessionId, gameState, username } = get();
+        const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
         const { error } = await withErrorHandling(async () => {
@@ -949,7 +955,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
               // Clear pending actions and optimistic state
               get().removePendingAction(actionId);
               get().clearOptimisticState();
-              
+
               // Set a friendly error message but don't throw
               set({
                 error: createGameError(
@@ -957,14 +963,14 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
                   "This round has already been completed. Your sabotage was not needed."
                 ),
               });
-              
+
               // Clear the error after 3 seconds
               setTimeout(() => {
                 if (get().error?.code === ERROR_CODES.ROUND_ENDED) {
                   set({ error: null });
                 }
               }, 3000);
-              
+
               return; // Exit gracefully
             }
             // Re-throw other errors
@@ -1296,9 +1302,11 @@ export const useGameSelectors = () => {
   const maxEligible = Math.max(eligibleActiveGuessers.length, 1);
   // Interpret legacy percent values (>100) as percentage and convert to count
   const rawThreshold = effectiveGameState.settings.majorityThreshold || 1;
-  const interpretedThreshold =
-    rawThreshold;
-  const majorityNeeded = Math.max(1, Math.min(interpretedThreshold, maxEligible));
+  const interpretedThreshold = rawThreshold;
+  const majorityNeeded = Math.max(
+    1,
+    Math.min(interpretedThreshold, maxEligible)
+  );
   const guessesReceived = effectiveGameState.currentReference
     ? activeGuessers.filter(
         (guesser) =>

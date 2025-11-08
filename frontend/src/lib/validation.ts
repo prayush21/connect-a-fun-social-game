@@ -135,7 +135,7 @@ export const referenceSubmissionSchema = z.object({
     .trim()
     .min(2, "Clue must be at least 2 characters")
     .max(120, "Clue too long"),
-  isClimactic: z.boolean().default(false),
+  isFinal: z.boolean().default(false),
 });
 
 // Game state validation

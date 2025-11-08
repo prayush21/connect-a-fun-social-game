@@ -197,15 +197,18 @@ export const calculateReferenceResolution = (
   const guesses = currentReference.guesses || {};
   const submittedGuessers = activeGuesserIds.filter((id) => guesses[id]);
 
-  // Handle climactic round (reference word equals secret word)
-  if (currentReference.isClimactic) {
-    // Require majority submissions before resolving climactic win
+  // Handle final round (reference word equals secret word)
+  if (currentReference.isFinal) {
+    // Require majority submissions before resolving final win
     const guesses = currentReference.guesses || {};
     const submittedGuessers = activeGuesserIds.filter((id) => guesses[id]);
     const rawThreshold = settings.majorityThreshold ?? 1;
     const maxEligible = Math.max(activeGuesserIds.length, 1);
     const interpretedThreshold = rawThreshold;
-    const majorityRequired = Math.max(1, Math.min(interpretedThreshold, maxEligible));
+    const majorityRequired = Math.max(
+      1,
+      Math.min(interpretedThreshold, maxEligible)
+    );
 
     if (submittedGuessers.length >= majorityRequired) {
       return {
@@ -337,7 +340,7 @@ export const resolveDirectGuess = (
     };
   }
 
-  const guessPlural = newDirectGuessesLeft > 1 ? 'guesses' : 'guess';
+  const guessPlural = newDirectGuessesLeft > 1 ? "guesses" : "guess";
   return {
     isCorrect: false,
     newDirectGuessesLeft,

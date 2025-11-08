@@ -80,7 +80,7 @@ export const ConnectSabotage = memo<ConnectSabotageProps>(
     }
 
     const isGuesser = playerRole === "guesser";
-    const isClimactic = currentReference.isClimactic;
+    const isFinal = currentReference.isFinal;
 
     // Check if guesser has already submitted
     const hasGuesserSubmitted =
@@ -93,8 +93,8 @@ export const ConnectSabotage = memo<ConnectSabotageProps>(
       currentReference.setterAttempt.toLowerCase() ===
         currentReference.referenceWord.toLowerCase();
 
-    // For setter in climactic round, hide the controls
-    if (!isGuesser && isClimactic) {
+    // For setter in final round, hide the controls
+    if (!isGuesser && isFinal) {
       return (
         <div className={`text-center ${className}`}>
           <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
@@ -102,8 +102,8 @@ export const ConnectSabotage = memo<ConnectSabotageProps>(
               🎯 Final Round
             </p>
             <p className="mt-2 text-sm text-amber-700">
-              Sabotage is disabled in the final round. Guessers must
-              directly connect to the secret word!
+              Sabotage is disabled in the final round. Guessers must directly
+              connect to the secret word!
             </p>
           </div>
         </div>
@@ -119,7 +119,10 @@ export const ConnectSabotage = memo<ConnectSabotageProps>(
               Connect Raised! Let&apos;s see if it sticks.🤞
             </p>
             <p className="mt-2 text-sm text-green-700">
-              Your guess: <span className="font-mono font-bold">{currentReference.guesses[currentPlayerId]}</span>
+              Your guess:{" "}
+              <span className="font-mono font-bold">
+                {currentReference.guesses[currentPlayerId]}
+              </span>
             </p>
             <p className="mt-1 text-xs text-green-600">
               Waiting for other players...
@@ -139,7 +142,9 @@ export const ConnectSabotage = memo<ConnectSabotageProps>(
             </p>
             <p className="mt-2 text-sm text-red-700">
               You correctly guessed the reference word:{" "}
-              <span className="font-mono font-bold">{currentReference.setterAttempt}</span>
+              <span className="font-mono font-bold">
+                {currentReference.setterAttempt}
+              </span>
             </p>
             <p className="mt-1 text-xs text-red-600">
               Waiting for round to complete...

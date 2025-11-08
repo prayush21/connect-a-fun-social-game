@@ -56,8 +56,8 @@ export const ViewReference = memo<ViewReferenceProps>(
           </p>
         </div> */}
 
-        {/* Climactic Indicator */}
-        {reference.isClimactic && (
+        {/* Final Round Indicator */}
+        {reference.isFinal && (
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
             <p className="text-center text-sm font-medium text-yellow-800">
               🎯 This is the Final round! The reference word matches the secret
@@ -69,8 +69,7 @@ export const ViewReference = memo<ViewReferenceProps>(
         {/* Screen reader information */}
         <div className="sr-only">
           Reference clue: {reference.clue}. Reference word starts with{" "}
-          {revealedPrefix}.
-          {reference.isClimactic && " This is a climactic round."}
+          {revealedPrefix}.{reference.isFinal && " This is a final round."}
         </div>
       </div>
     );

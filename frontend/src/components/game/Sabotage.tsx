@@ -20,13 +20,16 @@ export const Sabotage = memo<SabotageProps>(
     if (!currentReference) return null;
 
     // Final round: sabotage disabled with guidance card
-    if (currentReference.isClimactic) {
+    if (currentReference.isFinal) {
       return (
         <div className={`text-center ${className}`}>
           <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
-            <p className="text-lg font-semibold text-amber-800">🎯 Final Round</p>
+            <p className="text-lg font-semibold text-amber-800">
+              🎯 Final Round
+            </p>
             <p className="mt-2 text-sm text-amber-700">
-              Sabotage is disabled in the final round. Guessers must directly connect to the secret word!
+              Sabotage is disabled in the final round. Guessers must directly
+              connect to the secret word!
             </p>
           </div>
         </div>
@@ -43,12 +46,18 @@ export const Sabotage = memo<SabotageProps>(
       return (
         <div className={`text-center ${className}`}>
           <div className="rounded-lg border-2 border-red-300 bg-red-50 p-4">
-            <p className="text-lg font-semibold text-red-800">💥 Sabotage Successful!</p>
-            <p className="mt-2 text-sm text-red-700">
-              You correctly guessed the reference word: {" "}
-              <span className="font-mono font-bold">{currentReference.setterAttempt}</span>
+            <p className="text-lg font-semibold text-red-800">
+              💥 Sabotage Successful!
             </p>
-            <p className="mt-1 text-xs text-red-600">Waiting for round to complete...</p>
+            <p className="mt-2 text-sm text-red-700">
+              You correctly guessed the reference word:{" "}
+              <span className="font-mono font-bold">
+                {currentReference.setterAttempt}
+              </span>
+            </p>
+            <p className="mt-1 text-xs text-red-600">
+              Waiting for round to complete...
+            </p>
           </div>
         </div>
       );
@@ -123,11 +132,13 @@ export const Sabotage = memo<SabotageProps>(
         <Button
           onClick={handleSubmit}
           disabled={disabled || isSubmitting || !guess.trim()}
-          className="w-full font-medium text-white bg-red-600 hover:bg-red-700 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full bg-red-600 font-medium text-white hover:bg-red-700 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
           size="lg"
         >
           <span className="flex items-center justify-center gap-2">
-            <span className="text-lg" aria-hidden="true">💥</span>
+            <span className="text-lg" aria-hidden="true">
+              💥
+            </span>
             {isSubmitting ? "Submitting..." : "Sabotage"}
           </span>
         </Button>
