@@ -58,6 +58,36 @@ export interface ReferenceState {
   activeIndex: number | null; // deterministic pointer for round_robin, null for signull
 }
 
+export interface ArchivedPlayerSummary {
+  id: PlayerId;
+  role: PlayerRole;
+  name: string;
+}
+
+export interface ArchivedReferenceEntry
+  extends Omit<FirestoreReferenceEntry, "resolvedAt"> {
+  resolvedAt: Timestamp | FieldValue | null;
+}
+
+export interface ArchivedReferenceState {
+  order: string[];
+  itemsById: Record<string, ArchivedReferenceEntry>;
+  activeIndex: number | null;
+}
+
+export interface RoundArchiveSnapshot {
+  archiveId: string;
+  roundId: string;
+  roomId: RoomId;
+  secretWord: string;
+  playMode: PlayMode;
+  createdAt: Date | Timestamp | FieldValue;
+  completedAt: Date | Timestamp | FieldValue | null;
+  winner: GameWinner;
+  playerList: ArchivedPlayerSummary[];
+  referenceState: ArchivedReferenceState;
+}
+
 export interface GameState {
   roomId: RoomId;
   gamePhase: GamePhase;

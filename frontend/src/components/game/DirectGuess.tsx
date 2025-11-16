@@ -7,7 +7,7 @@ interface DirectGuessProps {
   directGuessesLeft: number;
   revealedPrefix: string;
   secretWordLength: number;
-  onSubmitGuess: (word: string) => Promise<void>;
+  onSubmitDirectGuess: (word: string) => Promise<void>;
   disabled?: boolean;
   className?: string;
 }
@@ -17,7 +17,7 @@ export const DirectGuess = memo<DirectGuessProps>(
     directGuessesLeft,
     revealedPrefix,
     secretWordLength,
-    onSubmitGuess,
+    onSubmitDirectGuess,
     disabled = false,
     className = "",
   }) => {
@@ -94,7 +94,7 @@ export const DirectGuess = memo<DirectGuessProps>(
       setError("");
 
       try {
-        await onSubmitGuess(guessWord.trim().toUpperCase());
+        await onSubmitDirectGuess(guessWord.trim().toUpperCase());
         handleCloseModal();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to submit guess");

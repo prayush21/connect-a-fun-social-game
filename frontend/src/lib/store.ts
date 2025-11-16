@@ -16,9 +16,8 @@ import {
   returnToLobby as returnToLobbyFirebase,
   setSecretWord,
   setReference as setGameReference,
-  submitGuess as submitGameGuess,
+  submitConnect,
   submitDirectGuess as submitGameDirectGuess,
-  submitSetterGuess as submitGameSetterGuess,
   updateGameSettings as updateSettings,
   removePlayer,
   changeSetter,
@@ -200,7 +199,7 @@ export interface GameStateStore {
   returnToLobby: () => Promise<void>;
   setWord: (word: string) => Promise<void>;
   setReference: (referenceWord: string, clue: string) => Promise<void>;
-  submitGuess: (guess: string) => Promise<void>;
+  submitConnect: (guess: string) => Promise<void>;
   submitDirectGuess: (word: string) => Promise<void>;
   submitSetterGuess: (guess: string) => Promise<void>;
   updateGameSettings: (
@@ -712,7 +711,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
         }
       },
 
-      async submitGuess(guess: string) {
+      async submitConnect(guess: string) {
         const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState?.currentReference) return;
 
@@ -739,7 +738,8 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           }
 
           try {
-            await submitGameGuess(currentRoomId, sessionId, guess);
+            // Use submitConnect instead of submitGameGuess
+            await submitConnect(currentRoomId, sessionId, guess);
           } catch (err) {
             // Check if this is a ROUND_ENDED error
             if (err instanceof Error && err.message.includes("ROUND_ENDED")) {
@@ -770,7 +770,7 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
 
           // Remove pending action after successful operation
           setTimeout(() => get().removePendingAction(actionId), 1000);
-        }, "submitGuess");
+        }, "submitConnect");
 
         if (error) {
           get().clearPendingActions();
@@ -948,7 +948,8 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           }
 
           try {
-            await submitGameSetterGuess(currentRoomId, sessionId, guess);
+            // Use submitConnect instead of submitGameSetterGuess
+            await submitConnect(currentRoomId, sessionId, guess);
           } catch (err) {
             // Check if this is a ROUND_ENDED error
             if (err instanceof Error && err.message.includes("ROUND_ENDED")) {

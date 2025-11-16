@@ -51,11 +51,11 @@ export default function Home() {
 
     setIsJoining(true);
     setError(null);
-    
+
     // Normalize room code: trim and convert to uppercase
     const normalizedGameCode = data.gameCode.trim().toUpperCase();
     console.log("Joining game with code:", normalizedGameCode);
-    
+
     try {
       await joinRoom(normalizedGameCode, username);
       router.push("/lobby");
@@ -159,52 +159,36 @@ export default function Home() {
             </div>
           </div>
 
-          {!showJoinForm ? (
-            <button
-              onClick={() => setShowJoinForm(true)}
-              className="w-full rounded-md border border-gray-300 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Join Game
-            </button>
-          ) : (
-            <form
-              onSubmit={joinGameForm.handleSubmit(onJoinGameSubmit)}
-              className="space-y-3"
-            >
-              <div className="flex gap-2">
-                <input
-                  {...joinGameForm.register("gameCode")}
-                  type="text"
-                  placeholder="Enter Code"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 uppercase shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  maxLength={6}
-                  onChange={(e) => {
-                    // Convert to uppercase as user types
-                    e.target.value = e.target.value.toUpperCase();
-                    joinGameForm.setValue("gameCode", e.target.value);
-                  }}
-                />
-                <button
-                  type="submit"
-                  className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Join
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowJoinForm(false)}
-                  className="px-3 py-2 text-gray-500 transition-colors hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-              {joinGameForm.formState.errors.gameCode && (
-                <p className="text-sm text-red-600">
-                  {joinGameForm.formState.errors.gameCode.message}
-                </p>
-              )}
-            </form>
-          )}
+          <form
+            onSubmit={joinGameForm.handleSubmit(onJoinGameSubmit)}
+            className="space-y-3"
+          >
+            <div className="flex gap-2">
+              <input
+                {...joinGameForm.register("gameCode")}
+                type="text"
+                placeholder="Enter Code"
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 uppercase shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                maxLength={6}
+                onChange={(e) => {
+                  // Convert to uppercase as user types
+                  e.target.value = e.target.value.toUpperCase();
+                  joinGameForm.setValue("gameCode", e.target.value);
+                }}
+              />
+              <button
+                type="submit"
+                className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                Join
+              </button>
+            </div>
+            {joinGameForm.formState.errors.gameCode && (
+              <p className="text-sm text-red-600">
+                {joinGameForm.formState.errors.gameCode.message}
+              </p>
+            )}
+          </form>
         </div>
 
         {/* How to Play Section */}

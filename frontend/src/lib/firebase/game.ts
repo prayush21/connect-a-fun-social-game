@@ -12,6 +12,8 @@ import {
   FieldValue,
   Unsubscribe,
   runTransaction,
+  arrayUnion,
+  addDoc,
 } from "firebase/firestore";
 import { getDb } from "./config";
 import { calculateClueGiverTurnAfterRemoval } from "../game-logic";
@@ -22,10 +24,90 @@ import type {
   GameSettings,
   PlayerId,
   RoomId,
+  FirestoreReferenceEntry,
+  FirestoreReferenceState,
+  GameWinner,
+  RoundArchiveSnapshot,
+  ArchivedReferenceState,
+  ArchivedPlayerSummary,
 } from "../types";
 
 // Collection reference getter
 const getGameRoomsCollection = () => collection(getDb(), "game_rooms");
+const getRoundArchivesCollection = (roomId: RoomId) =>
+  collection(getDb(), "game_rooms", roomId, "round_archives");
+
+const buildReferenceStateArchive = (
+  refState?: FirestoreReferenceState
+): ArchivedReferenceState => {
+  if (!refState) {
+    return {
+      order: [],
+      activeIndex: null,
+      itemsById: {},
+    };
+  }
+
+  const items = Object.entries(refState.itemsById || {}).reduce(
+    (acc, [refId, entry]) => {
+      acc[refId] = {
+        ...entry,
+        connects: entry.connects ?? [],
+        guesses: entry.guesses ?? {},
+        resolvedAt: entry.resolvedAt ?? null,
+      };
+      return acc;
+    },
+    {} as ArchivedReferenceState["itemsById"]
+  );
+
+  return {
+    order: [...(refState.order || [])],
+    activeIndex:
+      typeof refState.activeIndex === "number" ? refState.activeIndex : null,
+    itemsById: items,
+  };
+};
+
+const archiveCurrentRound = async (
+  roomId: RoomId,
+  data: FirestoreGameRoom
+): Promise<void> => {
+  const secretWord = (data.secretWord || "").trim();
+  const hasReferenceData = Boolean(
+    data.referenceState &&
+      ((data.referenceState.order?.length ?? 0) > 0 ||
+        Object.keys(data.referenceState.itemsById || {}).length > 0)
+  );
+
+  if (!secretWord && !hasReferenceData) {
+    return;
+  }
+
+  const playerList: ArchivedPlayerSummary[] = Object.entries(
+    data.players || {}
+  ).map(([id, player]) => ({
+    id,
+    role: player.role,
+    name: player.name,
+  }));
+
+  const archiveDoc: RoundArchiveSnapshot = {
+    archiveId: generateUUID(),
+    roundId: `round_${data.roundNumber || 1}`,
+    roomId: data.roomId,
+    secretWord,
+    playMode: data.settings?.playMode ?? "round_robin",
+    createdAt:
+      data.createdAt instanceof Timestamp ? data.createdAt : serverTimestamp(),
+    completedAt: serverTimestamp(),
+    winner: data.winner ?? null,
+    playerList,
+    referenceState: buildReferenceStateArchive(data.referenceState),
+  };
+
+  await addDoc(getRoundArchivesCollection(roomId), archiveDoc);
+};
 
 // Convert Firestore document to GameState
 export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
@@ -100,6 +182,45 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
     setterUid: data.setterUid,
     winner: data.winner,
     gameHistory: data.gameHistory || [],
+    // Convert referenceState from Firestore to client format
+    referenceState: data.referenceState
+      ? {
+          order: data.referenceState.order || [],
+          activeIndex: data.referenceState.activeIndex,
+          itemsById: Object.entries(data.referenceState.itemsById || {}).reduce(
+            (acc, [id, entry]) => {
+              acc[id] = {
+                ...entry,
+                timestamp:
+                  entry.timestamp instanceof Timestamp
+                    ? entry.timestamp.toDate()
+                    : new Date(),
+                resolvedAt: entry.resolvedAt
+                  ? entry.resolvedAt instanceof Timestamp
+                    ? entry.resolvedAt.toDate()
+                    : entry.resolvedAt
+                  : undefined,
+                connects: entry.connects?.map((connect) => ({
+                  playerId: connect.playerId,
+                  role: connect.role,
+                  guess: connect.guess,
+                  timestamp:
+                    connect.timestamp instanceof Timestamp
+                      ? connect.timestamp.toDate()
+                      : new Date(),
+                })),
+              };
+              return acc;
+            },
+            {} as Record<string, import("../types").ReferenceEntry>
+          ),
+        }
+      : {
+          // Default empty state for backward compatibility
+          order: [],
+          activeIndex: data.settings?.playMode === "round_robin" ? 0 : null,
+          itemsById: {},
+        },
     createdAt:
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate()
@@ -156,6 +277,30 @@ export const gameStateToFirestore = (
           timestamp: serverTimestamp(),
         }
       : null,
+    // Serialize referenceState to Firestore format
+    referenceState: gameState.referenceState
+      ? {
+          order: gameState.referenceState.order,
+          activeIndex: gameState.referenceState.activeIndex,
+          itemsById: Object.entries(gameState.referenceState.itemsById).reduce(
+            (acc, [id, entry]) => {
+              acc[id] = {
+                ...entry,
+                timestamp: serverTimestamp(),
+                resolvedAt: entry.resolvedAt ? serverTimestamp() : undefined,
+                connects: entry.connects?.map((connect) => ({
+                  playerId: connect.playerId,
+                  role: connect.role,
+                  guess: connect.guess,
+                  timestamp: serverTimestamp(),
+                })),
+              };
+              return acc;
+            },
+            {} as Record<string, import("../types").FirestoreReferenceEntry>
+          ),
+        }
+      : undefined,
     winner: gameState.winner,
     gameHistory: gameState.gameHistory,
     settings: gameState.settings,
@@ -189,6 +334,12 @@ export const createRoom = async (
     // Keep legacy field for compatibility; will mirror absolute count stored in settings
     thresholdMajority: 2,
     currentReference: null,
+    // Initialize empty referenceState
+    referenceState: {
+      order: [],
+      activeIndex: null, // Will be initialized when game starts
+      itemsById: {},
+    },
     winner: null,
     gameHistory: [`Room created by ${username}`],
     settings: {
@@ -198,6 +349,7 @@ export const createRoom = async (
       maxPlayers: 8,
       wordValidation: "strict",
       connectsRequired: 1, // Default number of connections required
+      playMode: "round_robin", // Default play mode
     },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -264,35 +416,43 @@ export const leaveRoom = async (
     updatedAt: serverTimestamp(),
   };
 
-  // Handle setter leaving
-  if (isLeavingPlayerSetter && remainingPlayers.length > 0) {
-    // Find the first remaining player to promote to setter
-    const newSetter = remainingPlayers[0];
+  if (isLeavingPlayerSetter) {
+    await archiveCurrentRound(roomId, data);
 
-    // Add setter change messages
-    const finalGameHistory = [
-      ...newGameHistory,
-      `${newSetter.name} is now the setter`,
-      "Game reset to lobby (setter left)",
-    ];
+    if (remainingPlayers.length > 0) {
+      // Find the first remaining player to promote to setter
+      const newSetter = remainingPlayers[0];
 
-    // Create update with setter reassignment and game reset
-    await updateDoc(docRef, {
-      ...baseUpdate,
-      setterUid: newSetter.id,
-      [`players.${newSetter.id}.role`]: "setter",
-      gamePhase: "lobby",
-      secretWord: "",
-      revealedCount: 1,
-      clueGiverTurn: 0,
-      roundNumber: 1,
-      directGuessesLeft: 3,
-      currentReference: null,
-      winner: null,
-      gameHistory: finalGameHistory,
-    });
+      // Add setter change messages
+      const finalGameHistory = [
+        ...newGameHistory,
+        "Game reset to lobby (setter left)",
+        `${newSetter.name} is now the setter`,
+      ];
+
+      await updateDoc(docRef, {
+        ...baseUpdate,
+        setterUid: newSetter.id,
+        [`players.${newSetter.id}.role`]: "setter",
+        gamePhase: "lobby",
+        secretWord: "",
+        revealedCount: 1,
+        clueGiverTurn: 0,
+        roundNumber: 1,
+        directGuessesLeft: 3,
+        currentReference: null,
+        referenceState: {
+          order: [],
+          activeIndex: data.settings?.playMode === "round_robin" ? 0 : null,
+          itemsById: {},
+        },
+        winner: null,
+        gameHistory: finalGameHistory,
+      });
+    } else {
+      await updateDoc(docRef, baseUpdate);
+    }
   } else {
-    // Just remove the player without setter reassignment
     await updateDoc(docRef, baseUpdate);
   }
 };
@@ -331,84 +491,19 @@ export const setReference = async (
   referenceWord: string,
   clue: string
 ): Promise<void> => {
-  const docRef = doc(getGameRoomsCollection(), roomId);
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.data() as FirestoreGameRoom;
-
-  const player = data.players?.[clueGiverId];
-  if (!player) throw new Error("Clue giver not found");
-
-  const referenceWordUpper = referenceWord.toUpperCase();
-  const secretWord = data.secretWord;
-
-  // Check if this is a final round (reference word equals secret word)
-  const isFinal = referenceWordUpper === secretWord;
-
-  const historyMessage = isFinal
-    ? `${player.name}: "${clue}" [FINAL ROUND]`
-    : `${player.name}: "${clue}"`;
-
-  await updateDoc(docRef, {
-    currentReference: {
-      clueGiverId,
-      referenceWord: referenceWordUpper,
-      clue,
-      guesses: {},
-      setterAttempt: "",
-      isFinal,
-      timestamp: serverTimestamp(),
-    },
-    gameHistory: [...(data.gameHistory || []), historyMessage],
-    updatedAt: serverTimestamp(),
-  });
+  // Delegate to new createReference function - using the existing API
+  await createReference(roomId, clueGiverId, referenceWord, clue);
 };
 
 export const submitConnect = async (
   roomId: RoomId,
   playerId: PlayerId,
-  guess: string
+  connectWord: string,
+  refId?: string // Optional: specific reference to connect on (required for signull)
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
-  void playerId;
-  void guess;
-  void docRef;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await runTransaction(getDb(), async (transaction: any) => {
-    void transaction;
-    /**
-     * 1. Read the current room document.
-     * 2. Validate round is active, player exists, and is eligible to connect.
-     * 3. Append a guess entry (playerId, role, timestamp, guess string) to currentReference.connects array.
-     * 4. Run calculateReferenceResolution-style helper against updated state.
-     * 5. Apply resolution outcome (success/fail/setter block) to the document.
-     */
-
-    // Read current state inside transaction
-    const docSnap = await transaction.get(docRef);
-    if (!docSnap.exists()) throw new Error("Room not found");
-
-    const data = docSnap.data() as FirestoreGameRoom;
-    const { players, currentReference } = data;
-
-    // Validate that round is still active
-    if (!currentReference) {
-      throw new Error("ROUND_ENDED:No active reference");
-    }
-
-    const player = players?.[playerId];
-    if (!player) throw new Error("Player not found");
-
-    currentReference.connects = currentReference.connects || [];
-  });
-};
-
-export const submitGuess = async (
-  roomId: RoomId,
-  playerId: PlayerId,
-  guess: string
-): Promise<void> => {
-  const docRef = doc(getGameRoomsCollection(), roomId);
+  let targetRefId: string = "";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await runTransaction(getDb(), async (transaction: any) => {
@@ -417,42 +512,90 @@ export const submitGuess = async (
     if (!docSnap.exists()) throw new Error("Room not found");
 
     const data = docSnap.data() as FirestoreGameRoom;
-    const { players, currentReference } = data;
+    const playMode = data.settings?.playMode || "round_robin";
+    const refState = data.referenceState;
 
-    // Validate that round is still active
-    if (!currentReference) {
+    // Get player info to determine role
+    const player = data.players?.[playerId];
+    if (!player) throw new Error("Player not found");
+
+    const playerRole = player.role; // 'guesser' | 'setter'
+
+    // Determine target reference
+    if (playMode === "round_robin") {
+      // Use active reference
+      if (!refState || refState.activeIndex === null) {
+        throw new Error("No active reference");
+      }
+      targetRefId = refState.order[refState.activeIndex];
+    } else {
+      // signull mode - must provide refId
+      if (!refId) throw new Error("Reference ID required for signull mode");
+      targetRefId = refId;
+    }
+
+    const targetRef = refState?.itemsById[targetRefId];
+    if (!targetRef || targetRef.status !== "pending") {
       throw new Error("ROUND_ENDED:No active reference");
     }
 
-    const player = players?.[playerId];
-    if (!player) throw new Error("Player not found");
-
-    // Check if player already submitted a guess (idempotency)
-    if (currentReference.guesses?.[playerId]) {
-      // Already submitted, this is a duplicate - silently succeed
-      return;
+    // Check idempotency - only for guessers; allow setter to submit multiple attempts
+    if (playerRole === "guesser") {
+      const existingConnect = targetRef.connects?.find(
+        (c) => c.playerId === playerId
+      );
+      if (existingConnect) {
+        return; // Already submitted
+      }
     }
 
-    // Update the guess atomically
+    // Create new connect entry - use Date.now() for timestamp since serverTimestamp()
+    // cannot be used inside arrayUnion()
+    const connectEntry = {
+      playerId,
+      role: playerRole,
+      guess: connectWord.toUpperCase(),
+      timestamp: Date.now(),
+    };
+
+    // Create history entry with Date.now() as well
+    const historyEntry = {
+      id: `connect_${playerId}_${Date.now()}`,
+      message:
+        playerRole === "setter"
+          ? `${player.name} tried ${connectWord.toUpperCase()}`
+          : `${player.name} raised a connect!`,
+      timestamp: Date.now(),
+      type: "info",
+      alignment: "right",
+      playerId: playerId,
+    };
+
+    // Update connect in array using arrayUnion
     transaction.update(docRef, {
-      [`currentReference.guesses.${playerId}`]: guess.toLowerCase(),
-      gameHistory: [
-        ...(data.gameHistory || []),
-        {
-          id: `guess_${playerId}_${Date.now()}`,
-          message: `${player.name} raised a connect!`,
-          timestamp: new Date(),
-          type: "info",
-          alignment: "right",
-          playerId: playerId,
-        },
-      ],
+      [`referenceState.itemsById.${targetRefId}.connects`]:
+        arrayUnion(connectEntry),
+      // Also update currentReference for backward compat
+      ...(playerRole === "guesser"
+        ? {
+            [`currentReference.guesses.${playerId}`]: connectWord.toLowerCase(),
+            [`referenceState.itemsById.${targetRefId}.guesses.${playerId}`]:
+              connectWord.toLowerCase(),
+          }
+        : {
+            [`currentReference.setterAttempt`]: connectWord.toLowerCase(),
+            [`referenceState.itemsById.${targetRefId}.setterAttempt`]:
+              connectWord.toLowerCase(),
+          }),
+      gameHistory: arrayUnion(historyEntry),
       updatedAt: serverTimestamp(),
     });
   });
 
-  // Trigger resolution check after successful transaction
-  await checkReferenceResolution(roomId);
+  // Trigger resolution check
+  if (targetRefId) {
+    await checkReferenceResolution(roomId, targetRefId);
+  }
 };
 
 export const submitDirectGuess = async (
@@ -672,7 +815,9 @@ export const volunteerAsClueGiver = async (
 
   await updateDoc(docRef, {
     clueGiverTurn: volunteerIndex,
-    currentReference: null, // Clear any existing reference
+    // Don't need to clear entire state, just set currentReference to null
+    // referenceState will handle active references properly
+    currentReference: null,
     gameHistory: [...(gameState.gameHistory || []), historyMessage],
     updatedAt: serverTimestamp(),
   });
@@ -680,9 +825,23 @@ export const volunteerAsClueGiver = async (
 
 export const startGameRound = async (roomId: RoomId): Promise<void> => {
   const gameRef = doc(getGameRoomsCollection(), roomId);
+  const docSnap = await getDoc(gameRef);
+
+  if (!docSnap.exists()) {
+    throw new Error("Game room not found");
+  }
+
+  const data = docSnap.data() as FirestoreGameRoom;
+  const playMode = data.settings?.playMode || "round_robin";
 
   await updateDoc(gameRef, {
     gamePhase: "setting_word",
+    // Initialize referenceState if not present
+    referenceState: data.referenceState || {
+      order: [],
+      activeIndex: playMode === "round_robin" ? 0 : null,
+      itemsById: {},
+    },
     updatedAt: serverTimestamp(),
   });
 };
@@ -734,6 +893,105 @@ export const generateRoomCode = (): string => {
   result += numbers.charAt(Math.floor(Math.random() * numbers.length));
 
   return result;
+};
+
+/**
+ * Generate a unique reference ID
+ * Format: ref_<timestamp>_<random>
+ */
+export const generateReferenceId = (): string => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 9);
+  return `ref_${timestamp}_${random}`;
+};
+
+/**
+ * Atomically create a new reference entry in both modes
+ * @param roomId - The room ID
+ * @param clueGiverId - The player ID of the clue giver
+ * @param referenceWord - The reference word
+ * @param clue - The clue text
+ * @returns The generated reference ID
+ */
+export const createReference = async (
+  roomId: RoomId,
+  clueGiverId: PlayerId,
+  referenceWord: string,
+  clue: string
+): Promise<string> => {
+  const docRef = doc(getGameRoomsCollection(), roomId);
+  const refId = generateReferenceId();
+
+  await runTransaction(getDb(), async (transaction) => {
+    const docSnap = await transaction.get(docRef);
+    if (!docSnap.exists()) throw new Error("Room not found");
+
+    const data = docSnap.data() as FirestoreGameRoom;
+    const player = data.players?.[clueGiverId];
+    if (!player) throw new Error("Clue giver not found");
+
+    const referenceWordUpper = referenceWord.toUpperCase();
+    const secretWord = data.secretWord;
+    const isFinal = referenceWordUpper === secretWord;
+    const playMode = data.settings?.playMode || "round_robin";
+
+    // Get current reference state
+    const currentRefState = data.referenceState || {
+      order: [],
+      activeIndex: playMode === "round_robin" ? 0 : null,
+      itemsById: {},
+    };
+
+    // Create new reference entry
+    const newEntry: FirestoreReferenceEntry = {
+      id: refId,
+      clueGiverId,
+      referenceWord: referenceWordUpper,
+      clue,
+      connects: [], // New connects array for Phase 2
+      guesses: {}, // Keep for backward compatibility during Phase 2-3
+      setterAttempt: "", // Keep for backward compatibility during Phase 2-3
+      isFinal,
+      timestamp: serverTimestamp(),
+      status: "pending",
+    };
+
+    // Calculate new activeIndex for round_robin
+    const newActiveIndex =
+      playMode === "round_robin"
+        ? currentRefState.order.length // Points to the newly added reference
+        : null;
+
+    const historyMessage = isFinal
+      ? `${player.name}: "${clue}" [FINAL ROUND]`
+      : `${player.name}: "${clue}"`;
+
+    // Transactional update using deep paths
+    transaction.update(docRef, {
+      // Append to order array
+      "referenceState.order": arrayUnion(refId),
+      // Set the entry in itemsById
+      [`referenceState.itemsById.${refId}`]: newEntry,
+      // Update activeIndex (for round_robin only, null for signull)
+      "referenceState.activeIndex": newActiveIndex,
+      // Keep currentReference in sync for backward compatibility
+      currentReference: {
+        id: refId,
+        clueGiverId,
+        referenceWord: referenceWordUpper,
+        clue,
+        guesses: {},
+        connects: [],
+        setterAttempt: "",
+        isFinal,
+        timestamp: serverTimestamp(),
+      },
+      gameHistory: arrayUnion(historyMessage),
+      updatedAt: serverTimestamp(),
+    });
+  });
+
+  return refId;
 };
 
 export const submitSetterGuess = async (
@@ -800,6 +1058,8 @@ export const returnToLobby = async (roomId: RoomId): Promise<void> => {
 
   const data = docSnap.data() as FirestoreGameRoom;
 
+  await archiveCurrentRound(roomId, data);
+
   // Reset game state back to lobby
   await updateDoc(docRef, {
     gamePhase: "lobby",
@@ -809,6 +1069,11 @@ export const returnToLobby = async (roomId: RoomId): Promise<void> => {
     roundNumber: (data.roundNumber || 1) + 1,
     directGuessesLeft: 3,
     currentReference: null,
+    referenceState: {
+      order: [],
+      activeIndex: data.settings?.playMode === "round_robin" ? 0 : null,
+      itemsById: {},
+    },
     winner: null,
     gameHistory: [
       ...(data.gameHistory || []),
@@ -818,236 +1083,310 @@ export const returnToLobby = async (roomId: RoomId): Promise<void> => {
   });
 };
 
+// ==================== Reference Resolution Helpers ====================
+
+/**
+ * Get the active reference for round_robin mode
+ * Returns null if no active reference
+ */
+const getActiveReferenceRR = (
+  refState: FirestoreReferenceState | undefined
+): FirestoreReferenceEntry | null => {
+  if (!refState || refState.activeIndex === null) return null;
+
+  const refId = refState.order[refState.activeIndex];
+  if (!refId) return null;
+
+  const entry = refState.itemsById[refId];
+  return entry && entry.status === "pending" ? entry : null;
+};
+
+/**
+ * Get a specific reference by ID (used in signull mode)
+ */
+const getReferenceById = (
+  refState: FirestoreReferenceState | undefined,
+  refId: string
+): FirestoreReferenceEntry | null => {
+  if (!refState) return null;
+  return refState.itemsById[refId] || null;
+};
+
+/**
+ * Calculate next activeIndex for round_robin after resolution
+ */
+const advanceRoundRobinIndex = (
+  currentIndex: number,
+  guesserCount: number
+): number => {
+  return guesserCount > 0 ? (currentIndex + 1) % guesserCount : 0;
+};
+
+interface ResolutionOutcome {
+  type: "success" | "failed" | "pending";
+  reason: string;
+  newRevealedCount?: number;
+  messages: (
+    | string
+    | {
+        id: string;
+        message: string;
+        timestamp: Date | Timestamp | FieldValue;
+        type?: "info" | "success" | "warning" | "error";
+        alignment?: "left" | "center" | "right";
+        playerId?: string;
+      }
+  )[];
+  isGameEnd?: boolean;
+  winner?: GameWinner;
+}
+
+/**
+ * Calculate resolution outcome based on connects
+ */
+const calculateResolution = (
+  targetRef: FirestoreReferenceEntry,
+  data: FirestoreGameRoom
+): ResolutionOutcome => {
+  const connectsRequired = data.settings?.connectsRequired || 2;
+  const connects = targetRef.connects || [];
+  const referenceWord = targetRef.referenceWord;
+  const secretWord = data.secretWord;
+
+  // Sort connects by timestamp
+  const sortedConnects = [...connects].sort((a, b) => {
+    const timeA = a.timestamp instanceof Timestamp ? a.timestamp.toMillis() : 0;
+    const timeB = b.timestamp instanceof Timestamp ? b.timestamp.toMillis() : 0;
+    return timeA - timeB;
+  });
+
+  let correctConnectsCount = 0;
+
+  // Check each connect
+  for (const connect of sortedConnects) {
+    // Setter block: If setter guesses the reference word correctly before the team
+    if (
+      connect.role === "setter" &&
+      connect.guess.toLowerCase() === referenceWord.toLowerCase()
+    ) {
+      return {
+        type: "failed",
+        reason: `Setter guessed the reference word correctly before the team`,
+        messages: [
+          {
+            id: `setter_block_${Date.now()}`,
+            message: `Setter blocked with '${referenceWord}' → Round failed`,
+            timestamp: new Date(),
+            type: "error",
+            alignment: "center",
+          },
+        ],
+      };
+    } else if (connect.role === "guesser") {
+      // Count correct guesser connects
+      if (connect.guess.toLowerCase() === referenceWord.toLowerCase()) {
+        correctConnectsCount++;
+      }
+    }
+  }
+
+  // Get total active guessers (excluding clue giver)
+  const guesserIds = Object.keys(data.players || {}).filter(
+    (id) => data.players?.[id]?.role === "guesser"
+  );
+  const activeGuesserIds = guesserIds.filter(
+    (id) => id !== targetRef.clueGiverId
+  );
+  const totalActiveGuessers = activeGuesserIds.length;
+
+  // For final rounds, any correct connect wins
+  if (targetRef.isFinal && correctConnectsCount > 0) {
+    return {
+      type: "success",
+      reason: `${correctConnectsCount} Connects were correct. Reference Word: ${referenceWord}`,
+      newRevealedCount: secretWord.length,
+      isGameEnd: true,
+      winner: "guessers",
+      messages: [
+        {
+          id: `final_round_success_${Date.now()}`,
+          message: `Final round hit! Guessers win!`,
+          timestamp: new Date(),
+          type: "success",
+          alignment: "center",
+        },
+      ],
+    };
+  }
+
+  // Check if required connects met
+  if (correctConnectsCount >= connectsRequired) {
+    const newRevealedCount = (data.revealedCount || 1) + 1;
+    const isGameEnd = newRevealedCount >= secretWord.length;
+
+    return {
+      type: "success",
+      reason: `${correctConnectsCount} correctly connected with Reference Word: ${referenceWord}`,
+      newRevealedCount,
+      isGameEnd,
+      winner: isGameEnd ? "guessers" : undefined,
+      messages: [
+        {
+          id: `all_connections_in_${Date.now()}`,
+          message: "All connections in! Resolving in 3...2...1!",
+          timestamp: new Date(),
+          type: "info",
+          alignment: "center",
+        },
+        {
+          id: `connect_success_${Date.now()}`,
+          message: isGameEnd
+            ? `Connected on "${referenceWord}" → Word complete! Guessers win!`
+            : `Connected on "${referenceWord}" → Revealed '${secretWord[data.revealedCount || 1]}' (${correctConnectsCount}/${totalActiveGuessers})`,
+          timestamp: new Date(),
+          type: "success",
+          alignment: "center",
+        },
+      ],
+    };
+  }
+
+  // Count total guesser connects
+  const totalGuesserConnectsCount = connects.filter(
+    (connect) => connect.role === "guesser"
+  ).length;
+
+  // All guessers have connected but not enough correct
+  if (totalGuesserConnectsCount >= totalActiveGuessers) {
+    return {
+      type: "failed",
+      reason: "Required number of correct connects weren't made",
+      messages: [
+        {
+          id: `all_connections_in_${Date.now()}`,
+          message: "All connections in! Resolving in 3...2...1!",
+          timestamp: new Date(),
+          type: "info",
+          alignment: "center",
+        },
+        {
+          id: `connect_failed_${Date.now()}`,
+          message: `No consensus (${totalGuesserConnectsCount}/${totalActiveGuessers} submitted, ${connectsRequired} needed)`,
+          timestamp: new Date(),
+          type: "error",
+          alignment: "center",
+        },
+      ],
+    };
+  }
+
+  // Still waiting for more connects
+  return {
+    type: "pending",
+    reason: `Just ${connectsRequired - correctConnectsCount} more required!`,
+    messages: [],
+  };
+};
+
 export const checkReferenceResolution = async (
-  roomId: RoomId
+  roomId: RoomId,
+  refId?: string // Optional: specific reference to resolve (for signull)
 ): Promise<void> => {
   const docRef = doc(getGameRoomsCollection(), roomId);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await runTransaction(getDb(), async (transaction: any) => {
-    // Read current state inside transaction
+    // 1. Read document
     const docSnap = await transaction.get(docRef);
     if (!docSnap.exists()) return;
 
     const data = docSnap.data() as FirestoreGameRoom;
-    const { currentReference, players, secretWord, clueGiverTurn } = data;
+    const playMode = data.settings?.playMode || "round_robin";
+    const refState = data.referenceState;
 
-    // Check if reference still exists (may have been resolved already)
-    if (!currentReference) return;
+    // 2. Get target reference based on mode
+    let targetRef: FirestoreReferenceEntry | null;
+    let targetRefId: string | null;
 
-    const guesserIds = Object.keys(players || {})
-      .filter((id) => players?.[id]?.role === "guesser")
-      .sort();
-    const nextTurn =
-      guesserIds.length > 0
-        ? ((clueGiverTurn || 0) + 1) % guesserIds.length
-        : 0;
-    const setterName =
-      Object.values(players || {}).find((p) => p.role === "setter")?.name ||
-      "Setter";
-
-    // Handle final rounds specially
-    if (currentReference.isFinal) {
-      const activeGuesserIds = guesserIds.filter(
-        (id) => id !== currentReference.clueGiverId
-      );
-      if (activeGuesserIds.length === 0) return;
-
-      const guesses = currentReference.guesses || {};
-      const guessedCount = activeGuesserIds.filter((id) => guesses[id]).length;
-      const majorityPercentage = data.thresholdMajority || 51;
-      const majorityThreshold = Math.ceil(
-        activeGuesserIds.length * (majorityPercentage / 100)
-      );
-
-      if (guessedCount >= majorityThreshold) {
-        // In climactic rounds, guessers always win regardless of their actual guesses
-        transaction.update(docRef, {
-          gamePhase: "ended",
-          winner: "guessers",
-          revealedCount: secretWord.length, // Reveal the entire word
-          gameHistory: [
-            ...(data.gameHistory || []),
-            "Final round hit! Guessers win!",
-          ],
-          updatedAt: serverTimestamp(),
-        });
-      }
-      return; // Exit early for climactic rounds
+    if (playMode === "round_robin") {
+      targetRef = getActiveReferenceRR(refState);
+      targetRefId = targetRef?.id || null;
+    } else {
+      // signull mode - must provide refId
+      if (!refId) return;
+      targetRef = getReferenceById(refState, refId);
+      targetRefId = refId;
     }
 
-    // Normal (non-climactic) resolution logic
-    if (
-      currentReference.setterAttempt &&
-      currentReference.setterAttempt ===
-        currentReference.referenceWord.toLowerCase()
-    ) {
-      transaction.update(docRef, {
-        currentReference: null,
-        clueGiverTurn: nextTurn,
-        gameHistory: [
-          ...(data.gameHistory || []),
-          `${setterName} blocked with '${currentReference.referenceWord}' → Round failed`,
-        ],
-        updatedAt: serverTimestamp(),
-      });
+    if (!targetRef || !targetRefId) {
       return;
     }
 
-    const activeGuesserIds = guesserIds.filter(
-      (id) => id !== currentReference.clueGiverId
-    );
-    if (activeGuesserIds.length === 0) return;
+    // 3. Check resolution conditions (majority, setter block, etc.)
+    const resolutionOutcome = calculateResolution(targetRef, data);
 
-    const guesses = currentReference.guesses || {};
-    const guessedCount = activeGuesserIds.filter((id) => guesses[id]).length;
-    // Prefer absolute from settings; fallback to legacy percent
-    const rawAbs2 = data.settings?.majorityThreshold;
-    const legacyPercent2 = data.thresholdMajority;
-    const interpretedThreshold2 =
-      typeof rawAbs2 === "number"
-        ? rawAbs2
-        : typeof legacyPercent2 === "number"
-          ? Math.ceil(
-              Math.max(activeGuesserIds.length, 1) * (legacyPercent2 / 100)
-            )
-          : 2;
-    const majorityThreshold = Math.max(
-      1,
-      Math.min(interpretedThreshold2, Math.max(activeGuesserIds.length, 1))
-    );
-
-    // Group guesses by their value to find matches
-    const guessGroups: Record<string, string[]> = {};
-    activeGuesserIds.forEach((id) => {
-      const guess = guesses[id];
-      if (guess) {
-        if (!guessGroups[guess]) {
-          guessGroups[guess] = [];
-        }
-        guessGroups[guess].push(id);
-      }
-    });
-
-    // Find the largest group of matching guesses
-    const largestGroup = Object.values(guessGroups).reduce(
-      (largest, current) =>
-        current.length > largest.length ? current : largest,
-      []
-    );
-
-    // Check if the largest group meets the threshold and matches the reference word
-    if (largestGroup.length >= majorityThreshold) {
-      const matchingGuess = Object.keys(guessGroups).find(
-        (guess) => guessGroups[guess] === largestGroup
+    // 4. Update based on outcome
+    if (resolutionOutcome.type === "success") {
+      // Get guesser count for round robin advancement
+      const guesserIds = Object.keys(data.players || {}).filter(
+        (id) => data.players?.[id]?.role === "guesser"
       );
+      const guesserCount = guesserIds.length;
 
-      if (
-        matchingGuess &&
-        matchingGuess.toLowerCase() ===
-          currentReference.referenceWord.toLowerCase()
-      ) {
-        const newRevealedCount = (data.revealedCount || 1) + 1;
-        const nextLetter = secretWord[data.revealedCount || 1];
+      // Mark as resolved, update game state
+      transaction.update(docRef, {
+        [`referenceState.itemsById.${targetRefId}.status`]: "resolved",
+        [`referenceState.itemsById.${targetRefId}.resolvedAt`]:
+          serverTimestamp(),
+        revealedCount: resolutionOutcome.newRevealedCount,
+        "referenceState.activeIndex":
+          playMode === "round_robin" &&
+          refState?.activeIndex !== null &&
+          refState
+            ? advanceRoundRobinIndex(refState.activeIndex, guesserCount)
+            : null,
+        // Clear currentReference for backward compat
+        currentReference: null,
+        gameHistory: arrayUnion(...resolutionOutcome.messages),
+        // Check for game end conditions
+        gamePhase: resolutionOutcome.isGameEnd ? "ended" : data.gamePhase,
+        winner: resolutionOutcome.winner || data.winner,
+        // Advance clue giver turn for round robin
+        clueGiverTurn:
+          playMode === "round_robin"
+            ? ((data.clueGiverTurn || 0) + 1) % Math.max(guesserCount, 1)
+            : data.clueGiverTurn,
+        updatedAt: serverTimestamp(),
+      });
+    } else if (resolutionOutcome.type === "failed") {
+      // Get guesser count for round robin advancement
+      const guesserIds = Object.keys(data.players || {}).filter(
+        (id) => data.players?.[id]?.role === "guesser"
+      );
+      const guesserCount = guesserIds.length;
 
-        if (newRevealedCount >= secretWord.length) {
-          // All letters revealed - guessers win!
-          transaction.update(docRef, {
-            gamePhase: "ended",
-            winner: "guessers",
-            revealedCount: secretWord.length,
-            gameHistory: [
-              ...(data.gameHistory || []),
-              {
-                id: `all_connections_in_${Date.now()}`,
-                message: "All connections in! Resolving in 3...2...1!",
-                timestamp: new Date(),
-                type: "info",
-                alignment: "center",
-              },
-              {
-                id: `connect_success_${Date.now()}`,
-                message: `Connected on "${currentReference.referenceWord}" → Word complete! Guessers win!`,
-                timestamp: new Date(),
-                type: "success",
-                alignment: "center",
-              },
-            ],
-            updatedAt: serverTimestamp(),
-          });
-        } else {
-          // Reveal next letter
-          transaction.update(docRef, {
-            revealedCount: newRevealedCount,
-            currentReference: null,
-            clueGiverTurn: nextTurn,
-            gameHistory: [
-              ...(data.gameHistory || []),
-              {
-                id: `all_connections_in_${Date.now()}`,
-                message: "All connections in! Resolving in 3...2...1!",
-                timestamp: new Date(),
-                type: "info",
-                alignment: "center",
-              },
-              {
-                id: `connect_success_${Date.now()}`,
-                message: `Connected on "${currentReference.referenceWord}" → Revealed '${nextLetter}' (${largestGroup.length}/${activeGuesserIds.length})`,
-                timestamp: new Date(),
-                type: "success",
-                alignment: "center",
-              },
-            ],
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } else {
-        // Majority reached but guess was incorrect - fail immediately
-        const failureMessage = `Majority wrong (${largestGroup.length}/${activeGuesserIds.length}) → Round failed`;
-
-        transaction.update(docRef, {
-          currentReference: null,
-          clueGiverTurn: nextTurn,
-          gameHistory: [
-            ...(data.gameHistory || []),
-            {
-              id: `all_connections_in_${Date.now()}`,
-              message: "All connections in! Resolving in 3...2...1!",
-              timestamp: new Date(),
-              type: "info",
-              alignment: "center",
-            },
-            failureMessage,
-          ],
-          updatedAt: serverTimestamp(),
-        });
-      }
-    } else {
-      // Check if all active guessers have submitted their guesses
-      if (guessedCount >= activeGuesserIds.length) {
-        // All guesses received but no majority consensus - fail
-        const failureMessage = `No consensus (${guessedCount}/${activeGuesserIds.length} submitted, ${majorityThreshold} needed)`;
-
-        transaction.update(docRef, {
-          currentReference: null,
-          clueGiverTurn: nextTurn,
-          gameHistory: [
-            ...(data.gameHistory || []),
-            {
-              id: `all_connections_in_${Date.now()}`,
-              message: "All connections in! Resolving in 3...2...1!",
-              timestamp: new Date(),
-              type: "info",
-              alignment: "center",
-            },
-            failureMessage,
-          ],
-          updatedAt: serverTimestamp(),
-        });
-      }
-      // If not all guesses received yet, wait for remaining guesses
-      // The UI will show progress: "Connection received" from submitGuess function
+      // Mark as failed, advance turn
+      transaction.update(docRef, {
+        [`referenceState.itemsById.${targetRefId}.status`]: "failed",
+        [`referenceState.itemsById.${targetRefId}.resolvedAt`]:
+          serverTimestamp(),
+        "referenceState.activeIndex":
+          playMode === "round_robin" &&
+          refState?.activeIndex !== null &&
+          refState
+            ? advanceRoundRobinIndex(refState.activeIndex, guesserCount)
+            : null,
+        currentReference: null,
+        gameHistory: arrayUnion(...resolutionOutcome.messages),
+        // Advance clue giver turn for round robin
+        clueGiverTurn:
+          playMode === "round_robin"
+            ? ((data.clueGiverTurn || 0) + 1) % Math.max(guesserCount, 1)
+            : data.clueGiverTurn,
+        updatedAt: serverTimestamp(),
+      });
     }
+    // If pending, do nothing - wait for more connects
   });
 };
 

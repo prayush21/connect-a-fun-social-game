@@ -13,7 +13,7 @@ export {
   returnToLobby,
   setSecretWord,
   setReference,
-  submitGuess,
+  submitConnect,
   submitDirectGuess,
   submitSetterGuess,
   updateGameSettings,

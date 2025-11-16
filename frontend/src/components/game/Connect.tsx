@@ -64,8 +64,10 @@ export const Connect = memo<ConnectProps>(
     }
 
     // If guesser has already submitted
-    const hasGuesserSubmitted =
-      currentPlayerId in (currentReference.guesses || {});
+    const submittedConnect = currentReference.connects?.find(
+      (connect) => connect.playerId === currentPlayerId
+    );
+    const hasGuesserSubmitted = !!submittedConnect;
 
     if (hasGuesserSubmitted) {
       return (
@@ -77,7 +79,7 @@ export const Connect = memo<ConnectProps>(
             <p className="mt-2 text-sm text-yellow-700">
               Your guess:{" "}
               <span className="font-mono font-bold">
-                {currentReference.guesses[currentPlayerId]}
+                {submittedConnect.guess}
               </span>
             </p>
             <p className="mt-1 text-xs text-yellow-600">

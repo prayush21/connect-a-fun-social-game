@@ -8,6 +8,7 @@ import { PlayerList } from "@/components/lobby/PlayerList";
 import { RoleSelectionModal } from "@/components/lobby/RoleSelectionModal";
 import { ThresholdControl } from "@/components/lobby/ThresholdControl";
 import { ConnectsRequiredControl } from "@/components/lobby/ConnectsRequiredControl";
+import { PlayModeToggle } from "@/components/lobby/PlayModeToggle";
 import { GameControls } from "@/components/lobby/GameControls";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ErrorToast } from "@/components/error-toast";
@@ -67,6 +68,18 @@ export default function LobbyRoute() {
     await updateGameSettings({
       ...gameState.settings,
       connectsRequired: newConnectsRequired,
+    });
+  };
+
+  // Handle play mode change
+  const handlePlayModeChange = async (
+    newPlayMode: "round_robin" | "signull"
+  ) => {
+    if (!gameState) return;
+
+    await updateGameSettings({
+      ...gameState.settings,
+      playMode: newPlayMode,
     });
   };
 
@@ -179,6 +192,13 @@ export default function LobbyRoute() {
             />
           );
         })()}
+
+        {/* Play Mode Toggle */}
+        <PlayModeToggle
+          playMode={gameState.settings.playMode || "round_robin"}
+          onChange={handlePlayModeChange}
+          isWordSetter={currentPlayer?.role === "setter"}
+        />
 
         {/* Game Controls */}
         <GameControls

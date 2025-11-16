@@ -35,7 +35,7 @@ export default function PlayRoute() {
     setWord,
     setReference,
     submitSetterGuess,
-    submitGuess,
+    submitConnect,
     submitDirectGuess,
     volunteerAsClueGiver,
     leaveRoom,
@@ -156,7 +156,7 @@ export default function PlayRoute() {
   // Handle connect/sabotage
   const handleConnect = async (guess: string) => {
     try {
-      await submitGuess(guess);
+      await submitConnect(guess);
     } catch (err) {
       console.error("Failed to connect:", err);
       throw err;
@@ -165,7 +165,7 @@ export default function PlayRoute() {
 
   const handleSabotage = async (guess: string) => {
     try {
-      await submitSetterGuess(guess);
+      await submitConnect(guess);
     } catch (err) {
       console.error("Failed to sabotage:", err);
       throw err;
@@ -241,7 +241,12 @@ export default function PlayRoute() {
               </span>
             </p>
           </div>
-          <Button className="bg-primary-500 text-white hover:bg-primary-600" onClick={handleReturnToLobby} size="lg" disabled={isLeaving}>
+          <Button
+            className="bg-primary-500 text-white hover:bg-primary-600"
+            onClick={handleReturnToLobby}
+            size="lg"
+            disabled={isLeaving}
+          >
             {isLeaving ? "Returning..." : "Return to Lobby"}
           </Button>
         </div>
@@ -281,7 +286,7 @@ export default function PlayRoute() {
                 directGuessesLeft={gameState.directGuessesLeft}
                 revealedPrefix={revealedPrefix}
                 secretWordLength={gameState.secretWord.length}
-                onSubmitGuess={handleDirectGuess}
+                onSubmitDirectGuess={handleDirectGuess}
                 disabled={!isConnected}
               />
             )}
