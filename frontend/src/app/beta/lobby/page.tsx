@@ -55,6 +55,7 @@ export default function BetaLobbyPage() {
     updateGameSettings,
     removePlayerFromRoom,
     changeSetter,
+    startGame,
   } = useStore();
 
   // Extract game state properties
@@ -171,6 +172,18 @@ export default function BetaLobbyPage() {
       setShowSetterDropdown(false);
     } catch (err) {
       console.error("Failed to change setter:", err);
+    }
+  };
+
+  // Handle start game
+  const handleStartGame = async () => {
+    if (!gameState) return;
+
+    try {
+      await startGame();
+      router.push("/beta/play");
+    } catch (err) {
+      console.error("Failed to start game:", err);
     }
   };
 
@@ -384,6 +397,7 @@ export default function BetaLobbyPage() {
         {isSetter && (
           <div className="fixed bottom-8 left-1/2 z-10 w-full max-w-md -translate-x-1/2 px-4">
             <Button
+              onClick={handleStartGame}
               disabled={!canStartGame}
               className={`w-full rounded-full py-6 text-lg font-semibold shadow-2xl transition-all ${
                 canStartGame
