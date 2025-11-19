@@ -11,6 +11,13 @@ export interface SignullCardProps {
   requiredConnects: number;
   totalActiveGuessers?: number;
   message: string;
+  onClick?: () => void;
+  messageHistory?: Array<{
+    id: string;
+    username: string;
+    message: string;
+    timestamp?: string;
+  }>;
 }
 
 /**
@@ -25,9 +32,14 @@ export function SignullCard({
   requiredConnects,
   message,
   totalActiveGuessers,
+  onClick,
+  messageHistory,
 }: SignullCardProps) {
   return (
-    <div className="flex h-full w-full flex-col rounded-3xl bg-white">
+    <div
+      className="flex h-full w-full cursor-pointer flex-col rounded-3xl bg-white"
+      onClick={onClick}
+    >
       {/* Header: Username and Progress */}
       <div className="mb-4 flex items-center justify-between">
         {/* Username - Left aligned */}
@@ -39,7 +51,7 @@ export function SignullCard({
         <div className="flex items-center gap-2">
           {/* Circular Progress */}
           <CircularProgress
-            connectsReceived={receivedConnects}
+            connectsReceived={3}
             connectsRequired={requiredConnects}
           />
 

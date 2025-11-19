@@ -27,8 +27,8 @@ export const LetterBlocks = ({
 
   // Dynamic sizing based on word length
   const blockSize = Math.max(24, Math.min(48, 300 / wordLength));
-  const fontSize = blockSize * 0.5;
-  const gap = Math.max(4, Math.min(12, 120 / wordLength));
+  const fontSize = blockSize * 0.8;
+  const gap = Math.min(4, Math.min(12, 120 / wordLength));
 
   // Direct guess state
   const [guessInput, setGuessInput] = useState<string[]>(
@@ -203,8 +203,8 @@ export const LetterBlocks = ({
                 style={{
                   width: `${blockSize}px`,
                   height: `${blockSize}px`,
-                  minWidth: `${Math.max(blockSize, 44)}px`, // Ensure touch targets
-                  minHeight: `${Math.max(blockSize, 44)}px`,
+                  minWidth: `${Math.max(blockSize, 28)}px`, // Ensure touch targets
+                  minHeight: `${Math.max(blockSize, 42)}px`,
                 }}
               >
                 {isDirectGuessMode && isEditable ? (
