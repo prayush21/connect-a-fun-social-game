@@ -3,6 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { CardContainer } from "@/components/beta/cards/CardContainer";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
+import {
+  WaitingCard,
+  EnterSecretWordCard,
+  SendASignullCard,
+  SignullCard,
+} from "@/components/beta/cards";
+import { LetterBlocks, RoundButton, RoundButtonIcon } from "@/components/beta";
 import { AnimatePresence, motion } from "framer-motion";
 
 /**
@@ -20,10 +27,12 @@ export default function BetaPlayPage() {
   const [roomCode] = useState("ABCD");
   const [notification, setNotification] = useState<string | null>(null);
   const [word] = useState("OXYGEN");
-  const [revealedLetters] = useState([0, 1, 2]); // O, X, F revealed
+  const [revealedCount] = useState(3); // First 3 letters revealed (O, X, Y)
   const [isWordSet] = useState(true); // Controls letter block visibility
   const [inputValue, setInputValue] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
+  const [directGuessesLeft] = useState(3); // Number of direct guesses remaining
 
   // Refs for scroll control
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,9 +41,19 @@ export default function BetaPlayPage() {
 
   // Card stack state
   const [cards, setCards] = useState([
-    { id: 1, title: "Card 1", content: "Enter the Secret Word" },
-    { id: 2, title: "Card 2", content: "Waiting for players..." },
-    { id: 3, title: "Card 3", content: "Make your guess" },
+    { id: 2, type: "enter-secret" as const },
+    { id: 3, type: "send-signull" as const },
+    {
+      id: 4,
+      type: "signull" as const,
+      username: "DUMBFOX",
+      receivedConnects: 2,
+      requiredConnects: 3,
+      totalActiveGuessers: 5,
+      message:
+        "What do you call a three humped camel? Quick! What do you call a three humped camel? ",
+    },
+    { id: 1, type: "waiting" as const },
   ]);
 
   // Handle input focus - scroll to hide just the header
@@ -63,11 +82,20 @@ export default function BetaPlayPage() {
     showNotification("Card swiped!");
   };
 
-  // Calculate dynamic letter block sizing
-  const wordLength = word.length;
-  const blockSize = Math.max(24, Math.min(48, 300 / wordLength));
-  const fontSize = blockSize * 0.5;
-  const gap = Math.max(4, Math.min(12, 120 / wordLength));
+  // Handle direct guess
+  const handleDirectGuessClick = () => {
+    setIsDirectGuessMode(true);
+  };
+
+  const handleDirectGuessSubmit = (guess: string) => {
+    showNotification(`Direct guess: ${guess}`);
+    setIsDirectGuessMode(false);
+    // TODO: Implement actual guess submission logic
+  };
+
+  const handleDirectGuessCancel = () => {
+    setIsDirectGuessMode(false);
+  };
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-neutral-200 p-0 md:p-4">
@@ -76,20 +104,12 @@ export default function BetaPlayPage() {
         {/* SECTION 1: Top Header Bar */}
         <header
           ref={headerRef}
-          className="sticky top-0 z-50 flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2"
+          className={`sticky top-0 z-50 flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Left Arrow Button */}
-          <button
-            onClick={() => showNotification("Navigate back")}
-            className="flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white p-2 transition-all hover:bg-neutral-50 active:scale-95"
-          >
-            <span>
-              <svg
-                className="h-5 w-5 text-black"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+          <RoundButton size="md" onClick={() => showNotification("Room Info")}>
+            <RoundButtonIcon size="md">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -97,22 +117,32 @@ export default function BetaPlayPage() {
                   d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-            </span>
-          </button>
+            </RoundButtonIcon>
+          </RoundButton>
 
-          {/* Right Arrow Button */}
-          <button
-            onClick={() => showNotification("History feature coming soon!")}
-            className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-black bg-white transition-all hover:bg-neutral-50 active:scale-95"
-          >
-            <svg
-              className="h-6 w-6"
-              viewBox="0 -960 960 960"
-              fill="currentColor"
+          {/* Direct Guess Button / Counter */}
+          {isDirectGuessMode ? (
+            // Show guesses counter during direct guess mode (not blurred)
+            <div className="absolute right-4 top-2 z-[60] flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-black bg-white">
+              <span className="text-lg font-bold text-black">
+                {directGuessesLeft}
+              </span>
+            </div>
+          ) : (
+            // Show direct guess button normally
+            <RoundButton
+              size="md"
+              onClick={handleDirectGuessClick}
+              disabled={isDirectGuessMode}
+              title="Direct Guess"
             >
-              <path d="M680-320v-360H320v-80h440v440h-80ZM480-120v-360H120v-80h440v440h-80Z" />
-            </svg>
-          </button>
+              <RoundButtonIcon size="md">
+                <svg viewBox="0 -960 960 960" fill="currentColor">
+                  <path d="M680-320v-360H320v-80h440v440h-80ZM480-120v-360H120v-80h440v440h-80Z" />
+                </svg>
+              </RoundButtonIcon>
+            </RoundButton>
+          )}
         </header>
 
         {/* SECTION 2: Notification Area - Reserved Space */}
@@ -134,43 +164,16 @@ export default function BetaPlayPage() {
         </div>
 
         {/* SECTION 3: Letter Blocks Display */}
-        <AnimatePresence>
-          {isWordSet && (
-            <motion.div
-              ref={letterBlocksRef}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, staggerChildren: 0.05 }}
-              className="my-4 flex items-center justify-center px-4"
-            >
-              <div
-                className="flex items-center justify-center"
-                style={{ gap: `${gap}px` }}
-              >
-                {word.split("").map((letter, index) => {
-                  const isRevealed = revealedLetters.includes(index);
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center justify-center border-2 border-black bg-white font-bold"
-                      style={{
-                        width: `${blockSize}px`,
-                        height: `${blockSize}px`,
-                        fontSize: `${fontSize}px`,
-                        color: isRevealed ? "#000000" : "transparent",
-                      }}
-                    >
-                      {isRevealed ? letter : ""}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {isWordSet && (
+          <LetterBlocks
+            secretWord={word}
+            revealedCount={revealedCount}
+            isDirectGuessMode={isDirectGuessMode}
+            onSubmit={handleDirectGuessSubmit}
+            onCancel={handleDirectGuessCancel}
+            className="my-4"
+          />
+        )}
 
         {/* SECTION 4: Card Container - Main Game Area */}
         <div className="relative flex-shrink-0 overflow-visible px-6">
@@ -185,6 +188,30 @@ export default function BetaPlayPage() {
               const scale = 1 - stackIndex * 0.03;
               const xOffset = -stackIndex * 12; // Negative for left offset
               const opacity = 1 - stackIndex * 0.15;
+
+              // Render appropriate card content based on type
+              const renderCardContent = () => {
+                switch (card.type) {
+                  case "waiting":
+                    return <WaitingCard />;
+                  case "enter-secret":
+                    return <EnterSecretWordCard />;
+                  case "send-signull":
+                    return <SendASignullCard />;
+                  case "signull":
+                    return (
+                      <SignullCard
+                        username={card.username || "PLAYER"}
+                        receivedConnects={card.receivedConnects || 2}
+                        requiredConnects={card.requiredConnects || 3}
+                        totalActiveGuessers={card.totalActiveGuessers || 5}
+                        message={card.message || ""}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              };
 
               return (
                 <div
@@ -202,19 +229,15 @@ export default function BetaPlayPage() {
                     disableSwipe={!isTopCard}
                     onSwipeLeft={isTopCard ? handleSwipe : undefined}
                     onSwipeRight={isTopCard ? handleSwipe : undefined}
-                    className="border-2 border-black"
+                    className={
+                      card.type === "waiting"
+                        ? "border-2 border-dashed border-black"
+                        : "border-2 border-black"
+                    }
                     stackIndex={stackIndex}
                   >
-                    <div
-                      className="flex flex-col items-center justify-center bg-white p-4"
-                      style={{ aspectRatio: "3 / 2" }}
-                    >
-                      <div className="mb-1 text-xs font-medium uppercase tracking-wider text-neutral-400">
-                        {card.title}
-                      </div>
-                      <h2 className="text-center text-sm font-bold uppercase tracking-wider text-black">
-                        {card.content}
-                      </h2>
+                    <div style={{ aspectRatio: "3 / 2" }}>
+                      {renderCardContent()}
                     </div>
                   </BaseCard>
                 </div>
@@ -224,26 +247,22 @@ export default function BetaPlayPage() {
         </div>
 
         {/* SECTION 5: Bottom Action Bar */}
-        <footer className="z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 px-6 pb-6">
-          {/* History/Back Button */}
-          <button
-            onClick={() => showNotification("Showing history...")}
-            className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white transition-all hover:bg-neutral-50 active:scale-95"
-          >
-            <svg
-              className="h-6 w-6 text-black"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
+        <footer
+          className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 px-6 pb-6 transition-all duration-200 ${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+        >
+          {/* Direct Guess Button */}
+          <RoundButton size="lg" title="Direct Guess">
+            <RoundButtonIcon size="lg">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </RoundButtonIcon>
+          </RoundButton>
 
           {/* Input Field */}
           <div className="flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3">
@@ -259,7 +278,8 @@ export default function BetaPlayPage() {
           </div>
 
           {/* Submit/Next Button */}
-          <button
+          <RoundButton
+            size="lg"
             onClick={() => {
               if (inputValue.trim()) {
                 showNotification(`Submitted: ${inputValue}`);
@@ -267,35 +287,29 @@ export default function BetaPlayPage() {
               }
             }}
             disabled={!inputValue.trim()}
-            className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white transition-all hover:bg-neutral-50 active:scale-95 disabled:border-neutral-300 disabled:bg-neutral-100"
+            className="disabled:border-neutral-300 disabled:bg-neutral-100"
           >
-            <svg
-              className="h-6 w-6 text-black"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M13 5l7 7-7 7"
-              />
-            </svg>
-            <svg
-              className="-ml-4 h-6 w-6 text-black"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M13 5l7 7-7 7"
-              />
-            </svg>
-          </button>
+            <RoundButtonIcon size="lg">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M13 5l7 7-7 7"
+                />
+              </svg>
+            </RoundButtonIcon>
+            <RoundButtonIcon size="lg" className="-ml-4">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M13 5l7 7-7 7"
+                />
+              </svg>
+            </RoundButtonIcon>
+          </RoundButton>
         </footer>
 
         {/* Keyboard Safe Area - Dynamic padding for iOS */}
