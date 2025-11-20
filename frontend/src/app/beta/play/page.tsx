@@ -18,6 +18,47 @@ import {
 } from "@/components/beta";
 import { AnimatePresence, motion } from "framer-motion";
 
+// Define card types
+type CardType = "waiting" | "enter-secret" | "send-signull" | "signull";
+
+type BaseCardData = {
+  id: number;
+  type: CardType;
+};
+
+type WaitingCardData = BaseCardData & {
+  type: "waiting";
+};
+
+type EnterSecretCardData = BaseCardData & {
+  type: "enter-secret";
+};
+
+type SendSignullCardData = BaseCardData & {
+  type: "send-signull";
+};
+
+type SignullCardData = BaseCardData & {
+  type: "signull";
+  username: string;
+  receivedConnects: number;
+  requiredConnects: number;
+  totalActiveGuessers: number;
+  message: string;
+  messageHistory?: Array<{
+    id: string;
+    username: string;
+    message: string;
+    timestamp?: string;
+  }>;
+};
+
+type CardData =
+  | WaitingCardData
+  | EnterSecretCardData
+  | SendSignullCardData
+  | SignullCardData;
+
 /**
  * Beta Play Page - Card-Based Game Interface
  *
@@ -40,6 +81,9 @@ export default function BetaPlayPage() {
   const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
   const [directGuessesLeft] = useState(3); // Number of direct guesses remaining
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isComposingSignull, setIsComposingSignull] = useState(false);
+  const [signullClue, setSignullClue] = useState("");
+  const [signullWord, setSignullWord] = useState("");
 
   // Placeholder player data
   const [players] = useState([
@@ -63,12 +107,12 @@ export default function BetaPlayPage() {
   const letterBlocksRef = useRef<HTMLDivElement>(null);
 
   // Card stack state
-  const [cards, setCards] = useState([
-    { id: 2, type: "enter-secret" as const },
-    { id: 3, type: "send-signull" as const },
+  const [nextCardId, setNextCardId] = useState(5);
+  const [cards, setCards] = useState<CardData[]>([
+    { id: 2, type: "enter-secret" },
     {
       id: 4,
-      type: "signull" as const,
+      type: "signull",
       username: "DUMBFOX",
       receivedConnects: 2,
       requiredConnects: 3,
@@ -128,7 +172,7 @@ export default function BetaPlayPage() {
         },
       ],
     },
-    { id: 1, type: "waiting" as const },
+    { id: 1, type: "waiting" },
   ]);
 
   // Handle input focus - scroll to hide just the header
@@ -155,6 +199,99 @@ export default function BetaPlayPage() {
   const handleSwipe = () => {
     setCards((prev) => prev.slice(1));
     showNotification("Card swiped!");
+    // Reset composing state if the send-signull card was swiped
+    if (cards[0]?.type === "send-signull") {
+      setIsComposingSignull(false);
+      setSignullClue("");
+      setSignullWord("");
+      setInputValue("");
+    }
+  };
+
+  // Handle Signull button click - insert send-signull card
+  const handleSignullClick = () => {
+    if (isComposingSignull) {
+      showNotification("Already composing a Signull");
+      return;
+    }
+
+    // Insert send-signull card at the front of the stack
+    const newCard: SendSignullCardData = {
+      id: nextCardId,
+      type: "send-signull",
+    };
+    setCards((prev) => [newCard, ...prev]);
+    setNextCardId((prev) => prev + 1);
+    setIsComposingSignull(true);
+    setSignullClue("");
+    setSignullWord("");
+    setInputValue("");
+    showNotification("Compose your Signull");
+  };
+
+  // Handle submit - validate and transform send-signull card into signull card
+  const handleSignullSubmit = () => {
+    if (!isComposingSignull) {
+      // Normal submit behavior when not composing signull
+      if (inputValue.trim()) {
+        showNotification(`Submitted: ${inputValue}`);
+        setInputValue("");
+      }
+      return;
+    }
+
+    // Validate clue and word
+    if (!signullClue.trim()) {
+      showNotification("Please enter a clue message");
+      return;
+    }
+
+    if (!signullWord.trim()) {
+      showNotification("Please enter the reference word");
+      return;
+    }
+
+    // TODO: Add validation for word prefix matching secret word
+
+    // Transform the send-signull card into a signull card
+    const currentUsername = "PLAYER1"; // TODO: Get from store/auth
+    const newSignullCard: SignullCardData = {
+      id: nextCardId,
+      type: "signull",
+      username: currentUsername,
+      receivedConnects: 0,
+      requiredConnects: connectsRequired,
+      totalActiveGuessers: players.filter((p) => p.role === "guesser").length,
+      message: signullClue.trim(),
+      messageHistory: [
+        {
+          id: `${nextCardId}-initial`,
+          username: currentUsername,
+          message: signullClue.trim(),
+          timestamp: "Just now",
+        },
+      ],
+    };
+
+    // Replace the send-signull card with the new signull card
+    setCards((prev) => {
+      const updatedCards = [...prev];
+      // Find and replace the send-signull card
+      const sendSignullIndex = updatedCards.findIndex(
+        (c) => c.type === "send-signull"
+      );
+      if (sendSignullIndex !== -1) {
+        updatedCards[sendSignullIndex] = newSignullCard;
+      }
+      return updatedCards;
+    });
+
+    setNextCardId((prev) => prev + 1);
+    setIsComposingSignull(false);
+    setSignullClue("");
+    setSignullWord("");
+    setInputValue("");
+    showNotification(`Signull sent: ${signullWord.trim()}`);
   };
 
   // Handle direct guess
@@ -291,15 +428,21 @@ export default function BetaPlayPage() {
                   case "enter-secret":
                     return <EnterSecretWordCard />;
                   case "send-signull":
-                    return <SendASignullCard />;
+                    return (
+                      <SendASignullCard
+                        clueMessage={signullClue}
+                        onClueChange={setSignullClue}
+                        autoFocus={isTopCard}
+                      />
+                    );
                   case "signull":
                     return (
                       <SignullCard
-                        username={card.username || "PLAYER"}
-                        receivedConnects={card.receivedConnects || 2}
-                        requiredConnects={card.requiredConnects || 3}
-                        totalActiveGuessers={card.totalActiveGuessers || 5}
-                        message={card.message || ""}
+                        username={card.username}
+                        receivedConnects={card.receivedConnects}
+                        requiredConnects={card.requiredConnects}
+                        totalActiveGuessers={card.totalActiveGuessers}
+                        message={card.message}
                         onClick={() =>
                           handleSignullCardClick(card.messageHistory)
                         }
@@ -350,18 +493,32 @@ export default function BetaPlayPage() {
 
         {/* SECTION 5: Bottom Action Bar */}
         <ActionBar
-          inputValue={inputValue}
-          onInputChange={setInputValue}
-          onInputFocus={handleInputFocus}
-          onSignullClick={() => showNotification("Signull clicked!")}
-          onSubmit={() => {
-            if (inputValue.trim()) {
-              showNotification(`Submitted: ${inputValue}`);
-              setInputValue("");
+          inputValue={isComposingSignull ? signullWord : inputValue}
+          onInputChange={(value) => {
+            if (isComposingSignull) {
+              setSignullWord(value);
+            } else {
+              setInputValue(value);
             }
           }}
-          placeholder="OXF"
-          disableSubmit={!inputValue.trim()}
+          onInputFocus={handleInputFocus}
+          onSignullClick={handleSignullClick}
+          onSubmit={
+            isComposingSignull
+              ? handleSignullSubmit
+              : () => {
+                  if (inputValue.trim()) {
+                    showNotification(`Submitted: ${inputValue}`);
+                    setInputValue("");
+                  }
+                }
+          }
+          placeholder={isComposingSignull ? "Enter reference word" : "OXF"}
+          disableSubmit={
+            isComposingSignull
+              ? !signullClue.trim() || !signullWord.trim()
+              : !inputValue.trim()
+          }
         />
 
         {/* Keyboard Safe Area - Dynamic padding for iOS */}

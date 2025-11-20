@@ -21,5 +21,6 @@ export type {
 export { WaitingCard } from "./WaitingCard";
 export { EnterSecretWordCard } from "./EnterSecretWordCard";
 export { SendASignullCard } from "./SendASignullCard";
+export type { SendASignullCardProps } from "./SendASignullCard";
 export { SignullCard } from "./SignullCard";
 export type { SignullCardProps } from "./SignullCard";

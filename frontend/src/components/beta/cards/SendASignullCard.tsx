@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
-
 /**
  * SendASignullCard Component
  *
  * Displays a card prompting the user to send a signull message
  * Features: Title, horizontal divider, editable text area, and down arrow
  */
-export function SendASignullCard() {
-  const [message, setMessage] = useState("");
+export interface SendASignullCardProps {
+  /** The clue message being composed */
+  clueMessage: string;
+  /** Callback when clue message changes */
+  onClueChange: (message: string) => void;
+  /** Optional auto-focus on the textarea */
+  autoFocus?: boolean;
+}
 
+export function SendASignullCard({
+  clueMessage,
+  onClueChange,
+  autoFocus = false,
+}: SendASignullCardProps) {
   return (
     <div className="flex h-full w-full flex-col bg-white">
       {/* Title */}
@@ -24,11 +33,12 @@ export function SendASignullCard() {
       {/* Editable Text Area */}
       <div className="flex flex-1 items-center justify-center">
         <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={clueMessage}
+          onChange={(e) => onClueChange(e.target.value)}
           placeholder="Type clue for your teammates for a word with same prefix as above"
           className="w-full resize-none bg-transparent text-center text-sm leading-relaxed text-neutral-700 placeholder-neutral-400 focus:outline-none"
           rows={3}
+          autoFocus={autoFocus}
         />
       </div>
 
