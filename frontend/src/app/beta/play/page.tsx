@@ -14,6 +14,7 @@ import {
   LetterBlocks,
   RoundButton,
   RoundButtonIcon,
+  RoomInfoButton,
 } from "@/components/beta";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -39,6 +40,15 @@ export default function BetaPlayPage() {
   const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
   const [directGuessesLeft] = useState(3); // Number of direct guesses remaining
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // Placeholder player data
+  const [players] = useState([
+    { id: "1", name: "DUMBFOX", role: "setter" as const },
+    { id: "2", name: "ROGI", role: "guesser" as const },
+    { id: "3", name: "PLAYER3", role: "guesser" as const },
+    { id: "4", name: "PLAYER4", role: "guesser" as const },
+  ]);
+  const [connectsRequired] = useState(3);
   const [selectedCardHistory, setSelectedCardHistory] = useState<
     Array<{
       id: string;
@@ -192,18 +202,11 @@ export default function BetaPlayPage() {
           className={`sticky top-0 z-50 flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isDirectGuessMode || isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Room Info Button */}
-          <RoundButton size="md" onClick={() => showNotification("Room Info")}>
-            <RoundButtonIcon size="md">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </RoundButtonIcon>
-          </RoundButton>
+          <RoomInfoButton
+            roomCode={roomCode}
+            players={players}
+            connectsRequired={connectsRequired}
+          />
 
           {/* Direct Guess Button / Counter */}
           {isDirectGuessMode ? (

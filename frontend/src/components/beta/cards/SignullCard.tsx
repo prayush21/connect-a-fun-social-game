@@ -37,7 +37,7 @@ export function SignullCard({
 }: SignullCardProps) {
   return (
     <div
-      className="flex h-full w-full cursor-pointer flex-col rounded-3xl bg-white"
+      className="flex h-full w-full cursor-pointer flex-col gap-4 rounded-3xl bg-white"
       onClick={onClick}
     >
       {/* Header: Username and Progress */}
@@ -51,7 +51,7 @@ export function SignullCard({
         <div className="flex items-center gap-2">
           {/* Circular Progress */}
           <CircularProgress
-            connectsReceived={3}
+            connectsReceived={receivedConnects}
             connectsRequired={requiredConnects}
           />
 

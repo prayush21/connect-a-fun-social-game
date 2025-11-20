@@ -626,7 +626,7 @@ const cardStyle = {
 ### Section 5: Bottom Action Bar
 
 - [ ] Three-button layout renders correctly
-- [ ] Left button (⌄⌄) shows/hides history appropriately
+- [ ] Left button (⌄⌄) sends a signull.
 - [ ] Center input field enabled/disabled based on card state
 - [ ] Right button (») behavior changes based on context
 - [ ] Input placeholder updates per card requirements
