@@ -45,6 +45,7 @@ type SignullCardData = BaseCardData & {
   requiredConnects: number;
   totalActiveGuessers: number;
   message: string;
+  isIntercepted?: boolean;
   messageHistory?: Array<{
     id: string;
     username: string;
@@ -97,6 +98,7 @@ export default function BetaPlayPage() {
       receivedConnects: 2,
       requiredConnects: 3,
       totalActiveGuessers: 5,
+      isIntercepted: true,
       message:
         "What do you call a three humped camel? Quick! What do you call a three humped camel? ",
       messageHistory: [
@@ -330,6 +332,7 @@ export default function BetaPlayPage() {
 
       updatedCards[activeIndex] = {
         ...signullCard,
+        receivedConnects: signullCard.receivedConnects + 1,
         messageHistory: [newMessage, ...(signullCard.messageHistory || [])],
       };
 
@@ -545,14 +548,13 @@ export default function BetaPlayPage() {
                         requiredConnects={card.requiredConnects}
                         totalActiveGuessers={card.totalActiveGuessers}
                         message={card.message}
+                        isIntercepted={card.isIntercepted}
                         onClick={() =>
                           handleSignullCardClick(card.messageHistory)
                         }
                         messageHistory={card.messageHistory}
                       />
                     );
-                  default:
-                    return null;
                 }
               };
 

@@ -12,6 +12,7 @@ export interface SignullCardProps {
   totalActiveGuessers?: number;
   message: string;
   onClick?: () => void;
+  isIntercepted?: boolean;
   messageHistory?: Array<{
     id: string;
     username: string;
@@ -33,6 +34,7 @@ export function SignullCard({
   message,
   totalActiveGuessers,
   onClick,
+  isIntercepted = false,
   messageHistory,
 }: SignullCardProps) {
   return (
@@ -53,6 +55,7 @@ export function SignullCard({
           <CircularProgress
             connectsReceived={receivedConnects}
             connectsRequired={requiredConnects}
+            isIntercepted={isIntercepted}
           />
 
           {/* Ratio Text */}
