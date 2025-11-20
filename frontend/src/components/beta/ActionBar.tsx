@@ -36,7 +36,7 @@ export function ActionBar({
 
   return (
     <div
-      className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 px-6 pb-6 transition-all duration-200 ${className}`}
+      className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
     >
       {/* Signull Button */}
       <RoundButton size="lg" onClick={onSignullClick} title="Send Signull">
