@@ -85,29 +85,8 @@ export default function BetaPlayPage() {
   const [signullClue, setSignullClue] = useState("");
   const [signullWord, setSignullWord] = useState("");
 
-  // Placeholder player data
-  const [players] = useState([
-    { id: "1", name: "DUMBFOX", role: "setter" as const },
-    { id: "2", name: "ROGI", role: "guesser" as const },
-    { id: "3", name: "PLAYER3", role: "guesser" as const },
-    { id: "4", name: "PLAYER4", role: "guesser" as const },
-  ]);
-  const [connectsRequired] = useState(3);
-  const [currentUsername] = useState("PLAYER2"); // TODO: Get from store/auth
-  const [selectedCardHistory, setSelectedCardHistory] = useState<
-    Array<{
-      id: string;
-      username: string;
-      message: string;
-      timestamp?: string;
-    }>
-  >([]);
-
-  // Refs for scroll control
-  const headerRef = useRef<HTMLDivElement>(null);
-  const letterBlocksRef = useRef<HTMLDivElement>(null);
-
   // Card stack state
+  const [activeIndex, setActiveIndex] = useState(0);
   const [nextCardId, setNextCardId] = useState(5);
   const [cards, setCards] = useState<CardData[]>([
     { id: 2, type: "enter-secret" },
@@ -176,6 +155,28 @@ export default function BetaPlayPage() {
     { id: 1, type: "waiting" },
   ]);
 
+  // Placeholder player data
+  const [players] = useState([
+    { id: "1", name: "DUMBFOX", role: "setter" as const },
+    { id: "2", name: "ROGI", role: "guesser" as const },
+    { id: "3", name: "PLAYER3", role: "guesser" as const },
+    { id: "4", name: "PLAYER4", role: "guesser" as const },
+  ]);
+  const [connectsRequired] = useState(3);
+  const [currentUsername] = useState("PLAYER2"); // TODO: Get from store/auth
+  const [selectedCardHistory, setSelectedCardHistory] = useState<
+    Array<{
+      id: string;
+      username: string;
+      message: string;
+      timestamp?: string;
+    }>
+  >([]);
+
+  // Refs for scroll control
+  const headerRef = useRef<HTMLDivElement>(null);
+  const letterBlocksRef = useRef<HTMLDivElement>(null);
+
   // Handle input focus - scroll to hide just the header
   const handleInputFocus = () => {
     // Small delay to allow keyboard to start showing
@@ -196,16 +197,19 @@ export default function BetaPlayPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Handle swipe to remove top card
-  const handleSwipe = () => {
-    setCards((prev) => prev.slice(1));
-    showNotification("Card swiped!");
-    // Reset composing state if the send-signull card was swiped
-    if (cards[0]?.type === "send-signull") {
-      setIsComposingSignull(false);
-      setSignullClue("");
-      setSignullWord("");
-      setInputValue("");
+  // Handle swipe left (next card)
+  const handleSwipeLeft = () => {
+    if (activeIndex < cards.length - 1) {
+      setActiveIndex((prev) => prev + 1);
+      // Reset composing state if we swipe away from a composing card?
+      // For now, let's keep the state so user can return to it.
+    }
+  };
+
+  // Handle swipe right (previous card)
+  const handleSwipeRight = () => {
+    if (activeIndex > 0) {
+      setActiveIndex((prev) => prev - 1);
     }
   };
 
@@ -223,6 +227,7 @@ export default function BetaPlayPage() {
     };
     setCards((prev) => [newCard, ...prev]);
     setNextCardId((prev) => prev + 1);
+    setActiveIndex(0); // Jump to the new card
     setIsComposingSignull(true);
     setSignullClue("");
     setSignullWord("");
@@ -276,7 +281,8 @@ export default function BetaPlayPage() {
     // Replace the send-signull card with the new signull card
     setCards((prev) => {
       const updatedCards = [...prev];
-      // Find and replace the send-signull card
+      // We assume the active card is the one being submitted if we are in composing mode
+      // But to be safe, we find the send-signull card
       const sendSignullIndex = updatedCards.findIndex(
         (c) => c.type === "send-signull"
       );
@@ -300,10 +306,10 @@ export default function BetaPlayPage() {
       return;
     }
 
-    const topCard = cards[0];
+    const currentCard = cards[activeIndex];
 
-    // Check if the top card is a SignullCard
-    if (topCard?.type !== "signull") {
+    // Check if the current card is a SignullCard
+    if (currentCard?.type !== "signull") {
       showNotification(`Submitted: ${inputValue}`);
       setInputValue("");
       return;
@@ -311,7 +317,7 @@ export default function BetaPlayPage() {
 
     // Create a new message entry
     const newMessage = {
-      id: `${topCard.id}-${Date.now()}`,
+      id: `${currentCard.id}-${Date.now()}`,
       username: currentUsername,
       message: inputValue.trim(),
       timestamp: "Just now",
@@ -320,9 +326,9 @@ export default function BetaPlayPage() {
     // Update the card's message history
     setCards((prev) => {
       const updatedCards = [...prev];
-      const signullCard = updatedCards[0] as SignullCardData;
+      const signullCard = updatedCards[activeIndex] as SignullCardData;
 
-      updatedCards[0] = {
+      updatedCards[activeIndex] = {
         ...signullCard,
         messageHistory: [newMessage, ...(signullCard.messageHistory || [])],
       };
@@ -330,7 +336,7 @@ export default function BetaPlayPage() {
       return updatedCards;
     });
 
-    showNotification(`Response sent to ${topCard.username}`);
+    showNotification(`Response sent to ${currentCard.username}`);
     setInputValue("");
   };
 
@@ -448,17 +454,73 @@ export default function BetaPlayPage() {
         <div
           className={`relative flex-shrink-0 overflow-visible px-6 transition-all duration-300 ${isHistoryOpen ? "translate-y-[-100px]" : ""}`}
         >
+          {/* Navigation Arrows */}
+          <div className="absolute left-0 top-1/2 z-[60] -translate-y-1/2 pl-1">
+            <button
+              onClick={handleSwipeLeft}
+              disabled={activeIndex === cards.length - 1}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-all hover:bg-white disabled:opacity-0"
+              aria-label="Next card"
+            >
+              <svg
+                className="h-6 w-6 text-black"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="absolute right-0 top-1/2 z-[60] -translate-y-1/2 pr-1">
+            <button
+              onClick={handleSwipeRight}
+              disabled={activeIndex === 0}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-all hover:bg-white disabled:opacity-0"
+              aria-label="Previous card"
+            >
+              <svg
+                className="h-6 w-6 text-black"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
           <div
             className="relative mx-auto my-2 max-w-md"
             style={{ aspectRatio: "3 / 2" }}
           >
-            {/* Render stacked cards from back to front */}
-            {cards.slice(0, 3).map((card, index) => {
-              const stackIndex = index;
-              const isTopCard = stackIndex === 0;
-              const scale = 1 - stackIndex * 0.03;
-              const xOffset = -stackIndex * 12; // Negative for left offset
-              const opacity = 1 - stackIndex * 0.15;
+            {/* Render stacked cards */}
+            {cards.map((card, index) => {
+              const offset = index - activeIndex;
+              const isActive = offset === 0;
+
+              // Optimization: Only render cards within a certain range
+              if (Math.abs(offset) > 2) return null;
+
+              // Calculate styles based on offset
+              // Left stack (offset > 0): Future cards, shift left
+              // Right stack (offset < 0): Past cards, shift right
+              const xOffset = offset * -25; // Inverted: positive offset (future) goes left (negative x)
+              const scale = 1 - Math.abs(offset) * 0.05;
+              const rotation = offset * -2; // Inverted rotation
+              const opacity = 1 - Math.abs(offset) * 0.1;
+              const zIndex = 50 - Math.abs(offset);
 
               // Render appropriate card content based on type
               const renderCardContent = () => {
@@ -472,7 +534,7 @@ export default function BetaPlayPage() {
                       <SendASignullCard
                         clueMessage={signullClue}
                         onClueChange={setSignullClue}
-                        autoFocus={isTopCard}
+                        autoFocus={isActive}
                       />
                     );
                   case "signull":
@@ -495,37 +557,40 @@ export default function BetaPlayPage() {
               };
 
               return (
-                <div
+                <motion.div
                   key={card.id}
-                  className="absolute left-0 right-0 transition-all duration-300 ease-out"
-                  style={{
-                    transform: `translateX(${xOffset}px) scale(${scale})`,
+                  className="absolute left-0 right-0"
+                  initial={false}
+                  animate={{
+                    x: xOffset,
+                    scale,
+                    rotate: rotation,
                     opacity,
-                    zIndex: 10 - stackIndex,
-                    transformOrigin: "center left",
+                    zIndex,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 25,
+                  }}
+                  style={{
+                    transformOrigin: "center bottom",
                   }}
                 >
                   <BaseCard
-                    state={isTopCard ? "active" : "stacked"}
-                    disableSwipe={!isTopCard || isHistoryOpen}
-                    onSwipeLeft={
-                      isTopCard && !isHistoryOpen ? handleSwipe : undefined
-                    }
-                    onSwipeRight={
-                      isTopCard && !isHistoryOpen ? handleSwipe : undefined
-                    }
+                    state={isActive ? "active" : "stacked"}
                     className={
                       card.type === "waiting"
                         ? "border-2 border-dashed border-black"
                         : "border-2 border-black"
                     }
-                    stackIndex={stackIndex}
+                    stackIndex={Math.abs(offset)}
                   >
                     <div style={{ aspectRatio: "3 / 2" }}>
                       {renderCardContent()}
                     </div>
                   </BaseCard>
-                </div>
+                </motion.div>
               );
             })}
           </div>
