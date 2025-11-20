@@ -93,6 +93,7 @@ export default function BetaPlayPage() {
     { id: "4", name: "PLAYER4", role: "guesser" as const },
   ]);
   const [connectsRequired] = useState(3);
+  const [currentUsername] = useState("PLAYER2"); // TODO: Get from store/auth
   const [selectedCardHistory, setSelectedCardHistory] = useState<
     Array<{
       id: string;
@@ -254,7 +255,6 @@ export default function BetaPlayPage() {
     // TODO: Add validation for word prefix matching secret word
 
     // Transform the send-signull card into a signull card
-    const currentUsername = "PLAYER1"; // TODO: Get from store/auth
     const newSignullCard: SignullCardData = {
       id: nextCardId,
       type: "signull",
@@ -292,6 +292,46 @@ export default function BetaPlayPage() {
     setSignullWord("");
     setInputValue("");
     showNotification(`Signull sent: ${signullWord.trim()}`);
+  };
+
+  // Handle response to a SignullCard
+  const handleConnect = () => {
+    if (!inputValue.trim()) {
+      return;
+    }
+
+    const topCard = cards[0];
+
+    // Check if the top card is a SignullCard
+    if (topCard?.type !== "signull") {
+      showNotification(`Submitted: ${inputValue}`);
+      setInputValue("");
+      return;
+    }
+
+    // Create a new message entry
+    const newMessage = {
+      id: `${topCard.id}-${Date.now()}`,
+      username: currentUsername,
+      message: inputValue.trim(),
+      timestamp: "Just now",
+    };
+
+    // Update the card's message history
+    setCards((prev) => {
+      const updatedCards = [...prev];
+      const signullCard = updatedCards[0] as SignullCardData;
+
+      updatedCards[0] = {
+        ...signullCard,
+        messageHistory: [newMessage, ...(signullCard.messageHistory || [])],
+      };
+
+      return updatedCards;
+    });
+
+    showNotification(`Response sent to ${topCard.username}`);
+    setInputValue("");
   };
 
   // Handle direct guess
@@ -503,16 +543,7 @@ export default function BetaPlayPage() {
           }}
           onInputFocus={handleInputFocus}
           onSignullClick={handleSignullClick}
-          onSubmit={
-            isComposingSignull
-              ? handleSignullSubmit
-              : () => {
-                  if (inputValue.trim()) {
-                    showNotification(`Submitted: ${inputValue}`);
-                    setInputValue("");
-                  }
-                }
-          }
+          onSubmit={isComposingSignull ? handleSignullSubmit : handleConnect}
           placeholder={isComposingSignull ? "Enter reference word" : "OXF"}
           disableSubmit={
             isComposingSignull
