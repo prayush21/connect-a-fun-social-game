@@ -1,3 +1,4 @@
+export { ActionBar } from "./ActionBar";
 export { LetterBlocks } from "./LetterBlocks";
 export { RoundButton, RoundButtonIcon } from "./RoundButton";
 export { CircularProgress } from "./CircularProgress";

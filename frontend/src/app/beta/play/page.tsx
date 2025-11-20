@@ -9,7 +9,12 @@ import {
   SendASignullCard,
   SignullCard,
 } from "@/components/beta/cards";
-import { LetterBlocks, RoundButton, RoundButtonIcon } from "@/components/beta";
+import {
+  ActionBar,
+  LetterBlocks,
+  RoundButton,
+  RoundButtonIcon,
+} from "@/components/beta";
 import { AnimatePresence, motion } from "framer-motion";
 
 /**
@@ -44,7 +49,6 @@ export default function BetaPlayPage() {
   >([]);
 
   // Refs for scroll control
-  const inputRef = useRef<HTMLInputElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const letterBlocksRef = useRef<HTMLDivElement>(null);
 
@@ -187,7 +191,7 @@ export default function BetaPlayPage() {
           ref={headerRef}
           className={`sticky top-0 z-50 flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isDirectGuessMode || isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
-          {/* Left Arrow Button */}
+          {/* Room Info Button */}
           <RoundButton size="md" onClick={() => showNotification("Room Info")}>
             <RoundButtonIcon size="md">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,70 +346,20 @@ export default function BetaPlayPage() {
         </div>
 
         {/* SECTION 5: Bottom Action Bar */}
-        <footer
-          className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 px-6 pb-6 transition-all duration-300 ${isDirectGuessMode || isHistoryOpen ? "pointer-events-none translate-y-[100px] opacity-50 blur-sm" : ""}`}
-        >
-          {/* Direct Guess Button */}
-          <RoundButton size="lg" title="Direct Guess">
-            <RoundButtonIcon size="lg">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </RoundButtonIcon>
-          </RoundButton>
-
-          {/* Input Field */}
-          <div className="flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onFocus={handleInputFocus}
-              placeholder="OXF"
-              className="w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none"
-            />
-          </div>
-
-          {/* Submit/Next Button */}
-          <RoundButton
-            size="lg"
-            onClick={() => {
-              if (inputValue.trim()) {
-                showNotification(`Submitted: ${inputValue}`);
-                setInputValue("");
-              }
-            }}
-            disabled={!inputValue.trim()}
-            className="disabled:border-neutral-300 disabled:bg-neutral-100"
-          >
-            <RoundButtonIcon size="lg">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M13 5l7 7-7 7"
-                />
-              </svg>
-            </RoundButtonIcon>
-            <RoundButtonIcon size="lg" className="-ml-4">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M13 5l7 7-7 7"
-                />
-              </svg>
-            </RoundButtonIcon>
-          </RoundButton>
-        </footer>
+        <ActionBar
+          inputValue={inputValue}
+          onInputChange={setInputValue}
+          onInputFocus={handleInputFocus}
+          onSignullClick={() => showNotification("Signull clicked!")}
+          onSubmit={() => {
+            if (inputValue.trim()) {
+              showNotification(`Submitted: ${inputValue}`);
+              setInputValue("");
+            }
+          }}
+          placeholder="OXF"
+          disableSubmit={!inputValue.trim()}
+        />
 
         {/* Keyboard Safe Area - Dynamic padding for iOS */}
         <div className="h-[env(safe-area-inset-bottom)]" />
@@ -438,7 +392,7 @@ export default function BetaPlayPage() {
                 {/* History Header */}
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold uppercase tracking-wider text-black">
-                    Message History
+                    Signull Log
                   </span>
                   <button
                     onClick={handleCloseHistory}

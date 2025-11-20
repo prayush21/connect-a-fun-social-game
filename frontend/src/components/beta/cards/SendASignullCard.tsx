@@ -32,6 +32,11 @@ export function SendASignullCard() {
         />
       </div>
 
+      {/* Subtitle Text */}
+      <p className="mt-4 text-center text-xs text-neutral-500">
+        (Type the word below)
+      </p>
+
       {/* Down Arrow */}
       {/* <svg
         className="h-8 w-8 text-black"
