@@ -2,79 +2,44 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { QRCodeSVG } from "qrcode.react";
+import { MoreHorizontal } from "lucide-react";
+import { useBetaStore } from "@/lib/beta/store";
+import { RoomInfoButton } from "@/components/beta";
 import {
-  Copy,
-  Info,
-  Plus,
-  Minus,
-  Trash2,
-  Edit2,
-  ChevronDown,
-} from "lucide-react";
-import { useStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
-
-// Player color palette - 10 distinct colors for visual differentiation
-const PLAYER_COLORS = [
-  { bg: "bg-blue-100", border: "border-blue-500", text: "text-blue-900" },
-  {
-    bg: "bg-emerald-100",
-    border: "border-emerald-500",
-    text: "text-emerald-900",
-  },
-  { bg: "bg-purple-100", border: "border-purple-500", text: "text-purple-900" },
-  { bg: "bg-rose-100", border: "border-rose-500", text: "text-rose-900" },
-  { bg: "bg-amber-100", border: "border-amber-500", text: "text-amber-900" },
-  { bg: "bg-indigo-100", border: "border-indigo-500", text: "text-indigo-900" },
-  { bg: "bg-teal-100", border: "border-teal-500", text: "text-teal-900" },
-  {
-    bg: "bg-fuchsia-100",
-    border: "border-fuchsia-500",
-    text: "text-fuchsia-900",
-  },
-  { bg: "bg-orange-100", border: "border-orange-500", text: "text-orange-900" },
-  { bg: "bg-cyan-100", border: "border-cyan-500", text: "text-cyan-900" },
-];
-
-// Deterministic color assignment based on player ID
-const getPlayerColor = (playerId: string, index: number) => {
-  // Use index as fallback, hash player ID for consistency
-  const hash = playerId.split("").reduce((acc, char) => {
-    return char.charCodeAt(0) + ((acc << 5) - acc);
-  }, 0);
-  const colorIndex = Math.abs(hash) % PLAYER_COLORS.length;
-  return PLAYER_COLORS[colorIndex];
-};
+  RoomCodeCard,
+  SettingsCard,
+  PlayerList,
+  StartGameButton,
+} from "@/components/beta/lobby";
 
 export default function BetaLobbyPage() {
   const router = useRouter();
   const {
-    gameState,
-    sessionId,
+    game: gameState,
+    userId: sessionId,
     updateGameSettings,
     removePlayerFromRoom,
     changeSetter,
     startGame,
-  } = useStore();
+    teardown,
+  } = useBetaStore();
 
   // Extract game state properties
   const roomId = gameState?.roomId ?? null;
-  const gamePhase = gameState?.gamePhase ?? "lobby";
+  const gamePhase = gameState?.phase ?? "lobby";
   const players = gameState?.players ?? {};
-  const currentPlayerId = sessionId;
-  const setterUid = gameState?.setterUid ?? "";
+  const currentPlayerId = sessionId || "";
+  const setterUid = gameState?.setterId ?? "";
   const settings = gameState?.settings ?? {
     connectsRequired: 1,
     playMode: "round_robin" as const,
     majorityThreshold: 1,
-    timeLimit: 60,
+    timeLimitSeconds: 60,
     maxPlayers: 4,
     wordValidation: "strict" as const,
   };
 
   const [copied, setCopied] = useState(false);
-  const [showConnectsInfo, setShowConnectsInfo] = useState(false);
   const [showSetterDropdown, setShowSetterDropdown] = useState(false);
 
   // Redirect logic
@@ -83,10 +48,18 @@ export default function BetaLobbyPage() {
       router.push("/");
       return;
     }
+
+    // If game state is loaded but player is not in it, they were removed
+    if (gameState && sessionId && !gameState.players[sessionId]) {
+      teardown();
+      router.push("/beta");
+      return;
+    }
+
     if (gamePhase !== "lobby") {
       router.push("/beta/play");
     }
-  }, [roomId, gamePhase, router]);
+  }, [roomId, gamePhase, router, gameState, sessionId, teardown]);
 
   // Generate join URL for QR code with auto-join params
   const joinUrl =
@@ -96,10 +69,31 @@ export default function BetaLobbyPage() {
 
   // Copy room code to clipboard
   const handleCopyCode = async () => {
-    if (joinUrl) {
+    if (!joinUrl) return;
+
+    try {
       await navigator.clipboard.writeText(joinUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Clipboard API failed, trying fallback:", err);
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = joinUrl;
+        // Ensure it's not visible but part of the DOM
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (fallbackErr) {
+        console.error("Fallback copy failed:", fallbackErr);
+      }
     }
   };
 
@@ -133,18 +127,13 @@ export default function BetaLobbyPage() {
   };
 
   // Handle play mode toggle
-  const handlePlayModeToggle = async () => {
-    if (!isSetter || !gameState) return;
+  const handleModeToggle = () => {
+    if (!isSetter) return;
     const newMode =
-      settings.playMode === "round_robin" ? "signull" : "round_robin";
-    try {
-      await updateGameSettings({
-        ...gameState.settings,
-        playMode: newMode,
-      });
-    } catch (err) {
-      console.error("Failed to update play mode:", err);
-    }
+      settings.playMode === "round_robin" ? "free" : "round_robin";
+    updateGameSettings({
+      playMode: newMode,
+    });
   };
 
   // Handle remove player
@@ -195,279 +184,71 @@ export default function BetaLobbyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        {/* Header - Game Lobby Title */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-slate-900">Game Lobby</h1>
-          <p className="mt-2 text-slate-600">
+    <div className="relative flex min-h-screen w-full flex-col bg-[#F2F3F5] px-4 py-6 md:px-6">
+      <div className="mx-auto w-full max-w-md space-y-6 pb-32">
+        <div className="mb-8 space-y-2 text-center">
+          <h1 className="text-3xl font-bold text-[#1a1f2e]">Game Lobby</h1>
+          <p className="text-neutral-500">
             Share the code below to invite your friends
           </p>
         </div>
 
-        {/* Room Code Section with QR Code */}
-        <div className="rounded-2xl bg-white p-6 shadow-xl md:p-8">
-          <div className="flex flex-col items-center justify-center space-y-4 md:flex-row md:space-x-6 md:space-y-0">
-            {/* Room Code Display */}
-            <div className="flex flex-col items-center space-y-3">
-              <div className="text-center">
-                <div className="text-5xl font-bold tracking-wider text-orange-500 md:text-6xl">
-                  {roomId}
-                </div>
-              </div>
+        <RoomCodeCard
+          roomCode={roomId}
+          joinUrl={joinUrl}
+          onCopy={handleCopyCode}
+          copied={copied}
+        />
 
-              {/* Copy Button */}
-              <Button
-                onClick={handleCopyCode}
-                variant="outline"
-                className="w-full max-w-xs border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                {copied ? "Copied!" : "Copy Invite Link"}
-              </Button>
-            </div>
+        <div className="relative">
+          <SettingsCard
+            connectsRequired={settings.connectsRequired}
+            onConnectsChange={handleConnectsChange}
+            isSignullMode={settings.playMode === "free"}
+            onToggleMode={handleModeToggle}
+            setterName={players[setterUid]?.name || "Unknown"}
+            isSetter={isSetter}
+            onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}
+          />
 
-            {/* QR Code */}
-            {joinUrl && (
-              <div className="rounded-lg border-2 border-slate-200 bg-white p-3">
-                <QRCodeSVG value={joinUrl} size={140} level="M" />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Game Settings Row */}
-        <div className="rounded-2xl bg-white p-6 shadow-xl">
-          <div className="flex flex-wrap items-center justify-center gap-6 md:flex-nowrap md:gap-8">
-            {/* Connects Required */}
-            <div className="flex flex-col items-center space-y-2">
-              <div className="flex items-center justify-center space-x-1">
-                <label className="text-center text-sm font-medium text-slate-700">
-                  Connects Required
-                </label>
+          {/* Setter Dropdown */}
+          {showSetterDropdown && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border-2 border-black bg-white shadow-xl">
+              {playersList.map((p) => (
                 <button
-                  type="button"
-                  onMouseEnter={() => setShowConnectsInfo(true)}
-                  onMouseLeave={() => setShowConnectsInfo(false)}
-                  className="relative text-slate-400 hover:text-slate-600"
+                  key={p.id}
+                  onClick={() => handleChangeSetter(p.id)}
+                  className={`w-full p-4 text-left font-medium transition-colors hover:bg-neutral-100 ${
+                    p.id === setterUid ? "bg-neutral-50 text-blue-600" : ""
+                  }`}
                 >
-                  <Info className="h-4 w-4" />
-                  {showConnectsInfo && (
-                    <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 rounded-lg bg-slate-900 p-3 text-xs text-white shadow-lg">
-                      Number of connections required before players can make a
-                      direct guess
-                    </div>
-                  )}
+                  {p.name}
                 </button>
-              </div>
-
-              {/* Stepper */}
-              <div className="flex items-center justify-center space-x-3">
-                <button
-                  onClick={() => handleConnectsChange(-1)}
-                  disabled={!isSetter || settings.connectsRequired <= 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border-2 border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="w-8 text-center text-lg font-semibold text-slate-900">
-                  {settings.connectsRequired}
-                </span>
-                <button
-                  onClick={() => handleConnectsChange(1)}
-                  disabled={
-                    !isSetter || settings.connectsRequired >= maxConnects
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border-2 border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
+              ))}
             </div>
-
-            {/* Signull Mode Toggle */}
-            <div className="flex flex-col items-center space-y-2">
-              <label className="text-center text-sm font-medium text-slate-700">
-                Signull Mode
-              </label>
-              <div className="flex items-center justify-center space-x-3">
-                <button
-                  onClick={handlePlayModeToggle}
-                  disabled={!isSetter}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                    settings.playMode === "signull"
-                      ? "bg-indigo-600"
-                      : "bg-slate-300"
-                  } ${!isSetter ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                      settings.playMode === "signull"
-                        ? "translate-x-6"
-                        : "translate-x-1"
-                    }`}
-                  />
-                </button>
-                <span className="inline-block w-6 text-xs text-slate-500">
-                  {settings.playMode === "signull" ? "On" : "Off"}
-                </span>
-              </div>
-            </div>
-
-            {/* Setter */}
-            <div className="relative flex w-full flex-col items-center space-y-2 md:w-auto">
-              <div className="flex items-center justify-center space-x-1">
-                <label className="text-center text-sm font-medium text-slate-700">
-                  Setter
-                </label>
-                {isSetter && <Edit2 className="h-3 w-3 text-slate-400" />}
-              </div>
-              <button
-                onClick={() => isSetter && setShowSetterDropdown(true)}
-                disabled={!isSetter}
-                className="flex items-center justify-center space-x-2 rounded-lg px-3 py-1 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:hover:bg-transparent"
-              >
-                <span className="text-base font-bold text-slate-900">
-                  {players[setterUid]?.name || "Unknown"}
-                </span>
-                {isSetter && <ChevronDown className="h-4 w-4 text-slate-600" />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Player Cards List */}
-        <div className="space-y-3">
-          {playersList.map((player, index) => {
-            const color = getPlayerColor(player.id, index);
-            const isHost = player.id === setterUid;
-            const isCurrentPlayer = player.id === currentPlayerId;
-
-            return (
-              <div
-                key={player.id}
-                className={`flex items-center justify-between rounded-2xl p-4 shadow-md transition-all ${
-                  isCurrentPlayer ? `border-2 ${color.border}` : ""
-                } ${color.bg}`}
-              >
-                {/* Left: Player Name with Avatar */}
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${color.bg} font-semibold ${color.text}`}
-                  >
-                    {player.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span className={`font-semibold ${color.text}`}>
-                    {player.name}
-                    {isHost && " (Host)"}
-                  </span>
-                </div>
-
-                {/* Right: Role Badge and Remove Button */}
-                <div className="flex items-center space-x-2">
-                  {/* Remove Button (only visible to host, can't remove self) */}
-                  {isSetter && !isCurrentPlayer && (
-                    <button
-                      onClick={() => handleRemovePlayer(player.id)}
-                      className="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-                      title="Remove player"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Waiting for player slots */}
-          {Array.from({ length: Math.max(0, 4 - playersList.length) }).map(
-            (_, index) => (
-              <div
-                key={`waiting-${index}`}
-                className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center text-slate-400"
-              >
-                Waiting for player...
-              </div>
-            )
           )}
         </div>
 
-        {/* Floating Start Game Button (only visible to setter) */}
-        {isSetter && (
-          <div className="fixed bottom-8 left-1/2 z-10 w-full max-w-md -translate-x-1/2 px-4">
-            <Button
-              onClick={handleStartGame}
-              disabled={!canStartGame}
-              className={`w-full rounded-full py-6 text-lg font-semibold shadow-2xl transition-all ${
-                canStartGame
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                  : "cursor-not-allowed bg-slate-300 text-slate-500"
-              }`}
-            >
-              Start Game
-            </Button>
-          </div>
-        )}
-
-        {/* How to Play Link */}
-        <div className="pb-24 text-center">
-          <button className="text-sm text-slate-500 hover:text-slate-700 hover:underline">
-            How to play?
-          </button>
-        </div>
+        <PlayerList
+          players={playersList}
+          currentUserId={currentPlayerId}
+          hostId={setterUid}
+          setterId={setterUid}
+          onRemovePlayer={handleRemovePlayer}
+          isHost={isSetter}
+        />
       </div>
 
-      {/* Setter Dropdown Modal */}
-      {showSetterDropdown && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => setShowSetterDropdown(false)}
-        >
-          <div
-            className="mx-4 w-full max-w-xs rounded-2xl bg-white p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-4 text-center text-lg font-bold text-slate-900">
-              Select Setter
-            </h3>
-            <div className="space-y-2">
-              {playersList.map((player) => {
-                const color = getPlayerColor(
-                  player.id,
-                  playersList.indexOf(player)
-                );
-                const isCurrentSetter = player.id === setterUid;
-
-                return (
-                  <button
-                    key={player.id}
-                    onClick={() => handleChangeSetter(player.id)}
-                    className={`w-full rounded-lg p-3 text-left transition-colors ${
-                      isCurrentSetter
-                        ? `${color.bg} ${color.border} border-2`
-                        : "bg-slate-50 hover:bg-slate-100"
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full ${color.bg} text-sm font-semibold ${color.text}`}
-                      >
-                        {player.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span
-                        className={`font-semibold ${isCurrentSetter ? color.text : "text-slate-900"}`}
-                      >
-                        {player.name}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#F2F3F5] via-[#F2F3F5] to-transparent px-4 pb-6 pt-12 md:px-6">
+        <div className="mx-auto max-w-md">
+          <StartGameButton onClick={handleStartGame} disabled={!canStartGame} />
+          <div className="mt-4 text-center">
+            <button className="text-sm text-neutral-500 underline">
+              How to play?
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

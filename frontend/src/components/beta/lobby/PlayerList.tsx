@@ -1,0 +1,64 @@
+import { Trash2 } from "lucide-react";
+import { BaseCard } from "@/components/beta/cards/BaseCard";
+
+interface Player {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+interface PlayerListProps {
+  players: Player[];
+  currentUserId: string;
+  hostId: string; // Assuming host is the setter or just the first player? Or passed explicitly.
+  setterId: string;
+  onRemovePlayer: (id: string) => void;
+  isHost: boolean; // Can remove players
+}
+
+export function PlayerList({
+  players,
+  currentUserId,
+  hostId,
+  setterId,
+  onRemovePlayer,
+  isHost,
+}: PlayerListProps) {
+  return (
+    <div className="w-full space-y-3">
+      {players.map((player) => (
+        <BaseCard
+          key={player.id}
+          className={`flex items-center justify-between !rounded-2xl !p-4 transition-all ${
+            player.id === currentUserId
+              ? "z-10 border-2 border-black shadow-md"
+              : "border-2 border-transparent shadow-sm hover:border-neutral-100"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-neutral-100 bg-neutral-100 text-sm font-bold shadow-sm">
+              {player.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-lg font-bold">
+              {player.name}
+              {player.id === hostId && " (Host)"}
+            </span>
+          </div>
+          {isHost && player.id !== currentUserId && (
+            <button
+              onClick={() => onRemovePlayer(player.id)}
+              className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
+        </BaseCard>
+      ))}
+
+      {/* Waiting placeholder */}
+      <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 p-6 text-center text-neutral-400">
+        Waiting for player...
+      </div>
+    </div>
+  );
+}

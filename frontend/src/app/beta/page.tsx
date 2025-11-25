@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { useBetaStore } from "@/lib/beta/store";
+import { generateRoomCode } from "@/lib/beta/firebase";
 import { nicknameSchema, joinGameSchema } from "@/lib/validation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,12 +20,10 @@ export default function BetaHome() {
     username,
     setUsername,
     generateNewUsername,
-    createRoom,
-    joinRoom,
     setError,
-    sessionId,
+    userId: sessionId,
     initAuth,
-  } = useStore();
+  } = useBetaStore();
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -41,7 +40,7 @@ export default function BetaHome() {
 
   const nicknameForm = useForm<NicknameFormData>({
     resolver: zodResolver(nicknameSchema),
-    defaultValues: { nickname: username },
+    defaultValues: { nickname: username || "" },
   });
 
   const joinGameForm = useForm<JoinGameFormData>({
@@ -51,14 +50,16 @@ export default function BetaHome() {
 
   // Sync modal nickname with store username when it changes
   useEffect(() => {
-    if (showJoinModal) {
+    if (showJoinModal && username) {
       setModalNickname(username);
     }
   }, [username, showJoinModal]);
 
   // Sync form with store username changes (for dice button functionality)
   useEffect(() => {
-    nicknameForm.setValue("nickname", username);
+    if (username) {
+      nicknameForm.setValue("nickname", username);
+    }
   }, [username, nicknameForm]);
 
   // Handle QR code redirect - always show modal for nickname confirmation
@@ -90,7 +91,7 @@ export default function BetaHome() {
       return;
     }
 
-    if (!pendingRoomCode) return;
+    if (!pendingRoomCode || !sessionId) return;
 
     setIsJoining(true);
     setError(null);
@@ -100,7 +101,12 @@ export default function BetaHome() {
       setUsername(modalNickname.trim());
 
       // Join the room
-      await joinRoom(pendingRoomCode, modalNickname.trim());
+      await useBetaStore.getState().initRoom(pendingRoomCode);
+
+      const error = useBetaStore.getState().error;
+      if (error) {
+        throw new Error(error.message);
+      }
 
       // Close modal and clear state
       setShowJoinModal(false);
@@ -129,13 +135,15 @@ export default function BetaHome() {
   };
 
   const onJoinGameSubmit = async (data: JoinGameFormData) => {
-    if (!username.trim()) {
+    if (!username?.trim()) {
       setError({
         code: "VALIDATION_ERROR",
         message: "Please set a nickname first",
       });
       return;
     }
+
+    if (!sessionId) return;
 
     setIsJoining(true);
     setError(null);
@@ -145,7 +153,13 @@ export default function BetaHome() {
     console.log("Joining game with code:", normalizedGameCode);
 
     try {
-      await joinRoom(normalizedGameCode, username);
+      await useBetaStore.getState().initRoom(normalizedGameCode);
+
+      const error = useBetaStore.getState().error;
+      if (error) {
+        throw new Error(error.message);
+      }
+
       router.push("/beta/lobby");
     } catch (err) {
       console.error("Failed to join game:", err);
@@ -159,7 +173,7 @@ export default function BetaHome() {
   };
 
   const handleCreateNewGame = async () => {
-    if (!username.trim()) {
+    if (!username?.trim()) {
       setError({
         code: "VALIDATION_ERROR",
         message: "Please set a nickname first",
@@ -167,11 +181,22 @@ export default function BetaHome() {
       return;
     }
 
+    if (!sessionId) return;
+
     setIsCreating(true);
     setError(null);
 
     try {
-      await createRoom(username);
+      const roomCode = generateRoomCode();
+      await useBetaStore
+        .getState()
+        .initRoom(roomCode, { createIfMissing: true });
+
+      const error = useBetaStore.getState().error;
+      if (error) {
+        throw new Error(error.message);
+      }
+
       router.push("/beta/lobby");
     } catch (err) {
       console.error("Failed to create game:", err);
@@ -219,7 +244,7 @@ export default function BetaHome() {
                   type="text"
                   className="flex-1 rounded-lg border-2 border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="Enter your nickname"
-                  value={username}
+                  value={username || ""}
                   onChange={(e) => setUsername(e.target.value)}
                 />
                 <button
