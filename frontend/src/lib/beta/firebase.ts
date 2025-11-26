@@ -274,7 +274,8 @@ export const addSignull = async (
     newOrder[revealedCount] = [...newOrder[revealedCount], signullId];
 
     const flattenedOrder = newOrder.reduce((acc, val) => acc.concat(val), []);
-    const activeIndex = playMode === "round_robin" ? flattenedOrder.length - 1 : null;
+    const activeIndex =
+      playMode === "round_robin" ? flattenedOrder.length - 1 : null;
 
     trx.update(docRef, {
       "signullState.order": newOrder,
@@ -367,7 +368,10 @@ export const submitConnect = async (
     if (data.settings.playMode === "round_robin") {
       const idx = data.signullState.activeIndex;
       if (idx === null) throw new Error("NO_ACTIVE_SIGNULL");
-      const flattenedOrder = (data.signullState.order || []).reduce((acc, val) => acc.concat(val), []);
+      const flattenedOrder = (data.signullState.order || []).reduce(
+        (acc, val) => acc.concat(val),
+        []
+      );
       targetId = flattenedOrder[idx];
     }
     if (!targetId) throw new Error("SIGNULL_ID_REQUIRED");
@@ -402,7 +406,10 @@ export const submitConnect = async (
         // Invalidate other pending signulls if one is resolved
         // This prevents multiple signulls from being active/resolved simultaneously
         // when they were all pending at the same time.
-        const flattenedOrder = (data.signullState.order || []).reduce((acc, val) => acc.concat(val), []);
+        const flattenedOrder = (data.signullState.order || []).reduce(
+          (acc, val) => acc.concat(val),
+          []
+        );
         const otherPendingIds = flattenedOrder.filter(
           (id) =>
             id !== targetId &&
@@ -424,7 +431,10 @@ export const submitConnect = async (
       resolution &&
       ["resolved", "failed", "blocked"].includes(resolution.status)
     ) {
-      const flattenedOrder = (data.signullState.order || []).reduce((acc, val) => acc.concat(val), []);
+      const flattenedOrder = (data.signullState.order || []).reduce(
+        (acc, val) => acc.concat(val),
+        []
+      );
       const pendingIds = flattenedOrder.filter(
         (id) => data.signullState.itemsById[id].status === "pending"
       );
@@ -583,6 +593,20 @@ export const startGame = async (roomId: RoomId): Promise<void> => {
   const docRef = doc(getRoomsCollection(), roomId);
   await updateDoc(docRef, {
     phase: "setting",
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const resetGame = async (roomId: RoomId): Promise<void> => {
+  const docRef = doc(getRoomsCollection(), roomId);
+  await updateDoc(docRef, {
+    phase: "lobby",
+    secretWord: deleteField(),
+    revealedCount: 0,
+    "signullState.order": [],
+    "signullState.itemsById": {},
+    "signullState.activeIndex": null,
+    winner: deleteField(),
     updatedAt: serverTimestamp(),
   });
 };

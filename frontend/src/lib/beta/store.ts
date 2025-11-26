@@ -13,6 +13,7 @@ import {
   updateGameSettings as fxUpdateGameSettings,
   changeSetter as fxChangeSetter,
   startGame as fxStartGame,
+  resetGame as fxResetGame,
   subscribeToRoom,
 } from "./firebase";
 import type {
@@ -77,6 +78,7 @@ interface BetaStoreState {
   changeSetter: (newSetterId: PlayerId) => Promise<void>;
   removePlayerFromRoom: (playerId: PlayerId) => Promise<void>;
   startGame: () => Promise<void>;
+  resetGame: () => Promise<void>;
   setSecretWord: (word: string) => Promise<void>;
   addSignull: (word: string, clue: string) => Promise<SignullId | null>;
   submitConnect: (guess: string, signullId?: SignullId) => Promise<void>;
@@ -349,6 +351,15 @@ export const useBetaStore = create<BetaStoreState>()(
         if (!roomId) return;
         try {
           await fxStartGame(roomId);
+        } catch (e) {
+          set({ error: mapError(e) });
+        }
+      },
+      resetGame: async () => {
+        const { roomId } = get();
+        if (!roomId) return;
+        try {
+          await fxResetGame(roomId);
         } catch (e) {
           set({ error: mapError(e) });
         }

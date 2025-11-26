@@ -88,6 +88,8 @@ export default function BetaPlayPage() {
   const addSignull = useBetaStore((state) => state.addSignull);
   const submitConnect = useBetaStore((state) => state.submitConnect);
   const submitDirectGuess = useBetaStore((state) => state.submitDirectGuess);
+  const setSecretWord = useBetaStore((state) => state.setSecretWord);
+  const resetGame = useBetaStore((state) => state.resetGame);
 
   // Derived state from store
   const roomCode = game?.roomId || "----";
@@ -98,6 +100,14 @@ export default function BetaPlayPage() {
     () => Object.values(game?.players || {}),
     [game?.players]
   );
+
+  // Redirect to lobby if phase changes to lobby
+  useEffect(() => {
+    if (game?.phase === "lobby") {
+      router.push("/beta/lobby");
+    }
+  }, [game?.phase, router]);
+
   const connectsRequired = game?.settings.connectsRequired || 3;
   const directGuessesLeft = game?.directGuessesLeft || 0;
   const currentUsername = username || "Guest";
@@ -363,6 +373,19 @@ export default function BetaPlayPage() {
     setIsDirectGuessMode(false);
   };
 
+  const handleSecretWordSubmit = async () => {
+    if (!inputValue.trim()) return;
+
+    try {
+      await setSecretWord(inputValue.trim());
+      showNotification(`Secret word set: ${inputValue.trim()}`);
+      setInputValue("");
+    } catch (error) {
+      showNotification("Failed to set secret word");
+      console.error(error);
+    }
+  };
+
   // Handle history card click
   const handleSignullCardClick = (
     history?: Array<{
@@ -405,6 +428,8 @@ export default function BetaPlayPage() {
 
     // For other card types (waiting, enter-secret), input is generally disabled
     // unless specific logic handles them (e.g. enter-secret might use a different input mechanism)
+    if (currentCard.type === "enter-secret") return false;
+
     return true;
   }, [cards, activeIndex, isComposingSignull, isSetter]);
 
@@ -641,9 +666,22 @@ export default function BetaPlayPage() {
           }}
           onInputFocus={handleInputFocus}
           onSignullClick={handleSignullClick}
-          onSubmit={isComposingSignull ? handleSignullSubmit : handleConnect}
-          placeholder={isComposingSignull ? "Enter reference word" : "OXF"}
+          onSubmit={
+            isComposingSignull
+              ? handleSignullSubmit
+              : cards[activeIndex]?.type === "enter-secret"
+                ? handleSecretWordSubmit
+                : handleConnect
+          }
+          placeholder={
+            isComposingSignull
+              ? "Enter reference word"
+              : cards[activeIndex]?.type === "enter-secret"
+                ? "Enter Secret Word"
+                : "OXF"
+          }
           disableInput={isInputDisabled}
+          disableSignull={isSetter}
           disableSubmit={
             isComposingSignull
               ? !signullClue.trim() || !signullWord.trim()
@@ -651,10 +689,7 @@ export default function BetaPlayPage() {
           }
           isGameEnded={game?.phase === "ended"}
           onPlayAgain={() => {
-            // TODO: Implement play again logic (e.g., reset game, return to lobby)
-            showNotification("Play Again clicked");
-            // Navigate to the lobby page
-            router.push("/beta/lobby");
+            resetGame();
           }}
         />
 

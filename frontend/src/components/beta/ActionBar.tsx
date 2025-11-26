@@ -20,6 +20,8 @@ interface ActionBarProps {
   disableSubmit?: boolean;
   /** Whether the input field should be disabled */
   disableInput?: boolean;
+  /** Whether the signull button should be disabled */
+  disableSignull?: boolean;
   /** Additional CSS classes */
   className?: string;
   /** Whether the game has ended */
@@ -37,6 +39,7 @@ export function ActionBar({
   placeholder = "Enter text",
   disableSubmit = false,
   disableInput = false,
+  disableSignull = false,
   className = "",
   isGameEnded = false,
   onPlayAgain,
@@ -63,7 +66,13 @@ export function ActionBar({
       className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
     >
       {/* Signull Button */}
-      <RoundButton size="lg" onClick={onSignullClick} title="Send Signull">
+      <RoundButton
+        size="lg"
+        onClick={onSignullClick}
+        title="Send Signull"
+        disabled={disableSignull}
+        className="disabled:cursor-not-allowed disabled:opacity-50"
+      >
         <RoundButtonIcon size="lg">
           <svg fill="yellow" stroke="currentColor" viewBox="0 0 24 24">
             <path

@@ -20,8 +20,7 @@ export function EnterSecretWordCard() {
       {/* Instructions Text */}
       <div className="flex flex-1 items-center justify-center">
         <p className="text-center text-sm leading-relaxed text-neutral-700">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non
-          risus.
+          Enter the secret word in the input field below to start the game.
         </p>
       </div>
 

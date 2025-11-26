@@ -45,7 +45,7 @@ export default function BetaLobbyPage() {
   // Redirect logic
   useEffect(() => {
     if (!roomId) {
-      router.push("/");
+      router.push("/beta");
       return;
     }
 

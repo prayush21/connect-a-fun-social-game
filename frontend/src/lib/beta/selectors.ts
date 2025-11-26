@@ -15,7 +15,10 @@ export function getActiveSignull(state: GameState | null): SignullEntry | null {
   if (settings.playMode === "round_robin") {
     const idx = signullState.activeIndex;
     if (idx === null) return null;
-    const flattenedOrder = signullState.order.reduce((acc, val) => acc.concat(val), []);
+    const flattenedOrder = signullState.order.reduce(
+      (acc, val) => acc.concat(val),
+      []
+    );
     const id = flattenedOrder[idx];
     return signullState.itemsById[id] || null;
   }
