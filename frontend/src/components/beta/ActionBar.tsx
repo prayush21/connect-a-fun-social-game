@@ -18,8 +18,14 @@ interface ActionBarProps {
   placeholder?: string;
   /** Whether the submit button should be disabled */
   disableSubmit?: boolean;
+  /** Whether the input field should be disabled */
+  disableInput?: boolean;
   /** Additional CSS classes */
   className?: string;
+  /** Whether the game has ended */
+  isGameEnded?: boolean;
+  /** Callback when Play Again button is clicked */
+  onPlayAgain?: () => void;
 }
 
 export function ActionBar({
@@ -30,9 +36,27 @@ export function ActionBar({
   onSubmit,
   placeholder = "Enter text",
   disableSubmit = false,
+  disableInput = false,
   className = "",
+  isGameEnded = false,
+  onPlayAgain,
 }: ActionBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  if (isGameEnded) {
+    return (
+      <div
+        className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center justify-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
+      >
+        <button
+          onClick={onPlayAgain}
+          className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-white px-8 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+        >
+          Play Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -53,7 +77,9 @@ export function ActionBar({
       </RoundButton>
 
       {/* Input Field */}
-      <div className="flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3">
+      <div
+        className={`flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3 ${disableInput ? "bg-neutral-200 opacity-50" : ""}`}
+      >
         <input
           ref={inputRef}
           type="text"
@@ -61,7 +87,8 @@ export function ActionBar({
           onChange={(e) => onInputChange(e.target.value)}
           onFocus={onInputFocus}
           placeholder={placeholder}
-          className="w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none"
+          disabled={disableInput}
+          className="w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none disabled:cursor-not-allowed"
         />
       </div>
 

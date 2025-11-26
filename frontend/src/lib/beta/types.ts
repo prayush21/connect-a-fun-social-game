@@ -10,7 +10,12 @@ export type GameWinner = null | "guessers" | "setter";
 export type PlayerRole = "setter" | "guesser";
 export type GamePhase = "lobby" | "setting" | "signulls" | "ended";
 export type PlayMode = "round_robin" | "free"; // free = no enforced turn order
-export type SignullStatus = "pending" | "resolved" | "failed" | "blocked"; // blocked = setter intercepted
+export type SignullStatus =
+  | "pending"
+  | "resolved"
+  | "failed"
+  | "blocked"
+  | "inactive"; // blocked = setter intercepted
 
 export interface Player {
   id: PlayerId;
@@ -61,6 +66,7 @@ export interface GameState {
   players: Record<PlayerId, Player>;
   setterId: PlayerId;
   secretWord: string; // UPPERCASE
+  revealedCount: number;
   signullState: SignullState;
   directGuessesLeft: number;
   winner: GameWinner;
@@ -115,6 +121,7 @@ export interface FirestoreGameRoom {
   >;
   setterId: PlayerId;
   secretWord: string;
+  revealedCount: number;
   signullState: {
     order: SignullId[];
     activeIndex: number | null;

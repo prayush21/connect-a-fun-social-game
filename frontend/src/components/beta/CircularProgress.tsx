@@ -7,6 +7,7 @@ export interface CircularProgressProps {
   connectsReceived: number;
   connectsRequired: number;
   isIntercepted?: boolean;
+  isInactive?: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ export function CircularProgress({
   connectsReceived,
   connectsRequired,
   isIntercepted = false,
+  isInactive = false,
 }: CircularProgressProps) {
   const radius = 40;
   const stroke = 8;
@@ -31,6 +33,17 @@ export function CircularProgress({
 
   // Calculate the offset (how much of the stroke to hide)
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  if (isInactive) {
+    return (
+      <div className="relative h-6 w-6">
+        <div className="flex h-full w-full items-center justify-center rounded-full border-2 border-dashed border-gray-400 bg-gray-100">
+          {/* Gray dash/minus mark */}
+          <div className="h-0.5 w-3 bg-gray-400" />
+        </div>
+      </div>
+    );
+  }
 
   if (isIntercepted) {
     return (

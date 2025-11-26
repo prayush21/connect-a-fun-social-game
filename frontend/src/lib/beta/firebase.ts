@@ -76,6 +76,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
     ),
     setterId: data.setterId,
     secretWord: data.secretWord,
+    revealedCount: data.revealedCount ?? 0,
     signullState: {
       order: data.signullState.order || [],
       activeIndex: data.signullState.activeIndex ?? null,
@@ -143,6 +144,7 @@ export const createRoom = async (
     },
     setterId: creatorId,
     secretWord: "",
+    revealedCount: 0,
     signullState: {
       order: [],
       activeIndex: finalSettings.playMode === "round_robin" ? 0 : null,
@@ -359,8 +361,11 @@ export const submitConnect = async (
     const entry = data.signullState.itemsById[targetId];
     if (!entry) throw new Error("SIGNULL_NOT_FOUND");
     if (entry.status !== "pending") throw new Error("SIGNULL_NOT_PENDING");
-    // Prevent duplicate from same player
-    if (entry.connects.some((c) => c.playerId === playerId)) {
+    // Prevent duplicate from same player (unless setter)
+    if (
+      player.role !== "setter" &&
+      entry.connects.some((c) => c.playerId === playerId)
+    ) {
       throw new Error("ALREADY_CONNECTED");
     }
     const isCorrect = upperGuess === entry.word;
@@ -373,9 +378,31 @@ export const submitConnect = async (
     entry.connects.push(newConnect);
     // Evaluate resolution
     const resolution = evaluateResolution(entry, data);
+    let newRevealedCount = data.revealedCount ?? 0;
+
     if (resolution) {
       entry.status = resolution.status;
       if (resolution.resolvedAt) entry.resolvedAt = resolution.resolvedAt;
+      if (resolution.status === "resolved") {
+        newRevealedCount++;
+
+        // Invalidate other pending signulls if one is resolved
+        // This prevents multiple signulls from being active/resolved simultaneously
+        // when they were all pending at the same time.
+        const otherPendingIds = data.signullState.order.filter(
+          (id) =>
+            id !== targetId &&
+            data.signullState.itemsById[id].status === "pending"
+        );
+
+        otherPendingIds.forEach((id) => {
+          const pendingEntry = data.signullState.itemsById[id];
+          if (pendingEntry) {
+            pendingEntry.status = "inactive";
+            pendingEntry.resolvedAt = serverTimestamp();
+          }
+        });
+      }
     }
     // Advance activeIndex for round_robin if resolved/failed/blocked
     if (
@@ -404,6 +431,7 @@ export const submitConnect = async (
       signullState: data.signullState,
       phase: data.phase,
       winner: data.winner,
+      revealedCount: newRevealedCount,
       updatedAt: serverTimestamp(),
     });
   });

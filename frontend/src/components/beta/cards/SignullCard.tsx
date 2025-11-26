@@ -13,6 +13,7 @@ export interface SignullCardProps {
   message: string;
   onClick?: () => void;
   isIntercepted?: boolean;
+  isInactive?: boolean;
   messageHistory?: Array<{
     id: string;
     username: string;
@@ -35,11 +36,12 @@ export function SignullCard({
   totalActiveGuessers,
   onClick,
   isIntercepted = false,
+  isInactive = false,
   messageHistory,
 }: SignullCardProps) {
   return (
     <div
-      className="flex h-full w-full cursor-pointer flex-col gap-4 rounded-3xl bg-white"
+      className={`flex h-full w-full cursor-pointer flex-col gap-4 rounded-3xl bg-white ${isInactive ? "opacity-60 grayscale" : ""}`}
       onClick={onClick}
     >
       {/* Header: Username and Progress */}
@@ -56,6 +58,7 @@ export function SignullCard({
             connectsReceived={receivedConnects}
             connectsRequired={requiredConnects}
             isIntercepted={isIntercepted}
+            isInactive={isInactive}
           />
 
           {/* Ratio Text */}

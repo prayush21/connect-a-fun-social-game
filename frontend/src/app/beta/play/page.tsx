@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { CardContainer } from "@/components/beta/cards/CardContainer";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
 import {
@@ -17,12 +17,15 @@ import {
   RoomInfoButton,
 } from "@/components/beta";
 import { AnimatePresence, motion } from "framer-motion";
+import { useBetaStore } from "@/lib/beta/store";
+import { useGame, useIsSetter } from "@/lib/beta/selectors";
+import type { SignullEntry, SignullStatus } from "@/lib/beta/types";
 
 // Define card types
 type CardType = "waiting" | "enter-secret" | "send-signull" | "signull";
 
 type BaseCardData = {
-  id: number;
+  id: number | string;
   type: CardType;
 };
 
@@ -45,7 +48,10 @@ type SignullCardData = BaseCardData & {
   requiredConnects: number;
   totalActiveGuessers: number;
   message: string;
+  status: SignullStatus;
+  hasConnected: boolean;
   isIntercepted?: boolean;
+  isInactive?: boolean;
   messageHistory?: Array<{
     id: string;
     username: string;
@@ -71,16 +77,33 @@ type CardData =
  * 5. Bottom Action Bar - Input & navigation
  */
 export default function BetaPlayPage() {
-  // Placeholder state
-  const [roomCode] = useState("ABCD");
+  // Store hooks
+  const game = useGame();
+  const userId = useBetaStore((state) => state.userId);
+  const username = useBetaStore((state) => state.username);
+  const isSetter = useIsSetter();
+  const addSignull = useBetaStore((state) => state.addSignull);
+  const submitConnect = useBetaStore((state) => state.submitConnect);
+  const submitDirectGuess = useBetaStore((state) => state.submitDirectGuess);
+
+  // Derived state from store
+  const roomCode = game?.roomId || "----";
+  const word = game?.secretWord || "";
+  const revealedCount = game?.revealedCount || 0;
+  const isWordSet = !!game?.secretWord;
+  const players = useMemo(
+    () => Object.values(game?.players || {}),
+    [game?.players]
+  );
+  const connectsRequired = game?.settings.connectsRequired || 3;
+  const directGuessesLeft = game?.directGuessesLeft || 0;
+  const currentUsername = username || "Guest";
+
+  // Local UI state
   const [notification, setNotification] = useState<string | null>(null);
-  const [word] = useState("elephant");
-  const [revealedCount] = useState(3); // First 3 letters revealed (O, X, Y)
-  const [isWordSet] = useState(true); // Controls letter block visibility
   const [inputValue, setInputValue] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
-  const [directGuessesLeft] = useState(3); // Number of direct guesses remaining
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isComposingSignull, setIsComposingSignull] = useState(false);
   const [signullClue, setSignullClue] = useState("");
@@ -88,84 +111,106 @@ export default function BetaPlayPage() {
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
-  const [nextCardId, setNextCardId] = useState(5);
-  const [cards, setCards] = useState<CardData[]>([
-    { id: 2, type: "enter-secret" },
-    {
-      id: 4,
-      type: "signull",
-      username: "DUMBFOX",
-      receivedConnects: 2,
-      requiredConnects: 3,
-      totalActiveGuessers: 5,
-      isIntercepted: true,
-      message:
-        "What do you call a three humped camel? Quick! What do you call a three humped camel? ",
-      messageHistory: [
-        {
-          id: "1",
-          username: "ROGI",
-          message: "Portal opened at /undefined. Find it. Quick!",
-          timestamp: "2m ago",
-        },
-        {
-          id: "2",
-          username: "ROGI",
-          message: "I am ROGI. I speak in riddles.",
-          timestamp: "3m ago",
-        },
-        {
-          id: "3",
-          username: "SYSTEM",
-          message: "DumbFox session initiated.",
-          timestamp: "5m ago",
-        },
-        {
-          id: "4",
-          username: "ROGI",
-          message: "To find the truth, one must first embrace the absurd.",
-          timestamp: "7m ago",
-        },
-        {
-          id: "5",
-          username: "USER",
-          message: "What is the meaning of OXF?",
-          timestamp: "8m ago",
-        },
-        {
-          id: "6",
-          username: "ROGI",
-          message:
-            "A key, a code, a path untold. The beast of burden, wise and old.",
-          timestamp: "10m ago",
-        },
-        {
-          id: "7",
-          username: "USER",
-          message: "Give me a hint.",
-          timestamp: "12m ago",
-        },
-        {
-          id: "8",
-          username: "ROGI",
-          message:
-            "The fox is clever, but the ox is strong. Three letters to right the wrong.",
-          timestamp: "15m ago",
-        },
-      ],
-    },
-    { id: 1, type: "waiting" },
-  ]);
 
-  // Placeholder player data
-  const [players] = useState([
-    { id: "1", name: "DUMBFOX", role: "setter" as const },
-    { id: "2", name: "ROGI", role: "guesser" as const },
-    { id: "3", name: "PLAYER3", role: "guesser" as const },
-    { id: "4", name: "PLAYER4", role: "guesser" as const },
-  ]);
-  const [connectsRequired] = useState(3);
-  const [currentUsername] = useState("PLAYER2"); // TODO: Get from store/auth
+  // Transform game state to cards
+  const cards = useMemo<CardData[]>(() => {
+    if (!game) return [{ id: -1, type: "waiting" }];
+
+    const mappedCards: CardData[] = [];
+
+    // 1. Add Signull cards (reversed order to show newest first)
+    // We need to map SignullEntry to SignullCardData
+    const signullCards: SignullCardData[] = [...game.signullState.order]
+      .reverse()
+      .map((signullId): SignullCardData | null => {
+        const entry = game.signullState.itemsById[signullId];
+        if (!entry) return null;
+
+        // Calculate stats
+        const totalActiveGuessers = Object.values(game.players).filter(
+          (p) => p.role === "guesser"
+        ).length;
+
+        // Map history
+        const messageHistory = entry.connects.map((c, idx) => ({
+          id: `${entry.id}-msg-${idx}`,
+          username: game.players[c.playerId]?.name || "Unknown",
+          message: c.guess, // In real game, this might be hidden until resolved?
+          // Actually connects are guesses.
+          // The message history in the mock was chat-like.
+          // In the real game, it's guesses.
+          timestamp: "Just now", // TODO: Format timestamp
+        }));
+
+        // Add initial clue as first message
+        messageHistory.unshift({
+          id: `${entry.id}-initial`,
+          username: game.players[entry.playerId]?.name || "Unknown",
+          message: entry.clue,
+          timestamp: "Just now",
+        });
+
+        const hasConnected = entry.connects.some((c) => c.playerId === userId);
+
+        return {
+          id: entry.id,
+          type: "signull",
+          username: game.players[entry.playerId]?.name || "Unknown",
+          receivedConnects: entry.connects.length, // or correct connects?
+          requiredConnects: game.settings.connectsRequired,
+          totalActiveGuessers,
+          message: entry.clue,
+          status: entry.status,
+          hasConnected,
+          isIntercepted: entry.status === "blocked",
+          isInactive: entry.status === "inactive",
+          messageHistory,
+        };
+      })
+      .filter((c): c is SignullCardData => c !== null);
+
+    mappedCards.push(...signullCards);
+
+    // Add Waiting card if we are waiting for the next signull
+    const latestSignullId =
+      game.signullState.order[game.signullState.order.length - 1];
+    const latestEntry = latestSignullId
+      ? game.signullState.itemsById[latestSignullId]
+      : null;
+    const isWaitingForNext =
+      game.phase === "signulls" &&
+      (!latestEntry || latestEntry.status !== "pending");
+
+    if (isWaitingForNext && !isComposingSignull) {
+      mappedCards.unshift({ id: "waiting-next", type: "waiting" });
+    }
+
+    // 2. Add Composing card if active
+    if (isComposingSignull) {
+      mappedCards.unshift({
+        id: -999,
+        type: "send-signull",
+      });
+    }
+
+    // 3. Add Phase-specific cards at the bottom (end of array)
+    // If we are in lobby or setting phase, these should be the only cards or at the bottom
+    if (game.phase === "lobby") {
+      mappedCards.push({ id: -1, type: "waiting" });
+    } else if (game.phase === "setting") {
+      if (game.setterId === userId) {
+        mappedCards.push({ id: -2, type: "enter-secret" });
+      } else {
+        mappedCards.push({ id: -1, type: "waiting" });
+      }
+    }
+
+    return mappedCards;
+  }, [game, userId, isComposingSignull]);
+
+  // Reset active index when cards change significantly?
+  // For now, keep it simple.
+
   const [selectedCardHistory, setSelectedCardHistory] = useState<
     Array<{
       id: string;
@@ -222,23 +267,16 @@ export default function BetaPlayPage() {
       return;
     }
 
-    // Insert send-signull card at the front of the stack
-    const newCard: SendSignullCardData = {
-      id: nextCardId,
-      type: "send-signull",
-    };
-    setCards((prev) => [newCard, ...prev]);
-    setNextCardId((prev) => prev + 1);
-    setActiveIndex(0); // Jump to the new card
     setIsComposingSignull(true);
     setSignullClue("");
     setSignullWord("");
     setInputValue("");
+    setActiveIndex(0); // Jump to the new card (which will be at index 0)
     showNotification("Compose your Signull");
   };
 
   // Handle submit - validate and transform send-signull card into signull card
-  const handleSignullSubmit = () => {
+  const handleSignullSubmit = async () => {
     if (!isComposingSignull) {
       // Normal submit behavior when not composing signull
       if (inputValue.trim()) {
@@ -259,51 +297,21 @@ export default function BetaPlayPage() {
       return;
     }
 
-    // TODO: Add validation for word prefix matching secret word
-
-    // Transform the send-signull card into a signull card
-    const newSignullCard: SignullCardData = {
-      id: nextCardId,
-      type: "signull",
-      username: currentUsername,
-      receivedConnects: 0,
-      requiredConnects: connectsRequired,
-      totalActiveGuessers: players.filter((p) => p.role === "guesser").length,
-      message: signullClue.trim(),
-      messageHistory: [
-        {
-          id: `${nextCardId}-initial`,
-          username: currentUsername,
-          message: signullClue.trim(),
-          timestamp: "Just now",
-        },
-      ],
-    };
-
-    // Replace the send-signull card with the new signull card
-    setCards((prev) => {
-      const updatedCards = [...prev];
-      // We assume the active card is the one being submitted if we are in composing mode
-      // But to be safe, we find the send-signull card
-      const sendSignullIndex = updatedCards.findIndex(
-        (c) => c.type === "send-signull"
-      );
-      if (sendSignullIndex !== -1) {
-        updatedCards[sendSignullIndex] = newSignullCard;
-      }
-      return updatedCards;
-    });
-
-    setNextCardId((prev) => prev + 1);
-    setIsComposingSignull(false);
-    setSignullClue("");
-    setSignullWord("");
-    setInputValue("");
-    showNotification(`Signull sent: ${signullWord.trim()}`);
+    try {
+      await addSignull(signullWord.trim(), signullClue.trim());
+      setIsComposingSignull(false);
+      setSignullClue("");
+      setSignullWord("");
+      setInputValue("");
+      showNotification(`Signull sent: ${signullWord.trim()}`);
+    } catch (error) {
+      showNotification("Failed to send Signull");
+      console.error(error);
+    }
   };
 
   // Handle response to a SignullCard
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (!inputValue.trim()) {
       return;
     }
@@ -317,30 +325,15 @@ export default function BetaPlayPage() {
       return;
     }
 
-    // Create a new message entry
-    const newMessage = {
-      id: `${currentCard.id}-${Date.now()}`,
-      username: currentUsername,
-      message: inputValue.trim(),
-      timestamp: "Just now",
-    };
-
-    // Update the card's message history
-    setCards((prev) => {
-      const updatedCards = [...prev];
-      const signullCard = updatedCards[activeIndex] as SignullCardData;
-
-      updatedCards[activeIndex] = {
-        ...signullCard,
-        receivedConnects: signullCard.receivedConnects + 1,
-        messageHistory: [newMessage, ...(signullCard.messageHistory || [])],
-      };
-
-      return updatedCards;
-    });
-
-    showNotification(`Response sent to ${currentCard.username}`);
-    setInputValue("");
+    try {
+      // We need the signull ID. The card ID is the signull ID (as string)
+      await submitConnect(inputValue.trim(), currentCard.id as string);
+      showNotification(`Response sent to ${currentCard.username}`);
+      setInputValue("");
+    } catch (error) {
+      showNotification("Failed to send response");
+      console.error(error);
+    }
   };
 
   // Handle direct guess
@@ -348,10 +341,15 @@ export default function BetaPlayPage() {
     setIsDirectGuessMode(true);
   };
 
-  const handleDirectGuessSubmit = (guess: string) => {
-    showNotification(`Direct guess: ${guess}`);
-    setIsDirectGuessMode(false);
-    // TODO: Implement actual guess submission logic
+  const handleDirectGuessSubmit = async (guess: string) => {
+    try {
+      await submitDirectGuess(guess);
+      showNotification(`Direct guess: ${guess}`);
+      setIsDirectGuessMode(false);
+    } catch (error) {
+      showNotification("Failed to submit guess");
+      console.error(error);
+    }
   };
 
   const handleDirectGuessCancel = () => {
@@ -377,6 +375,31 @@ export default function BetaPlayPage() {
     setIsHistoryOpen(false);
     setTimeout(() => setSelectedCardHistory([]), 300); // Clear after animation
   };
+
+  // Determine if input should be disabled
+  const isInputDisabled = useMemo(() => {
+    if (isComposingSignull) return false;
+
+    const currentCard = cards[activeIndex];
+    if (!currentCard) return true;
+
+    if (currentCard.type === "signull") {
+      const signullCard = currentCard as SignullCardData;
+
+      // If card is not pending, disable input
+      if (signullCard.status !== "pending") return true;
+
+      // If user is setter, they can always input (as long as pending)
+      if (isSetter) return false;
+
+      // If user is guesser, they can only input if they haven't connected yet
+      return signullCard.hasConnected;
+    }
+
+    // For other card types (waiting, enter-secret), input is generally disabled
+    // unless specific logic handles them (e.g. enter-secret might use a different input mechanism)
+    return true;
+  }, [cards, activeIndex, isComposingSignull, isSetter]);
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-neutral-200 p-0 md:p-4">
@@ -549,6 +572,7 @@ export default function BetaPlayPage() {
                         totalActiveGuessers={card.totalActiveGuessers}
                         message={card.message}
                         isIntercepted={card.isIntercepted}
+                        isInactive={card.isInactive}
                         onClick={() =>
                           handleSignullCardClick(card.messageHistory)
                         }
@@ -612,11 +636,17 @@ export default function BetaPlayPage() {
           onSignullClick={handleSignullClick}
           onSubmit={isComposingSignull ? handleSignullSubmit : handleConnect}
           placeholder={isComposingSignull ? "Enter reference word" : "OXF"}
+          disableInput={isInputDisabled}
           disableSubmit={
             isComposingSignull
               ? !signullClue.trim() || !signullWord.trim()
-              : !inputValue.trim()
+              : !inputValue.trim() || isInputDisabled
           }
+          isGameEnded={game?.phase === "ended"}
+          onPlayAgain={() => {
+            // TODO: Implement play again logic (e.g., reset game, return to lobby)
+            showNotification("Play Again clicked");
+          }}
         />
 
         {/* Keyboard Safe Area - Dynamic padding for iOS */}
