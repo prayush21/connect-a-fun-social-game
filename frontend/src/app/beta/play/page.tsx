@@ -101,6 +101,13 @@ export default function BetaPlayPage() {
     [game?.players]
   );
 
+  //Redirec to beta home page if no roomId
+  useEffect(() => {
+    if (!game?.roomId) {
+      router.push("/beta");
+    }
+  }, [game?.roomId, router]);
+
   // Redirect to lobby if phase changes to lobby
   useEffect(() => {
     if (game?.phase === "lobby") {
@@ -133,8 +140,13 @@ export default function BetaPlayPage() {
 
     // 1. Add Signull cards (reversed order to show newest first)
     // We need to map SignullEntry to SignullCardData
-    const signullCards: SignullCardData[] = game.signullState.order
-      .reduce((acc, val) => acc.concat(val), [])
+    const signullCards: SignullCardData[] = Object.keys(game.signullState.order)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .reduce(
+        (acc, key) => acc.concat(game.signullState.order[String(key)]),
+        [] as string[]
+      )
       .reverse()
       .map((signullId): SignullCardData | null => {
         const entry = game.signullState.itemsById[signullId];
@@ -186,10 +198,13 @@ export default function BetaPlayPage() {
     mappedCards.push(...signullCards);
 
     // Add Waiting card if we are waiting for the next signull
-    const flattenedOrder = game.signullState.order.reduce(
-      (acc, val) => acc.concat(val),
-      []
-    );
+    const flattenedOrder = Object.keys(game.signullState.order)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .reduce(
+        (acc, key) => acc.concat(game.signullState.order[String(key)]),
+        [] as string[]
+      );
     const latestSignullId = flattenedOrder[flattenedOrder.length - 1];
     const latestEntry = latestSignullId
       ? game.signullState.itemsById[latestSignullId]
@@ -228,14 +243,7 @@ export default function BetaPlayPage() {
   // Reset active index when cards change significantly?
   // For now, keep it simple.
 
-  const [selectedCardHistory, setSelectedCardHistory] = useState<
-    Array<{
-      id: string;
-      username: string;
-      message: string;
-      timestamp?: string;
-    }>
-  >([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   // Refs for scroll control
   const headerRef = useRef<HTMLDivElement>(null);
@@ -387,24 +395,25 @@ export default function BetaPlayPage() {
   };
 
   // Handle history card click
-  const handleSignullCardClick = (
-    history?: Array<{
-      id: string;
-      username: string;
-      message: string;
-      timestamp?: string;
-    }>
-  ) => {
-    if (history && history.length > 0) {
-      setSelectedCardHistory(history);
-      setIsHistoryOpen(true);
-    }
+  const handleSignullCardClick = (cardId: string) => {
+    setSelectedCardId(cardId);
+    setIsHistoryOpen(true);
   };
 
   const handleCloseHistory = () => {
     setIsHistoryOpen(false);
-    setTimeout(() => setSelectedCardHistory([]), 300); // Clear after animation
+    setTimeout(() => setSelectedCardId(null), 300); // Clear after animation
   };
+
+  // Selected card history derived from cards array
+  const selectedCardHistory = useMemo(() => {
+    if (!selectedCardId) return [];
+    const card = cards.find((c) => String(c.id) === selectedCardId);
+    if (card && card.type === "signull") {
+      return (card as SignullCardData).messageHistory || [];
+    }
+    return [];
+  }, [cards, selectedCardId]);
 
   // Determine if input should be disabled
   const isInputDisabled = useMemo(() => {
@@ -605,9 +614,7 @@ export default function BetaPlayPage() {
                         message={card.message}
                         isIntercepted={card.isIntercepted}
                         isInactive={card.isInactive}
-                        onClick={() =>
-                          handleSignullCardClick(card.messageHistory)
-                        }
+                        onClick={() => handleSignullCardClick(String(card.id))}
                         messageHistory={card.messageHistory}
                       />
                     );

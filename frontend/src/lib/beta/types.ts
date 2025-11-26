@@ -29,7 +29,7 @@ export interface Player {
 export interface SignullConnect {
   playerId: PlayerId;
   guess: string; // uppercase canonical form
-  timestamp: Date | FieldValue; // use FieldValue.serverTimestamp() when creating
+  timestamp: Date;
   isCorrect: boolean;
 }
 
@@ -46,7 +46,7 @@ export interface SignullEntry {
 }
 
 export interface SignullState {
-  order: SignullId[][]; // grouped by revealedCount stage
+  order: Record<string, SignullId[]>; // grouped by revealedCount stage (key is stringified index)
   itemsById: Record<SignullId, SignullEntry>;
   activeIndex: number | null; // used only in round_robin mode (index into flattened order)
 }
@@ -123,7 +123,7 @@ export interface FirestoreGameRoom {
   secretWord: string;
   revealedCount: number;
   signullState: {
-    order: SignullId[][];
+    order: Record<string, SignullId[]>;
     activeIndex: number | null;
     itemsById: Record<SignullId, FirestoreSignullEntry>;
   };

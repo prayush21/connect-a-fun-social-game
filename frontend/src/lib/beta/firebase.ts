@@ -78,7 +78,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
     secretWord: data.secretWord,
     revealedCount: data.revealedCount ?? 0,
     signullState: {
-      order: data.signullState.order || [],
+      order: data.signullState.order || {},
       activeIndex: data.signullState.activeIndex ?? null,
       itemsById: Object.entries(data.signullState.itemsById || {}).reduce(
         (acc, [id, entry]) => {
@@ -146,7 +146,7 @@ export const createRoom = async (
     secretWord: "",
     revealedCount: 0,
     signullState: {
-      order: [],
+      order: {},
       activeIndex: finalSettings.playMode === "round_robin" ? 0 : null,
       itemsById: {},
     },
@@ -263,17 +263,22 @@ export const addSignull = async (
       createdAt: serverTimestamp() as Timestamp,
     };
 
-    const currentOrder = data.signullState.order || [];
+    const currentOrder = data.signullState.order || {};
     const revealedCount = data.revealedCount ?? 0;
-    const newOrder = [...currentOrder];
-    // Ensure we have arrays up to revealedCount
-    while (newOrder.length <= revealedCount) {
-      newOrder.push([]);
-    }
-    // Add to the current stage
-    newOrder[revealedCount] = [...newOrder[revealedCount], signullId];
+    const stageKey = String(revealedCount);
+    const currentStageList = currentOrder[stageKey] || [];
+    const newStageList = [...currentStageList, signullId];
 
-    const flattenedOrder = newOrder.reduce((acc, val) => acc.concat(val), []);
+    // Calculate flattened order for activeIndex
+    const newOrder = { ...currentOrder, [stageKey]: newStageList };
+    const sortedKeys = Object.keys(newOrder)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const flattenedOrder = sortedKeys.reduce(
+      (acc, key) => acc.concat(newOrder[String(key)]),
+      [] as string[]
+    );
+
     const activeIndex =
       playMode === "round_robin" ? flattenedOrder.length - 1 : null;
 
@@ -360,18 +365,28 @@ export const submitConnect = async (
     const snap = await trx.get(docRef);
     if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
     const data = snap.data() as FirestoreGameRoom;
+
     if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
     const player = data.players[playerId];
     if (!player) throw new Error("PLAYER_NOT_FOUND");
+
+    // Helper to flatten order
+    const getFlattenedOrder = (order: Record<string, SignullId[]>) => {
+      const keys = Object.keys(order || {})
+        .map(Number)
+        .sort((a, b) => a - b);
+      return keys.reduce(
+        (acc, key) => acc.concat(order[String(key)]),
+        [] as SignullId[]
+      );
+    };
+
     // Determine target signull
     let targetId: SignullId | undefined = signullId;
     if (data.settings.playMode === "round_robin") {
       const idx = data.signullState.activeIndex;
       if (idx === null) throw new Error("NO_ACTIVE_SIGNULL");
-      const flattenedOrder = (data.signullState.order || []).reduce(
-        (acc, val) => acc.concat(val),
-        []
-      );
+      const flattenedOrder = getFlattenedOrder(data.signullState.order);
       targetId = flattenedOrder[idx];
     }
     if (!targetId) throw new Error("SIGNULL_ID_REQUIRED");
@@ -389,7 +404,7 @@ export const submitConnect = async (
     const newConnect = {
       playerId,
       guess: upperGuess,
-      timestamp: serverTimestamp(),
+      timestamp: Timestamp.now(),
       isCorrect,
     };
     entry.connects.push(newConnect);
@@ -406,10 +421,7 @@ export const submitConnect = async (
         // Invalidate other pending signulls if one is resolved
         // This prevents multiple signulls from being active/resolved simultaneously
         // when they were all pending at the same time.
-        const flattenedOrder = (data.signullState.order || []).reduce(
-          (acc, val) => acc.concat(val),
-          []
-        );
+        const flattenedOrder = getFlattenedOrder(data.signullState.order);
         const otherPendingIds = flattenedOrder.filter(
           (id) =>
             id !== targetId &&
@@ -431,10 +443,7 @@ export const submitConnect = async (
       resolution &&
       ["resolved", "failed", "blocked"].includes(resolution.status)
     ) {
-      const flattenedOrder = (data.signullState.order || []).reduce(
-        (acc, val) => acc.concat(val),
-        []
-      );
+      const flattenedOrder = getFlattenedOrder(data.signullState.order);
       const pendingIds = flattenedOrder.filter(
         (id) => data.signullState.itemsById[id].status === "pending"
       );
@@ -603,7 +612,7 @@ export const resetGame = async (roomId: RoomId): Promise<void> => {
     phase: "lobby",
     secretWord: deleteField(),
     revealedCount: 0,
-    "signullState.order": [],
+    "signullState.order": {},
     "signullState.itemsById": {},
     "signullState.activeIndex": null,
     winner: deleteField(),

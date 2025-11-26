@@ -246,6 +246,7 @@ export const useBetaStore = create<BetaStoreState>()(
           await fxSetSecretWord(roomId, userId, word);
         } catch (e) {
           set({ error: mapError(e) });
+          throw e;
         } finally {
           set({ isLoading: false });
         }
@@ -260,7 +261,7 @@ export const useBetaStore = create<BetaStoreState>()(
           return id;
         } catch (e) {
           set({ error: mapError(e) });
-          return null;
+          throw e;
         } finally {
           set({ isLoading: false });
         }
@@ -274,6 +275,7 @@ export const useBetaStore = create<BetaStoreState>()(
           await fxSubmitConnect(roomId, userId, signullId, guess);
         } catch (e) {
           set({ error: mapError(e) });
+          throw e;
         } finally {
           set({ isLoading: false });
         }
@@ -287,6 +289,7 @@ export const useBetaStore = create<BetaStoreState>()(
           await fxSubmitDirectGuess(roomId, userId, guess);
         } catch (e) {
           set({ error: mapError(e) });
+          throw e;
         } finally {
           set({ isLoading: false });
         }
