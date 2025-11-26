@@ -46,9 +46,9 @@ export interface SignullEntry {
 }
 
 export interface SignullState {
-  order: SignullId[]; // insertion order of signulls
+  order: SignullId[][]; // grouped by revealedCount stage
   itemsById: Record<SignullId, SignullEntry>;
-  activeIndex: number | null; // used only in round_robin mode
+  activeIndex: number | null; // used only in round_robin mode (index into flattened order)
 }
 
 export interface GameSettings {
@@ -123,7 +123,7 @@ export interface FirestoreGameRoom {
   secretWord: string;
   revealedCount: number;
   signullState: {
-    order: SignullId[];
+    order: SignullId[][];
     activeIndex: number | null;
     itemsById: Record<SignullId, FirestoreSignullEntry>;
   };

@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useBetaStore } from "@/lib/beta/store";
 import { useGame, useIsSetter } from "@/lib/beta/selectors";
 import type { SignullEntry, SignullStatus } from "@/lib/beta/types";
+import { useRouter } from "next/navigation";
 
 // Define card types
 type CardType = "waiting" | "enter-secret" | "send-signull" | "signull";
@@ -77,6 +78,8 @@ type CardData =
  * 5. Bottom Action Bar - Input & navigation
  */
 export default function BetaPlayPage() {
+  const router = useRouter();
+
   // Store hooks
   const game = useGame();
   const userId = useBetaStore((state) => state.userId);
@@ -120,7 +123,8 @@ export default function BetaPlayPage() {
 
     // 1. Add Signull cards (reversed order to show newest first)
     // We need to map SignullEntry to SignullCardData
-    const signullCards: SignullCardData[] = [...game.signullState.order]
+    const signullCards: SignullCardData[] = game.signullState.order
+      .reduce((acc, val) => acc.concat(val), [])
       .reverse()
       .map((signullId): SignullCardData | null => {
         const entry = game.signullState.itemsById[signullId];
@@ -172,8 +176,11 @@ export default function BetaPlayPage() {
     mappedCards.push(...signullCards);
 
     // Add Waiting card if we are waiting for the next signull
-    const latestSignullId =
-      game.signullState.order[game.signullState.order.length - 1];
+    const flattenedOrder = game.signullState.order.reduce(
+      (acc, val) => acc.concat(val),
+      []
+    );
+    const latestSignullId = flattenedOrder[flattenedOrder.length - 1];
     const latestEntry = latestSignullId
       ? game.signullState.itemsById[latestSignullId]
       : null;
@@ -646,6 +653,8 @@ export default function BetaPlayPage() {
           onPlayAgain={() => {
             // TODO: Implement play again logic (e.g., reset game, return to lobby)
             showNotification("Play Again clicked");
+            // Navigate to the lobby page
+            router.push("/beta/lobby");
           }}
         />
 

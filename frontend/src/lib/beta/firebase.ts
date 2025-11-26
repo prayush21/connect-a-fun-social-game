@@ -262,8 +262,20 @@ export const addSignull = async (
       status: "pending",
       createdAt: serverTimestamp() as Timestamp,
     };
-    const newOrder = [...data.signullState.order, signullId];
-    const activeIndex = playMode === "round_robin" ? newOrder.length - 1 : null;
+
+    const currentOrder = data.signullState.order || [];
+    const revealedCount = data.revealedCount ?? 0;
+    const newOrder = [...currentOrder];
+    // Ensure we have arrays up to revealedCount
+    while (newOrder.length <= revealedCount) {
+      newOrder.push([]);
+    }
+    // Add to the current stage
+    newOrder[revealedCount] = [...newOrder[revealedCount], signullId];
+
+    const flattenedOrder = newOrder.reduce((acc, val) => acc.concat(val), []);
+    const activeIndex = playMode === "round_robin" ? flattenedOrder.length - 1 : null;
+
     trx.update(docRef, {
       "signullState.order": newOrder,
       "signullState.activeIndex": activeIndex,
@@ -355,7 +367,8 @@ export const submitConnect = async (
     if (data.settings.playMode === "round_robin") {
       const idx = data.signullState.activeIndex;
       if (idx === null) throw new Error("NO_ACTIVE_SIGNULL");
-      targetId = data.signullState.order[idx];
+      const flattenedOrder = (data.signullState.order || []).reduce((acc, val) => acc.concat(val), []);
+      targetId = flattenedOrder[idx];
     }
     if (!targetId) throw new Error("SIGNULL_ID_REQUIRED");
     const entry = data.signullState.itemsById[targetId];
@@ -389,7 +402,8 @@ export const submitConnect = async (
         // Invalidate other pending signulls if one is resolved
         // This prevents multiple signulls from being active/resolved simultaneously
         // when they were all pending at the same time.
-        const otherPendingIds = data.signullState.order.filter(
+        const flattenedOrder = (data.signullState.order || []).reduce((acc, val) => acc.concat(val), []);
+        const otherPendingIds = flattenedOrder.filter(
           (id) =>
             id !== targetId &&
             data.signullState.itemsById[id].status === "pending"
@@ -410,14 +424,15 @@ export const submitConnect = async (
       resolution &&
       ["resolved", "failed", "blocked"].includes(resolution.status)
     ) {
-      const pendingIds = data.signullState.order.filter(
+      const flattenedOrder = (data.signullState.order || []).reduce((acc, val) => acc.concat(val), []);
+      const pendingIds = flattenedOrder.filter(
         (id) => data.signullState.itemsById[id].status === "pending"
       );
       if (pendingIds.length === 0) {
         data.signullState.activeIndex = null;
       } else {
         const nextId = pendingIds[0];
-        data.signullState.activeIndex = data.signullState.order.indexOf(nextId);
+        data.signullState.activeIndex = flattenedOrder.indexOf(nextId);
       }
       if (resolution.gameEnded) {
         data.phase = "ended";
