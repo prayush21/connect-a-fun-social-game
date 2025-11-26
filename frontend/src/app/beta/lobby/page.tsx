@@ -11,6 +11,7 @@ import {
   PlayerList,
   StartGameButton,
 } from "@/components/beta/lobby";
+import { copyToClipboard } from "@/lib/utils";
 
 export default function BetaLobbyPage() {
   const router = useRouter();
@@ -71,29 +72,10 @@ export default function BetaLobbyPage() {
   const handleCopyCode = async () => {
     if (!joinUrl) return;
 
-    try {
-      await navigator.clipboard.writeText(joinUrl);
+    const success = await copyToClipboard(joinUrl);
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Clipboard API failed, trying fallback:", err);
-      try {
-        const textArea = document.createElement("textarea");
-        textArea.value = joinUrl;
-        // Ensure it's not visible but part of the DOM
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        textArea.style.top = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (fallbackErr) {
-        console.error("Fallback copy failed:", fallbackErr);
-      }
     }
   };
 

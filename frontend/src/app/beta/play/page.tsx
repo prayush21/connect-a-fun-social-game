@@ -44,6 +44,7 @@ type SendSignullCardData = BaseCardData & {
 
 type SignullCardData = BaseCardData & {
   type: "signull";
+  playerId: string;
   username: string;
   receivedConnects: number;
   requiredConnects: number;
@@ -181,6 +182,7 @@ export default function BetaPlayPage() {
         return {
           id: entry.id,
           type: "signull",
+          playerId: entry.playerId,
           username: game.players[entry.playerId]?.name || "Unknown",
           receivedConnects: entry.connects.length, // or correct connects?
           requiredConnects: game.settings.connectsRequired,
@@ -288,7 +290,8 @@ export default function BetaPlayPage() {
   // Handle Signull button click - insert send-signull card
   const handleSignullClick = () => {
     if (isComposingSignull) {
-      showNotification("Already composing a Signull");
+      showNotification("Back to reading signulls");
+      setIsComposingSignull(false);
       return;
     }
 
@@ -347,6 +350,12 @@ export default function BetaPlayPage() {
     if (currentCard?.type !== "signull") {
       showNotification(`Submitted: ${inputValue}`);
       setInputValue("");
+      return;
+    }
+
+    // Check if player is trying to connect to their own signull
+    if (currentCard.playerId === userId) {
+      showNotification("Can't connect to own signull");
       return;
     }
 
@@ -612,7 +621,11 @@ export default function BetaPlayPage() {
                         requiredConnects={card.requiredConnects}
                         totalActiveGuessers={card.totalActiveGuessers}
                         message={card.message}
-                        isIntercepted={card.isIntercepted}
+                        isIntercepted={
+                          card.isIntercepted ||
+                          card.status === "blocked" ||
+                          card.status === "failed"
+                        }
                         isInactive={card.isInactive}
                         onClick={() => handleSignullCardClick(String(card.id))}
                         messageHistory={card.messageHistory}
@@ -685,7 +698,7 @@ export default function BetaPlayPage() {
               ? "Enter reference word"
               : cards[activeIndex]?.type === "enter-secret"
                 ? "Enter Secret Word"
-                : "OXF"
+                : "Enter your response word"
           }
           disableInput={isInputDisabled}
           disableSignull={isSetter}
