@@ -440,7 +440,7 @@ export default function BetaPlayPage() {
         {/* SECTION 1: Top Header Bar */}
         <header
           ref={headerRef}
-          className={`sticky top-0 z-50 flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isDirectGuessMode || isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+          className={`sticky top-0 z-[100] flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isDirectGuessMode || isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Room Info Button */}
           <RoomInfoButton
@@ -462,7 +462,7 @@ export default function BetaPlayPage() {
             <RoundButton
               size="md"
               onClick={handleDirectGuessClick}
-              disabled={isDirectGuessMode}
+              disabled={isDirectGuessMode || isSetter}
               title="Direct Guess"
             >
               <RoundButtonIcon size="md">
