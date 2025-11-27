@@ -16,8 +16,10 @@ import { copyToClipboard } from "@/lib/utils";
 export default function BetaLobbyPage() {
   const router = useRouter();
   const {
+    roomId: storeRoomId,
     game: gameState,
     userId: sessionId,
+    initialized,
     updateGameSettings,
     removePlayerFromRoom,
     changeSetter,
@@ -25,8 +27,8 @@ export default function BetaLobbyPage() {
     teardown,
   } = useBetaStore();
 
-  // Extract game state properties
-  const roomId = gameState?.roomId ?? null;
+  // Use store's roomId (set immediately) instead of gameState?.roomId (async from Firebase)
+  const roomId = storeRoomId;
   const gamePhase = gameState?.phase ?? "lobby";
   const players = gameState?.players ?? {};
   const currentPlayerId = sessionId || "";
@@ -45,8 +47,14 @@ export default function BetaLobbyPage() {
 
   // Redirect logic
   useEffect(() => {
+    // No room in store - redirect to home
     if (!roomId) {
       router.push("/beta");
+      return;
+    }
+
+    // Wait for Firebase subscription to initialize before checking player membership
+    if (!initialized) {
       return;
     }
 
@@ -60,7 +68,7 @@ export default function BetaLobbyPage() {
     if (gamePhase !== "lobby") {
       router.push("/beta/play");
     }
-  }, [roomId, gamePhase, router, gameState, sessionId, teardown]);
+  }, [roomId, gamePhase, router, gameState, sessionId, teardown, initialized]);
 
   // Generate join URL for QR code with auto-join params
   const joinUrl =

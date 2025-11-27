@@ -373,6 +373,7 @@ export const useBetaStore = create<BetaStoreState>()(
       partialize: (state) => ({
         username: state.username,
         userId: state.userId,
+        roomId: state.roomId,
       }),
     }
   )
