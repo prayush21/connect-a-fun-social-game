@@ -19,6 +19,7 @@ export type {
 } from "./CardTransition";
 
 export { WaitingCard } from "./WaitingCard";
+export { StartingGameCard } from "./StartingGameCard";
 export { EnterSecretWordCard } from "./EnterSecretWordCard";
 export { SendASignullCard } from "./SendASignullCard";
 export { SignullCard } from "./SignullCard";

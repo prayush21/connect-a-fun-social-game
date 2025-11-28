@@ -5,6 +5,7 @@ import { CardContainer } from "@/components/beta/cards/CardContainer";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
 import {
   WaitingCard,
+  StartingGameCard,
   EnterSecretWordCard,
   SendASignullCard,
   SignullCard,
@@ -26,6 +27,7 @@ import { useRouter } from "next/navigation";
 // Define card types
 type CardType =
   | "waiting"
+  | "starting-game"
   | "enter-secret"
   | "send-signull"
   | "signull"
@@ -38,6 +40,10 @@ type BaseCardData = {
 
 type WaitingCardData = BaseCardData & {
   type: "waiting";
+};
+
+type StartingGameCardData = BaseCardData & {
+  type: "starting-game";
 };
 
 type EnterSecretCardData = BaseCardData & {
@@ -75,6 +81,7 @@ type GameEndedCardData = BaseCardData & {
 
 type CardData =
   | WaitingCardData
+  | StartingGameCardData
   | EnterSecretCardData
   | SendSignullCardData
   | SignullCardData
@@ -251,10 +258,8 @@ export default function BetaPlayPage() {
       if (game.setterId === userId) {
         mappedCards.push({ id: -2, type: "enter-secret" });
       } else {
-        // Only show waiting card if less than 4 players
-        if (playerCount < 4) {
-          mappedCards.push({ id: -1, type: "waiting" });
-        }
+        // Show starting game card for guessers waiting for setter
+        mappedCards.push({ id: -1, type: "starting-game" });
       }
     } else if (game.phase === "ended") {
       // Add winning card at the front when game ends
@@ -490,6 +495,7 @@ export default function BetaPlayPage() {
           <RoomInfoButton
             roomCode={roomCode}
             players={players}
+            currentPlayerId={userId || undefined}
             connectsRequired={connectsRequired}
           />
 
@@ -630,6 +636,8 @@ export default function BetaPlayPage() {
                 switch (card.type) {
                   case "waiting":
                     return <WaitingCard />;
+                  case "starting-game":
+                    return <StartingGameCard />;
                   case "enter-secret":
                     return <EnterSecretWordCard />;
                   case "send-signull":

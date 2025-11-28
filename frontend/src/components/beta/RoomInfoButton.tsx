@@ -13,6 +13,7 @@ interface Player {
 interface RoomInfoButtonProps {
   roomCode: string;
   players: Player[];
+  currentPlayerId?: string;
   connectsRequired: number;
   className?: string;
 }
@@ -28,6 +29,7 @@ interface RoomInfoButtonProps {
 export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
   roomCode,
   players,
+  currentPlayerId,
   connectsRequired,
   className,
 }) => {
@@ -157,7 +159,14 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
                   key={player.id}
                   className="flex items-center justify-between rounded-xl px-3 py-2 transition-colors hover:bg-neutral-50"
                 >
-                  <span className="text-sm font-medium text-black">
+                  <span
+                    className={cn(
+                      "text-sm text-black",
+                      player.id === currentPlayerId
+                        ? "font-bold"
+                        : "font-medium"
+                    )}
+                  >
                     {player.name}
                   </span>
                   {player.role === "setter" && (
