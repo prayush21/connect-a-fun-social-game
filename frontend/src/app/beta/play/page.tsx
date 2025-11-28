@@ -545,6 +545,7 @@ export default function BetaPlayPage() {
               secretWord={word}
               revealedCount={revealedCount}
               isDirectGuessMode={isDirectGuessMode}
+              isGameEnded={game?.phase === "ended"}
               onSubmit={handleDirectGuessSubmit}
               onCancel={handleDirectGuessCancel}
               className="my-4"

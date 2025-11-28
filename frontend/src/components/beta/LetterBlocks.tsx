@@ -7,6 +7,7 @@ interface LetterBlocksProps {
   secretWord: string;
   revealedCount: number;
   isDirectGuessMode?: boolean;
+  isGameEnded?: boolean;
   onDirectGuessClick?: () => void;
   onSubmit?: (guess: string) => void;
   onCancel?: () => void;
@@ -17,6 +18,7 @@ export const LetterBlocks = ({
   secretWord,
   revealedCount,
   isDirectGuessMode = false,
+  isGameEnded = false,
   onDirectGuessClick,
   onSubmit,
   onCancel,
@@ -24,6 +26,9 @@ export const LetterBlocks = ({
 }: LetterBlocksProps) => {
   const letters = secretWord.toUpperCase().split("");
   const wordLength = letters.length;
+
+  // When game ends, reveal all letters
+  const effectiveRevealedCount = isGameEnded ? wordLength : revealedCount;
 
   // Dynamic sizing based on word length
   const blockSize = Math.max(24, Math.min(48, 300 / wordLength));
@@ -43,19 +48,19 @@ export const LetterBlocks = ({
     if (isDirectGuessMode) {
       const initialGuess = Array(wordLength).fill("");
       // Pre-fill revealed letters
-      for (let i = 0; i < revealedCount; i++) {
+      for (let i = 0; i < effectiveRevealedCount; i++) {
         initialGuess[i] = letters[i];
       }
       setGuessInput(initialGuess);
-      setFocusedIndex(revealedCount); // Start at first unrevealed letter
+      setFocusedIndex(effectiveRevealedCount); // Start at first unrevealed letter
 
       // Focus first unrevealed input after animation
       setTimeout(() => {
-        inputRefs.current[revealedCount]?.focus();
+        inputRefs.current[effectiveRevealedCount]?.focus();
       }, 400);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDirectGuessMode, secretWord, wordLength, revealedCount]);
+  }, [isDirectGuessMode, secretWord, wordLength, effectiveRevealedCount]);
 
   // Click outside handler
   useEffect(() => {
@@ -101,7 +106,7 @@ export const LetterBlocks = ({
   // Handle backspace navigation
   const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace") {
-      if (guessInput[index] === "" && index > revealedCount) {
+      if (guessInput[index] === "" && index > effectiveRevealedCount) {
         // Move to previous block if current is empty
         e.preventDefault();
         const prevIndex = index - 1;
@@ -113,7 +118,7 @@ export const LetterBlocks = ({
         newGuess[index] = "";
         setGuessInput(newGuess);
       }
-    } else if (e.key === "ArrowLeft" && index > revealedCount) {
+    } else if (e.key === "ArrowLeft" && index > effectiveRevealedCount) {
       e.preventDefault();
       const prevIndex = index - 1;
       setFocusedIndex(prevIndex);
@@ -175,8 +180,9 @@ export const LetterBlocks = ({
           style={{ gap: `${gap}px` }}
         >
           {letters.map((letter, index) => {
-            const isRevealed = index < revealedCount;
-            const isEditable = isDirectGuessMode && index >= revealedCount;
+            const isRevealed = index < effectiveRevealedCount;
+            const isEditable =
+              isDirectGuessMode && index >= effectiveRevealedCount;
 
             return (
               <motion.div
