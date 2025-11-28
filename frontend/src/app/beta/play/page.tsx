@@ -219,20 +219,15 @@ export default function BetaPlayPage() {
     mappedCards.push(...signullCards);
 
     // Add Waiting card if we are waiting for the next signull
-    const flattenedOrder = Object.keys(game.signullState.order)
-      .map(Number)
-      .sort((a, b) => a - b)
-      .reduce(
-        (acc, key) => acc.concat(game.signullState.order[String(key)]),
-        [] as string[]
-      );
-    const latestSignullId = flattenedOrder[flattenedOrder.length - 1];
-    const latestEntry = latestSignullId
-      ? game.signullState.itemsById[latestSignullId]
-      : null;
-    const isWaitingForNext =
-      game.phase === "signulls" &&
-      (!latestEntry || latestEntry.status !== "pending");
+    // Check if all signulls for the current revealedCount are resolved (not pending)
+    const currentRoundSignullIds =
+      game.signullState.order[String(revealedCount)] || [];
+    const hasAnyPendingSignull = currentRoundSignullIds.some((signullId) => {
+      const entry = game.signullState.itemsById[signullId];
+      return entry?.status === "pending";
+    });
+
+    const isWaitingForNext = game.phase === "signulls" && !hasAnyPendingSignull;
 
     if (isWaitingForNext && !isComposingSignull) {
       mappedCards.unshift({ id: "waiting-next", type: "waiting" });
