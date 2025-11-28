@@ -106,7 +106,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
       ),
     },
     directGuessesLeft: data.directGuessesLeft,
-    winner: data.winner,
+    winner: data.winner ?? null,
     settings: data.settings,
     createdAt: tsToDate(data.createdAt),
     updatedAt: tsToDate(data.updatedAt),
@@ -464,7 +464,7 @@ export const submitConnect = async (
     trx.update(docRef, {
       signullState: data.signullState,
       phase: data.phase,
-      winner: data.winner,
+      winner: data.winner ?? null,
       revealedCount: newRevealedCount,
       updatedAt: serverTimestamp(),
     });

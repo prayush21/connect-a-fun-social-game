@@ -229,16 +229,21 @@ export default function BetaLobbyPage() {
         />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#F2F3F5] via-[#F2F3F5] to-transparent px-4 pb-6 pt-12 md:px-6">
-        <div className="mx-auto max-w-md">
-          <StartGameButton onClick={handleStartGame} disabled={!canStartGame} />
-          <div className="mt-4 text-center">
-            <button className="text-sm text-neutral-500 underline">
-              How to play?
-            </button>
+      {isSetter && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#F2F3F5] via-[#F2F3F5] to-transparent px-4 pb-6 pt-12 md:px-6">
+          <div className="mx-auto max-w-md">
+            <StartGameButton
+              onClick={handleStartGame}
+              disabled={!canStartGame}
+            />
+            <div className="mt-4 text-center">
+              <button className="text-sm text-neutral-500 underline">
+                How to play?
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -229,13 +229,18 @@ export default function BetaPlayPage() {
 
     // 3. Add Phase-specific cards at the bottom (end of array)
     // If we are in lobby or setting phase, these should be the only cards or at the bottom
+    const playerCount = Object.keys(game.players || {}).length;
+
     if (game.phase === "lobby") {
-      mappedCards.push({ id: -1, type: "waiting" });
+      // Don't show waiting card in lobby - lobby page handles this
     } else if (game.phase === "setting") {
       if (game.setterId === userId) {
         mappedCards.push({ id: -2, type: "enter-secret" });
       } else {
-        mappedCards.push({ id: -1, type: "waiting" });
+        // Only show waiting card if less than 4 players
+        if (playerCount < 4) {
+          mappedCards.push({ id: -1, type: "waiting" });
+        }
       }
     }
 
