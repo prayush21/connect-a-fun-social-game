@@ -616,6 +616,7 @@ export const resetGame = async (roomId: RoomId): Promise<void> => {
     "signullState.order": {},
     "signullState.itemsById": {},
     "signullState.activeIndex": null,
+    directGuessesLeft: 3,
     winner: deleteField(),
     updatedAt: serverTimestamp(),
   });
