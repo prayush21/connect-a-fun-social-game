@@ -8,6 +8,7 @@ import {
   EnterSecretWordCard,
   SendASignullCard,
   SignullCard,
+  WinningCard,
 } from "@/components/beta/cards";
 import {
   ActionBar,
@@ -19,11 +20,16 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useBetaStore } from "@/lib/beta/store";
 import { useGame, useIsSetter } from "@/lib/beta/selectors";
-import type { SignullEntry, SignullStatus } from "@/lib/beta/types";
+import type { SignullEntry, SignullStatus, GameWinner } from "@/lib/beta/types";
 import { useRouter } from "next/navigation";
 
 // Define card types
-type CardType = "waiting" | "enter-secret" | "send-signull" | "signull";
+type CardType =
+  | "waiting"
+  | "enter-secret"
+  | "send-signull"
+  | "signull"
+  | "game-ended";
 
 type BaseCardData = {
   id: number | string;
@@ -62,11 +68,17 @@ type SignullCardData = BaseCardData & {
   }>;
 };
 
+type GameEndedCardData = BaseCardData & {
+  type: "game-ended";
+  winnerRole: GameWinner;
+};
+
 type CardData =
   | WaitingCardData
   | EnterSecretCardData
   | SendSignullCardData
-  | SignullCardData;
+  | SignullCardData
+  | GameEndedCardData;
 
 /**
  * Beta Play Page - Card-Based Game Interface
@@ -115,6 +127,13 @@ export default function BetaPlayPage() {
       router.push("/beta/lobby");
     }
   }, [game?.phase, router]);
+
+  // Reset active index to show winning card when game ends
+  useEffect(() => {
+    if (game?.phase === "ended") {
+      setActiveIndex(0);
+    }
+  }, [game?.phase]);
 
   const connectsRequired = game?.settings.connectsRequired || 3;
   const directGuessesLeft = game?.directGuessesLeft || 0;
@@ -242,6 +261,13 @@ export default function BetaPlayPage() {
           mappedCards.push({ id: -1, type: "waiting" });
         }
       }
+    } else if (game.phase === "ended") {
+      // Add winning card at the front when game ends
+      mappedCards.unshift({
+        id: "game-ended",
+        type: "game-ended",
+        winnerRole: game.winner,
+      });
     }
 
     return mappedCards;
@@ -636,6 +662,8 @@ export default function BetaPlayPage() {
                         messageHistory={card.messageHistory}
                       />
                     );
+                  case "game-ended":
+                    return <WinningCard winnerRole={card.winnerRole} />;
                 }
               };
 
