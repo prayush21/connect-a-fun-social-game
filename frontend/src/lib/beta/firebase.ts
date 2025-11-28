@@ -356,7 +356,7 @@ export const evaluateResolution = (
 export const submitConnect = async (
   roomId: RoomId,
   playerId: PlayerId,
-  signullId?: SignullId, // required in free mode; ignored in round_robin
+  signullId?: SignullId, // if provided, targets specific signull; in round_robin falls back to activeIndex if not provided
   guess?: string
 ): Promise<void> => {
   const docRef = doc(getRoomsCollection(), roomId);
@@ -382,8 +382,9 @@ export const submitConnect = async (
     };
 
     // Determine target signull
+    // Use the explicitly passed signullId if provided, otherwise fall back to activeIndex in round_robin mode
     let targetId: SignullId | undefined = signullId;
-    if (data.settings.playMode === "round_robin") {
+    if (!targetId && data.settings.playMode === "round_robin") {
       const idx = data.signullState.activeIndex;
       if (idx === null) throw new Error("NO_ACTIVE_SIGNULL");
       const flattenedOrder = getFlattenedOrder(data.signullState.order);
