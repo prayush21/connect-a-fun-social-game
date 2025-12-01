@@ -490,6 +490,24 @@ export default function BetaPlayPage() {
             connectsRequired={connectsRequired}
           />
 
+          {/* SECTION 2: Notification Area - Center aligned in header */}
+          <div className="absolute inset-x-0 flex justify-center pointer-events-none">
+            <AnimatePresence>
+              {notification && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="pointer-events-auto"
+                >
+                  <div className="rounded-full border-2 border-black bg-white px-3 py-1.5 text-xs font-medium text-black shadow-lg">
+                    {notification}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Direct Guess Button / Counter */}
           {isDirectGuessMode ? (
             // Show guesses counter during direct guess mode (not blurred)
@@ -514,24 +532,6 @@ export default function BetaPlayPage() {
             </RoundButton>
           )}
         </header>
-
-        {/* SECTION 2: Notification Area - Reserved Space */}
-        <div className="relative h-0 w-full">
-          <AnimatePresence>
-            {notification && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute left-1/2 top-2 z-50 -translate-x-1/2"
-              >
-                <div className="rounded-full border-2 border-black bg-white px-3 py-1.5 text-xs font-medium text-black shadow-lg">
-                  {notification}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* SECTION 3: Letter Blocks Display */}
         {isWordSet && (
