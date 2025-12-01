@@ -108,6 +108,7 @@ export interface SignullMetrics {
   isComplete: boolean;
   isIntercepted: boolean;
   isInactive: boolean;
+  isFailed: boolean;
   isFinal: boolean;
   // For history display - all connects (includes setter intercepts)
   allConnects: Array<{
@@ -175,6 +176,7 @@ export function getSignullMetrics(
     isComplete: signull.status === "resolved",
     isIntercepted: signull.status === "blocked",
     isInactive: signull.status === "inactive",
+    isFailed: signull.status === "failed",
     isFinal: signull.isFinal,
     allConnects: allConnectsWithNames,
   };

@@ -8,6 +8,7 @@ export interface CircularProgressProps {
   connectsRequired: number;
   isIntercepted?: boolean;
   isInactive?: boolean;
+  isFailed?: boolean;
 }
 
 /**
@@ -21,6 +22,7 @@ export function CircularProgress({
   connectsRequired,
   isIntercepted = false,
   isInactive = false,
+  isFailed = false,
 }: CircularProgressProps) {
   const radius = 40;
   const stroke = 8;
@@ -40,6 +42,17 @@ export function CircularProgress({
         <div className="flex h-full w-full items-center justify-center rounded-full border-2 border-dashed border-gray-400 bg-gray-100">
           {/* Gray dash/minus mark */}
           <div className="h-0.5 w-3 bg-gray-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isFailed) {
+    return (
+      <div className="relative h-6 w-6">
+        <div className="flex h-full w-full items-center justify-center rounded-full bg-yellow-500">
+          {/* White minus mark */}
+          <div className="h-0.5 w-3 bg-white" />
         </div>
       </div>
     );

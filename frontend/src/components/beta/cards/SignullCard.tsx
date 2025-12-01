@@ -31,11 +31,12 @@ export function SignullCard({ data, onClick }: SignullCardProps) {
     totalActiveGuessers,
     isIntercepted,
     isInactive,
+    isFailed,
   } = data;
 
   return (
     <div
-      className={`flex h-full w-full cursor-pointer flex-col gap-4 rounded-3xl bg-white ${isInactive ? "opacity-60 grayscale" : ""}`}
+      className={`flex h-full w-full cursor-pointer flex-col gap-4 rounded-3xl bg-white ${isInactive || isFailed ? "opacity-60 grayscale" : ""}`}
       onClick={onClick}
     >
       {/* Header: Username and Progress */}
@@ -53,6 +54,7 @@ export function SignullCard({ data, onClick }: SignullCardProps) {
             connectsRequired={connectsRequired}
             isIntercepted={isIntercepted}
             isInactive={isInactive}
+            isFailed={isFailed}
           />
 
           {/* Ratio Text - shows total connects received / total active guessers */}

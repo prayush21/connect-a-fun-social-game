@@ -339,7 +339,9 @@ export const evaluateResolution = (
       resolvedAt: serverTimestamp(),
     };
   }
-  const allGuessersAttempted = guesserIds.every((gid) =>
+  // Exclude the signull creator from the "all guessers attempted" check
+  const eligibleGuesserIds = guesserIds.filter((gid) => gid !== entry.playerId);
+  const allGuessersAttempted = eligibleGuesserIds.every((gid) =>
     connects.some((c) => c.playerId === gid)
   );
   if (allGuessersAttempted && correctCount < connectsRequired) {
