@@ -181,10 +181,12 @@ export default function BetaPlayPage() {
         if (!entry) return null;
 
         // Map history - all connects (includes setter intercepts)
+        // Censor guesser guesses but show setter guesses
         const messageHistory = metrics.allConnects.map((c, idx) => ({
           id: `${entry.id}-msg-${idx}`,
           username: c.playerName,
-          message: c.guess,
+          message: c.playerRole === "setter" ? c.guess : "Connect Sent",
+          // : `Connected ${c.isCorrect ? "✓" : "✗"}`,
           timestamp: "Just now", // TODO: Format timestamp
         }));
 
