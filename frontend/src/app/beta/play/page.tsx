@@ -491,7 +491,7 @@ export default function BetaPlayPage() {
           />
 
           {/* SECTION 2: Notification Area - Center aligned in header */}
-          <div className="absolute inset-x-0 flex justify-center pointer-events-none">
+          <div className="pointer-events-none absolute inset-x-0 flex justify-center">
             <AnimatePresence>
               {notification && (
                 <motion.div
