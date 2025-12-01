@@ -17,7 +17,10 @@ import {
   RoundButton,
   RoundButtonIcon,
   RoomInfoButton,
+  NotificationBanner,
+  useNotify,
 } from "@/components/beta";
+import { useGameNotifications } from "@/lib/beta/useGameNotifications";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBetaStore } from "@/lib/beta/store";
 import {
@@ -144,8 +147,11 @@ export default function BetaPlayPage() {
   const directGuessesLeft = game?.directGuessesLeft || 0;
   const currentUsername = username || "Guest";
 
+  // Centralized notification system - watches game state for events from other players
+  useGameNotifications();
+  const notify = useNotify();
+
   // Local UI state
-  const [notification, setNotification] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
@@ -287,10 +293,12 @@ export default function BetaPlayPage() {
     }, 100);
   };
 
-  // Placeholder notification trigger
-  const showNotification = (message: string) => {
-    setNotification(message);
-    setTimeout(() => setNotification(null), 3000);
+  // Notification helper - uses centralized notification system
+  const showNotification = (
+    message: string,
+    type: "info" | "success" | "error" | "signull" = "info"
+  ) => {
+    notify[type](message);
   };
 
   // Handle swipe left (next card)
@@ -322,7 +330,7 @@ export default function BetaPlayPage() {
     setSignullWord("");
     setInputValue("");
     setActiveIndex(0); // Jump to the new card (which will be at index 0)
-    showNotification("Compose your Signull");
+    showNotification("Compose your Signull", "signull");
   };
 
   // Handle submit - validate and transform send-signull card into signull card
@@ -338,12 +346,12 @@ export default function BetaPlayPage() {
 
     // Validate clue and word
     if (!signullClue.trim()) {
-      showNotification("Please enter a clue message");
+      showNotification("Please enter a clue message", "error");
       return;
     }
 
     if (!signullWord.trim()) {
-      showNotification("Please enter the reference word");
+      showNotification("Please enter the reference word", "error");
       return;
     }
 
@@ -353,9 +361,9 @@ export default function BetaPlayPage() {
       setSignullClue("");
       setSignullWord("");
       setInputValue("");
-      showNotification(`Signull sent: ${signullWord.trim()}`);
+      showNotification(`Signull sent: ${signullWord.trim()}`, "success");
     } catch (error) {
-      showNotification("Failed to send Signull");
+      showNotification("Failed to send Signull", "error");
       console.error(error);
     }
   };
@@ -377,17 +385,20 @@ export default function BetaPlayPage() {
 
     // Check if player is trying to connect to their own signull
     if (currentCard.metrics.clueGiverId === userId) {
-      showNotification("Can't connect to own signull");
+      showNotification("Can't connect to own signull", "error");
       return;
     }
 
     try {
       // We need the signull ID. The card ID is the signull ID (as string)
       await submitConnect(inputValue.trim(), currentCard.id as string);
-      showNotification(`Response sent to ${currentCard.metrics.clueGiverName}`);
+      showNotification(
+        `Response sent to ${currentCard.metrics.clueGiverName}`,
+        "success"
+      );
       setInputValue("");
     } catch (error) {
-      showNotification("Failed to send response");
+      showNotification("Failed to send response", "error");
       console.error(error);
     }
   };
@@ -400,10 +411,10 @@ export default function BetaPlayPage() {
   const handleDirectGuessSubmit = async (guess: string) => {
     try {
       await submitDirectGuess(guess);
-      showNotification(`Direct guess: ${guess}`);
+      showNotification(`Direct guess: ${guess}`, "success");
       setIsDirectGuessMode(false);
     } catch (error) {
-      showNotification("Failed to submit guess");
+      showNotification("Failed to submit guess", "error");
       console.error(error);
     }
   };
@@ -417,10 +428,10 @@ export default function BetaPlayPage() {
 
     try {
       await setSecretWord(inputValue.trim());
-      showNotification(`Secret word set: ${inputValue.trim()}`);
+      showNotification(`Secret word set: ${inputValue.trim()}`, "success");
       setInputValue("");
     } catch (error) {
-      showNotification("Failed to set secret word");
+      showNotification("Failed to set secret word", "error");
       console.error(error);
     }
   };
@@ -490,22 +501,9 @@ export default function BetaPlayPage() {
             connectsRequired={connectsRequired}
           />
 
-          {/* SECTION 2: Notification Area - Center aligned in header */}
-          <div className="pointer-events-none absolute inset-x-0 flex justify-center">
-            <AnimatePresence>
-              {notification && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="pointer-events-auto"
-                >
-                  <div className="rounded-full border-2 border-black bg-white px-3 py-1.5 text-xs font-medium text-black shadow-lg">
-                    {notification}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* SECTION 2: Notification Area - Center aligned in header, stacks vertically */}
+          <div className="pointer-events-none absolute inset-x-0 top-14 z-[110] flex justify-center">
+            <NotificationBanner maxVisible={4} />
           </div>
 
           {/* Direct Guess Button / Counter */}
