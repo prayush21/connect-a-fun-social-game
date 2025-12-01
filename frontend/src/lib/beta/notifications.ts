@@ -183,7 +183,7 @@ export function generateNotificationId(): string {
 /**
  * Notification styles based on category
  * These can be used by UI components to render appropriate styles
- * 
+ *
  * NOTE: Colors are commented out for minimal design. Keeping icons/emojis.
  */
 export const NotificationStyles: Record<
