@@ -88,6 +88,124 @@ export function getConnectsRemaining(
   return Math.max(0, state.settings.connectsRequired - correct);
 }
 
+/**
+ * Computed metrics for a Signull
+ * Progress is calculated from guesser connects only, but all connects are available for history
+ */
+export interface SignullMetrics {
+  signullId: SignullId;
+  clueGiverId: PlayerId;
+  clueGiverName: string;
+  clue: string;
+  word: string;
+  status: SignullEntry["status"];
+  // Progress tracking - guessers only (excludes setter intercepts)
+  correctConnectsFromGuessers: number;
+  totalConnectsFromGuessers: number;
+  connectsRequired: number;
+  totalActiveGuessers: number;
+  // Status flags
+  isComplete: boolean;
+  isIntercepted: boolean;
+  isInactive: boolean;
+  isFinal: boolean;
+  // For history display - all connects (includes setter intercepts)
+  allConnects: Array<{
+    playerId: PlayerId;
+    playerName: string;
+    playerRole: PlayerRole;
+    guess: string;
+    isCorrect: boolean;
+    timestamp: Date;
+  }>;
+}
+
+export function getSignullMetrics(
+  state: GameState | null,
+  signullId: SignullId
+): SignullMetrics | null {
+  if (!state) return null;
+  const signull = state.signullState.itemsById[signullId];
+  if (!signull) return null;
+
+  const clueGiver = state.players[signull.playerId];
+
+  // Filter connects to only include guessers (exclude setter's intercepts from progress count)
+  const guesserConnects = signull.connects.filter((c) => {
+    const player = state.players[c.playerId];
+    return player?.role === "guesser";
+  });
+
+  // Count correct connects from guessers only
+  const correctConnectsFromGuessers = guesserConnects.filter(
+    (c) => c.isCorrect
+  ).length;
+
+  // Total active guessers (excluding the clue giver if they're a guesser)
+  const totalActiveGuessers = Object.values(state.players).filter(
+    (p) => p.role === "guesser" && p.id !== signull.playerId && p.isOnline
+  ).length;
+
+  // Build all connects with player names and roles for history display
+  const allConnectsWithNames = signull.connects
+    .map((c) => {
+      const player = state.players[c.playerId];
+      return {
+        playerId: c.playerId,
+        playerName: player?.name || "Unknown",
+        playerRole: player?.role || "guesser",
+        guess: c.guess,
+        isCorrect: c.isCorrect,
+        timestamp: c.timestamp,
+      };
+    })
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+  return {
+    signullId: signull.id,
+    clueGiverId: signull.playerId,
+    clueGiverName: clueGiver?.name || "Unknown",
+    clue: signull.clue,
+    word: signull.word,
+    status: signull.status,
+    correctConnectsFromGuessers,
+    totalConnectsFromGuessers: guesserConnects.length,
+    connectsRequired: state.settings.connectsRequired,
+    totalActiveGuessers,
+    isComplete: signull.status === "resolved",
+    isIntercepted: signull.status === "blocked",
+    isInactive: signull.status === "inactive",
+    isFinal: signull.isFinal,
+    allConnects: allConnectsWithNames,
+  };
+}
+
+/**
+ * Get all signulls with computed metrics
+ */
+export function getAllSignullMetrics(
+  state: GameState | null
+): SignullMetrics[] {
+  if (!state) return [];
+  return Object.keys(state.signullState.itemsById)
+    .map((id) => getSignullMetrics(state, id))
+    .filter((data): data is SignullMetrics => data !== null);
+}
+
+/**
+ * Check if a specific player has already connected to a signull
+ */
+export function hasPlayerConnected(
+  state: GameState | null,
+  signullId: SignullId,
+  playerId: PlayerId
+): boolean {
+  if (!state) return false;
+  const signull = state.signullState.itemsById[signullId];
+  if (!signull) return false;
+  return signull.connects.some((c) => c.playerId === playerId);
+}
+
 // Hooks --------------------------------------------------------
 
 export function useGame() {
@@ -127,4 +245,19 @@ export function useConnectsRemaining(signullId?: SignullId) {
       : getActiveSignull(s.game);
     return getConnectsRemaining(s.game, signull);
   });
+}
+
+export function useSignullMetrics(signullId: SignullId) {
+  return useBetaStore((s) => getSignullMetrics(s.game, signullId));
+}
+
+export function useAllSignullMetrics() {
+  return useBetaStore((s) => getAllSignullMetrics(s.game));
+}
+
+export function useHasPlayerConnected(
+  signullId: SignullId,
+  playerId: PlayerId
+) {
+  return useBetaStore((s) => hasPlayerConnected(s.game, signullId, playerId));
 }

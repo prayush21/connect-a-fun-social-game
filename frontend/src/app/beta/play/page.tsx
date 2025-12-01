@@ -20,8 +20,14 @@ import {
 } from "@/components/beta";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBetaStore } from "@/lib/beta/store";
-import { useGame, useIsSetter } from "@/lib/beta/selectors";
-import type { SignullEntry, SignullStatus, GameWinner } from "@/lib/beta/types";
+import {
+  useGame,
+  useIsSetter,
+  getSignullMetrics,
+  hasPlayerConnected,
+} from "@/lib/beta/selectors";
+import type { SignullMetrics } from "@/lib/beta/selectors";
+import type { GameWinner } from "@/lib/beta/types";
 import { useRouter } from "next/navigation";
 
 // Define card types
@@ -56,16 +62,8 @@ type SendSignullCardData = BaseCardData & {
 
 type SignullCardData = BaseCardData & {
   type: "signull";
-  playerId: string;
-  username: string;
-  receivedConnects: number;
-  requiredConnects: number;
-  totalActiveGuessers: number;
-  message: string;
-  status: SignullStatus;
+  metrics: SignullMetrics;
   hasConnected: boolean;
-  isIntercepted?: boolean;
-  isInactive?: boolean;
   messageHistory?: Array<{
     id: string;
     username: string;
@@ -166,7 +164,7 @@ export default function BetaPlayPage() {
     const mappedCards: CardData[] = [];
 
     // 1. Add Signull cards (reversed order to show newest first)
-    // We need to map SignullEntry to SignullCardData
+    // Use getSignullMetrics for computed values
     const signullCards: SignullCardData[] = Object.keys(game.signullState.order)
       .map(Number)
       .sort((a, b) => a - b)
@@ -176,48 +174,39 @@ export default function BetaPlayPage() {
       )
       .reverse()
       .map((signullId): SignullCardData | null => {
+        const metrics = getSignullMetrics(game, signullId);
+        if (!metrics) return null;
+
         const entry = game.signullState.itemsById[signullId];
         if (!entry) return null;
 
-        // Calculate stats
-        const totalActiveGuessers = Object.values(game.players).filter(
-          (p) => p.role === "guesser"
-        ).length;
-
-        // Map history
-        const messageHistory = entry.connects.map((c, idx) => ({
+        // Map history - all connects (includes setter intercepts)
+        const messageHistory = metrics.allConnects.map((c, idx) => ({
           id: `${entry.id}-msg-${idx}`,
-          username: game.players[c.playerId]?.name || "Unknown",
-          message: c.guess, // In real game, this might be hidden until resolved?
-          // Actually connects are guesses.
-          // The message history in the mock was chat-like.
-          // In the real game, it's guesses.
+          username: c.playerName,
+          message: c.guess,
           timestamp: "Just now", // TODO: Format timestamp
         }));
 
         // Add initial clue as first message
         messageHistory.unshift({
           id: `${entry.id}-initial`,
-          username: game.players[entry.playerId]?.name || "Unknown",
-          message: entry.clue,
+          username: metrics.clueGiverName,
+          message: metrics.clue,
           timestamp: "Just now",
         });
 
-        const hasConnected = entry.connects.some((c) => c.playerId === userId);
+        const playerHasConnected = hasPlayerConnected(
+          game,
+          signullId,
+          userId || ""
+        );
 
         return {
           id: entry.id,
           type: "signull",
-          playerId: entry.playerId,
-          username: game.players[entry.playerId]?.name || "Unknown",
-          receivedConnects: entry.connects.length, // or correct connects?
-          requiredConnects: game.settings.connectsRequired,
-          totalActiveGuessers,
-          message: entry.clue,
-          status: entry.status,
-          hasConnected,
-          isIntercepted: entry.status === "blocked",
-          isInactive: entry.status === "inactive",
+          metrics,
+          hasConnected: playerHasConnected,
           messageHistory,
         };
       })
@@ -385,7 +374,7 @@ export default function BetaPlayPage() {
     }
 
     // Check if player is trying to connect to their own signull
-    if (currentCard.playerId === userId) {
+    if (currentCard.metrics.clueGiverId === userId) {
       showNotification("Can't connect to own signull");
       return;
     }
@@ -393,7 +382,7 @@ export default function BetaPlayPage() {
     try {
       // We need the signull ID. The card ID is the signull ID (as string)
       await submitConnect(inputValue.trim(), currentCard.id as string);
-      showNotification(`Response sent to ${currentCard.username}`);
+      showNotification(`Response sent to ${currentCard.metrics.clueGiverName}`);
       setInputValue("");
     } catch (error) {
       showNotification("Failed to send response");
@@ -466,7 +455,7 @@ export default function BetaPlayPage() {
       const signullCard = currentCard as SignullCardData;
 
       // If card is not pending, disable input
-      if (signullCard.status !== "pending") return true;
+      if (signullCard.metrics.status !== "pending") return true;
 
       // If user is setter, they can always input (as long as pending)
       if (isSetter) return false;
@@ -651,19 +640,8 @@ export default function BetaPlayPage() {
                   case "signull":
                     return (
                       <SignullCard
-                        username={card.username}
-                        receivedConnects={card.receivedConnects}
-                        requiredConnects={card.requiredConnects}
-                        totalActiveGuessers={card.totalActiveGuessers}
-                        message={card.message}
-                        isIntercepted={
-                          card.isIntercepted ||
-                          card.status === "blocked" ||
-                          card.status === "failed"
-                        }
-                        isInactive={card.isInactive}
+                        data={card.metrics}
                         onClick={() => handleSignullCardClick(String(card.id))}
-                        messageHistory={card.messageHistory}
                       />
                     );
                   case "game-ended":
