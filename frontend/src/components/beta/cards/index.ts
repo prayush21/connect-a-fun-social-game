@@ -24,3 +24,4 @@ export { EnterSecretWordCard } from "./EnterSecretWordCard";
 export { SendASignullCard } from "./SendASignullCard";
 export { SignullCard } from "./SignullCard";
 export { WinningCard } from "./WinningCard";
+export type { WinCondition, WinningCardProps } from "./WinningCard";

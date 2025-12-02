@@ -11,6 +11,7 @@ import {
   SignullCard,
   WinningCard,
 } from "@/components/beta/cards";
+import type { WinCondition } from "@/components/beta/cards";
 import {
   ActionBar,
   LetterBlocks,
@@ -78,6 +79,9 @@ type SignullCardData = BaseCardData & {
 type GameEndedCardData = BaseCardData & {
   type: "game-ended";
   winnerRole: GameWinner;
+  winCondition?: WinCondition;
+  secretWord?: string;
+  winningPlayerName?: string;
 };
 
 type CardData =
@@ -260,10 +264,32 @@ export default function BetaPlayPage() {
       }
     } else if (game.phase === "ended") {
       // Add winning card at the front when game ends
+      // Determine how the game was won
+      let winCondition: WinCondition | undefined;
+      let winningPlayerName: string | undefined;
+
+      if (game.winner === "setter") {
+        // Setter wins when guessers run out of direct guesses
+        winCondition = "out_of_guesses";
+      } else if (game.winner === "guessers") {
+        // Check if all letters were revealed (won by signulls)
+        if (game.revealedCount >= game.secretWord.length) {
+          winCondition = "all_letters_revealed";
+        } else {
+          // Won by direct guess (revealed count is less than word length)
+          winCondition = "direct_guess";
+          // TODO: Track who made the winning guess in game state
+          // For now, we don't have this info stored
+        }
+      }
+
       mappedCards.unshift({
         id: "game-ended",
         type: "game-ended",
         winnerRole: game.winner,
+        winCondition,
+        secretWord: game.secretWord,
+        winningPlayerName,
       });
     }
 
@@ -649,7 +675,14 @@ export default function BetaPlayPage() {
                       />
                     );
                   case "game-ended":
-                    return <WinningCard winnerRole={card.winnerRole} />;
+                    return (
+                      <WinningCard
+                        winnerRole={card.winnerRole}
+                        winCondition={card.winCondition}
+                        secretWord={card.secretWord}
+                        winningPlayerName={card.winningPlayerName}
+                      />
+                    );
                 }
               };
 
