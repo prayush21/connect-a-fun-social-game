@@ -162,7 +162,7 @@ export const LetterBlocks = ({
         className={`flex items-center justify-center ${className}`}
         animate={{
           scale: isDirectGuessMode ? 1.03 : 1,
-          y: isDirectGuessMode ? -8 : 0,
+          y: isDirectGuessMode ? 16 : 0,
           z: isDirectGuessMode ? 50 : 0,
         }}
         transition={{

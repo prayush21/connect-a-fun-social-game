@@ -549,7 +549,9 @@ export default function BetaPlayPage() {
             <RoundButton
               size="md"
               onClick={handleDirectGuessClick}
-              disabled={isDirectGuessMode || isSetter || game?.phase === "ended"}
+              disabled={
+                isDirectGuessMode || isSetter || game?.phase === "ended"
+              }
               title="Direct Guess"
             >
               <RoundButtonIcon size="md">
@@ -573,7 +575,7 @@ export default function BetaPlayPage() {
               isGameEnded={game?.phase === "ended"}
               onSubmit={handleDirectGuessSubmit}
               onCancel={handleDirectGuessCancel}
-              className="my-4"
+              className=""
             />
           </div>
         )}

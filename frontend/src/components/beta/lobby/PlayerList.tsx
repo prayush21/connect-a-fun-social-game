@@ -47,7 +47,7 @@ export function PlayerList({
           {isHost && player.id !== currentUserId && (
             <button
               onClick={() => onRemovePlayer(player.id)}
-              className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+              className="rounded-full border-2 border-transparent p-2 text-neutral-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] transition-all hover:border-red-500 hover:bg-red-50 hover:text-red-500 hover:shadow-[2px_2px_0px_0px_rgba(239,68,68,0.3)] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(239,68,68,0.3)]"
             >
               <Trash2 className="h-5 w-5" />
             </button>
@@ -55,10 +55,12 @@ export function PlayerList({
         </BaseCard>
       ))}
 
-      {/* Waiting placeholder */}
-      <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 p-6 text-center text-neutral-400">
-        Waiting for player...
-      </div>
+      {/* Waiting placeholder - only show when less than 5 players */}
+      {players.length < 5 && (
+        <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50/50 p-6 text-center text-neutral-400">
+          Waiting for player...
+        </div>
+      )}
     </div>
   );
 }

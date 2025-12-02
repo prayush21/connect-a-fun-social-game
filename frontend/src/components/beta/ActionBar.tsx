@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { RoundButton, RoundButtonIcon } from "@/components/beta";
 
 interface ActionBarProps {
@@ -45,11 +45,22 @@ export function ActionBar({
   onPlayAgain,
 }: ActionBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isSignullPressed, setIsSignullPressed] = useState(false);
+
+  const handleSignullClick = () => {
+    setIsSignullPressed(!isSignullPressed);
+    onSignullClick();
+  };
+
+  const handleSubmit = () => {
+    setIsSignullPressed(false);
+    onSubmit();
+  };
 
   if (isGameEnded) {
     return (
       <div
-        className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center justify-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
+        className={`z-50 mt-4 flex h-20 flex-shrink-0 items-center justify-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
       >
         <button
           onClick={onPlayAgain}
@@ -63,15 +74,17 @@ export function ActionBar({
 
   return (
     <div
-      className={`z-50 mt-6 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
+      className={`z-50 mt-4 flex h-20 flex-shrink-0 items-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
     >
       {/* Signull Button */}
       <RoundButton
         size="lg"
-        onClick={onSignullClick}
+        onClick={handleSignullClick}
         title="Send Signull"
         disabled={disableSignull}
-        className="disabled:cursor-not-allowed disabled:opacity-50"
+        className={`disabled:cursor-not-allowed disabled:opacity-50 ${
+          isSignullPressed ? "translate-y-[2px] shadow-none" : ""
+        }`}
       >
         <RoundButtonIcon size="lg">
           <svg fill="yellow" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +117,7 @@ export function ActionBar({
       {/* Submit/Next Button */}
       <RoundButton
         size="lg"
-        onClick={onSubmit}
+        onClick={handleSubmit}
         disabled={disableSubmit}
         className="disabled:border-neutral-300 disabled:bg-neutral-100"
       >

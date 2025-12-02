@@ -41,10 +41,13 @@ export const RoundButton = React.forwardRef<
         "flex flex-shrink-0 items-center justify-center rounded-full",
         // Border and background
         "border-2 border-black bg-white",
+        // Shadow and lift effect
+        "shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
         // Interactions
-        "transition-all hover:bg-neutral-50 active:scale-95",
+        "transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+        "active:translate-y-[2px] active:shadow-none",
         // Disabled state
-        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:active:scale-100",
+        "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:active:translate-y-0",
         // Size
         sizeClasses[size],
         className
