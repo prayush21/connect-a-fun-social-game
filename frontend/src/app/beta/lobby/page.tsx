@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, X } from "lucide-react";
 import { useBetaStore } from "@/lib/beta/store";
 import { RoomInfoButton } from "@/components/beta";
 import {
@@ -44,6 +44,7 @@ export default function BetaLobbyPage() {
 
   const [copied, setCopied] = useState(false);
   const [showSetterDropdown, setShowSetterDropdown] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   // Redirect logic
   useEffect(() => {
@@ -227,6 +228,16 @@ export default function BetaLobbyPage() {
           onRemovePlayer={handleRemovePlayer}
           isHost={isSetter}
         />
+
+        {/* How to Play Button - visible to all players */}
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => setShowHowToPlay(true)}
+            className="text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
+          >
+            How to play?
+          </button>
+        </div>
       </div>
 
       {isSetter && (
@@ -236,9 +247,74 @@ export default function BetaLobbyPage() {
               onClick={handleStartGame}
               disabled={!canStartGame}
             />
-            <div className="mt-4 text-center">
-              <button className="text-sm text-neutral-500 underline">
-                How to play?
+          </div>
+        </div>
+      )}
+
+      {/* How to Play Modal */}
+      {showHowToPlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+            {/* Modal Header */}
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-slate-900">
+                How to Play?
+              </h2>
+              <button
+                onClick={() => setShowHowToPlay(false)}
+                className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Instructions */}
+            <ol className="space-y-4 text-sm text-slate-600">
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                  1
+                </span>
+                <span>
+                  One player sets a secret word that others team up to guess
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                  2
+                </span>
+                <span>
+                  Any guesser can now give clues(called Signulls) by providing a
+                  reference word sharing prefix with the secret word (no need to
+                  be of same length!)
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                  3
+                </span>
+                <span>
+                  Other Guessers race against the word setter to figure out the
+                  reference word based on the clues!
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                  4
+                </span>
+                <span>
+                  Guessers win the next letter in secret word if they get their
+                  reference word matched before the Setter.
+                </span>
+              </li>
+            </ol>
+
+            {/* Close Button */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowHowToPlay(false)}
+                className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+              >
+                Got it!
               </button>
             </div>
           </div>
