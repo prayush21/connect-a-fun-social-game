@@ -112,10 +112,10 @@ export const NotificationTemplates = {
     priority: "normal" as const,
     message: "Secret word has been set!",
   }),
-  DIRECT_GUESS_USED: (playerName: string, remaining: number) => ({
+  DIRECT_GUESS_USED: (playerName: string, word: string, remaining: number) => ({
     category: "game" as const,
-    priority: "normal" as const,
-    message: `${playerName} used a direct guess (${remaining} left)`,
+    priority: "high" as const,
+    message: `${playerName} guessed "${word}" directly (${remaining} guess${remaining === 1 ? "" : "es"} left)`,
   }),
 
   // Player Events

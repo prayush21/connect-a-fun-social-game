@@ -59,6 +59,13 @@ export interface GameSettings {
   wordValidation: "strict" | "relaxed";
 }
 
+export interface LastDirectGuess {
+  playerId: PlayerId;
+  playerName: string;
+  word: string; // UPPERCASE
+  timestamp: Date;
+}
+
 export interface GameState {
   schemaVersion: 2; // fixed version for beta schema
   roomId: RoomId;
@@ -69,6 +76,7 @@ export interface GameState {
   revealedCount: number;
   signullState: SignullState;
   directGuessesLeft: number;
+  lastDirectGuess: LastDirectGuess | null; // tracks who made the last direct guess
   winner: GameWinner;
   settings: GameSettings;
   createdAt: Date; // snapshot conversion from Firestore Timestamp
@@ -105,6 +113,13 @@ export interface FirestoreSignullEntry {
   resolvedAt?: FirestoreTimeValue;
 }
 
+export interface FirestoreLastDirectGuess {
+  playerId: PlayerId;
+  playerName: string;
+  word: string;
+  timestamp: FirestoreTimeValue;
+}
+
 export interface FirestoreGameRoom {
   schemaVersion: 2;
   roomId: RoomId;
@@ -128,6 +143,7 @@ export interface FirestoreGameRoom {
     itemsById: Record<SignullId, FirestoreSignullEntry>;
   };
   directGuessesLeft: number;
+  lastDirectGuess: FirestoreLastDirectGuess | null;
   winner: GameWinner;
   settings: {
     playMode: PlayMode;

@@ -106,6 +106,14 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
       ),
     },
     directGuessesLeft: data.directGuessesLeft,
+    lastDirectGuess: data.lastDirectGuess
+      ? {
+          playerId: data.lastDirectGuess.playerId,
+          playerName: data.lastDirectGuess.playerName,
+          word: data.lastDirectGuess.word,
+          timestamp: tsToDate(data.lastDirectGuess.timestamp),
+        }
+      : null,
     winner: data.winner ?? null,
     settings: data.settings,
     createdAt: tsToDate(data.createdAt),
@@ -151,6 +159,7 @@ export const createRoom = async (
       itemsById: {},
     },
     directGuessesLeft: 3,
+    lastDirectGuess: null,
     winner: null,
     settings: finalSettings,
     createdAt: serverTimestamp() as Timestamp,
@@ -490,11 +499,18 @@ export const submitDirectGuess = async (
     if (!player || player.role !== "guesser") throw new Error("NOT_GUESSER");
     if (data.directGuessesLeft <= 0) throw new Error("NO_GUESSES_LEFT");
     const remaining = data.directGuessesLeft - 1;
+    const lastDirectGuess = {
+      playerId,
+      playerName: player.name,
+      word: upperGuess,
+      timestamp: serverTimestamp(),
+    };
     if (upperGuess === data.secretWord) {
       trx.update(docRef, {
         winner: "guessers",
         phase: "ended",
         directGuessesLeft: remaining,
+        lastDirectGuess,
         updatedAt: serverTimestamp(),
       });
       return;
@@ -504,12 +520,14 @@ export const submitDirectGuess = async (
         winner: "setter",
         phase: "ended",
         directGuessesLeft: 0,
+        lastDirectGuess,
         updatedAt: serverTimestamp(),
       });
       return;
     }
     trx.update(docRef, {
       directGuessesLeft: remaining,
+      lastDirectGuess,
       updatedAt: serverTimestamp(),
     });
   });
@@ -619,6 +637,7 @@ export const resetGame = async (roomId: RoomId): Promise<void> => {
     "signullState.itemsById": {},
     "signullState.activeIndex": null,
     directGuessesLeft: 3,
+    lastDirectGuess: null,
     winner: deleteField(),
     updatedAt: serverTimestamp(),
   });

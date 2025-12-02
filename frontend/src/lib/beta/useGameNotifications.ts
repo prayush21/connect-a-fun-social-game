@@ -14,7 +14,12 @@ import { useEffect, useRef } from "react";
 import { useBetaStore } from "./store";
 import { useNotificationStore } from "./notification-store";
 import { NotificationTemplates, createNotification } from "./notifications";
-import type { GameState, SignullEntry, SignullStatus } from "./types";
+import type {
+  GameState,
+  SignullEntry,
+  SignullStatus,
+  LastDirectGuess,
+} from "./types";
 
 interface SignullTracker {
   id: string;
@@ -29,6 +34,8 @@ interface GameStateSnapshot {
   playerIds: string[];
   winner: GameState["winner"];
   secretWordSet: boolean;
+  lastDirectGuess: LastDirectGuess | null;
+  directGuessesLeft: number;
 }
 
 function createSnapshot(game: GameState | null): GameStateSnapshot | null {
@@ -49,6 +56,8 @@ function createSnapshot(game: GameState | null): GameStateSnapshot | null {
     playerIds: Object.keys(game.players),
     winner: game.winner,
     secretWordSet: !!game.secretWord,
+    lastDirectGuess: game.lastDirectGuess,
+    directGuessesLeft: game.directGuessesLeft,
   };
 }
 
@@ -116,6 +125,33 @@ export function useGameNotifications() {
           )
         )
       );
+    }
+
+    // Detect direct guess usage
+    const currentGuess = currentSnapshot.lastDirectGuess;
+    const prevGuess = prevSnapshot.lastDirectGuess;
+    if (
+      currentGuess &&
+      (!prevGuess ||
+        currentGuess.timestamp.getTime() !== prevGuess.timestamp.getTime())
+    ) {
+      // A new direct guess was made
+      if (currentGuess.playerId !== userId) {
+        // Notify other players about the direct guess
+        addNotification(
+          createNotification(
+            NotificationTemplates.DIRECT_GUESS_USED(
+              currentGuess.playerName,
+              currentGuess.word,
+              currentSnapshot.directGuessesLeft
+            ),
+            {
+              playerId: currentGuess.playerId,
+              playerName: currentGuess.playerName,
+            }
+          )
+        );
+      }
     }
 
     // Detect new signulls from other players
