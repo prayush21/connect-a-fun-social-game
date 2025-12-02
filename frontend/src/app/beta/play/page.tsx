@@ -491,15 +491,19 @@ export default function BetaPlayPage() {
         {/* SECTION 1: Top Header Bar */}
         <header
           ref={headerRef}
-          className={`sticky top-0 z-[100] flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isDirectGuessMode || isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+          className={`sticky top-0 z-[100] flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Room Info Button */}
-          <RoomInfoButton
-            roomCode={roomCode}
-            players={players}
-            currentPlayerId={userId || undefined}
-            connectsRequired={connectsRequired}
-          />
+          <div
+            className={`${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+          >
+            <RoomInfoButton
+              roomCode={roomCode}
+              players={players}
+              currentPlayerId={userId || undefined}
+              connectsRequired={connectsRequired}
+            />
+          </div>
 
           {/* SECTION 2: Notification Area - Center aligned in header, stacks vertically */}
           <div className="pointer-events-none absolute inset-x-0 top-14 z-[110] flex justify-center">
@@ -550,7 +554,7 @@ export default function BetaPlayPage() {
 
         {/* SECTION 4: Card Container - Main Game Area */}
         <div
-          className={`relative flex-shrink-0 overflow-visible px-6 transition-all duration-300 ${isHistoryOpen ? "translate-y-[-100px]" : ""}`}
+          className={`relative flex-shrink-0 overflow-visible px-6 transition-all duration-300 ${isHistoryOpen ? "translate-y-[-100px]" : ""} ${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Navigation Arrows */}
           <div className="absolute left-0 top-1/2 z-[60] -translate-y-1/2 pl-1">
@@ -690,43 +694,47 @@ export default function BetaPlayPage() {
         </div>
 
         {/* SECTION 5: Bottom Action Bar */}
-        <ActionBar
-          inputValue={isComposingSignull ? signullWord : inputValue}
-          onInputChange={(value) => {
-            if (isComposingSignull) {
-              setSignullWord(value);
-            } else {
-              setInputValue(value);
+        <div
+          className={`${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+        >
+          <ActionBar
+            inputValue={isComposingSignull ? signullWord : inputValue}
+            onInputChange={(value) => {
+              if (isComposingSignull) {
+                setSignullWord(value);
+              } else {
+                setInputValue(value);
+              }
+            }}
+            onInputFocus={handleInputFocus}
+            onSignullClick={handleSignullClick}
+            onSubmit={
+              isComposingSignull
+                ? handleSignullSubmit
+                : cards[activeIndex]?.type === "enter-secret"
+                  ? handleSecretWordSubmit
+                  : handleConnect
             }
-          }}
-          onInputFocus={handleInputFocus}
-          onSignullClick={handleSignullClick}
-          onSubmit={
-            isComposingSignull
-              ? handleSignullSubmit
-              : cards[activeIndex]?.type === "enter-secret"
-                ? handleSecretWordSubmit
-                : handleConnect
-          }
-          placeholder={
-            isComposingSignull
-              ? "Enter reference word"
-              : cards[activeIndex]?.type === "enter-secret"
-                ? "Enter Secret Word"
-                : "Enter your response word"
-          }
-          disableInput={isInputDisabled}
-          disableSignull={isSetter}
-          disableSubmit={
-            isComposingSignull
-              ? !signullClue.trim() || !signullWord.trim()
-              : !inputValue.trim() || isInputDisabled
-          }
-          isGameEnded={game?.phase === "ended"}
-          onPlayAgain={() => {
-            resetGame();
-          }}
-        />
+            placeholder={
+              isComposingSignull
+                ? "Enter reference word"
+                : cards[activeIndex]?.type === "enter-secret"
+                  ? "Enter Secret Word"
+                  : "Enter your response word"
+            }
+            disableInput={isInputDisabled}
+            disableSignull={isSetter}
+            disableSubmit={
+              isComposingSignull
+                ? !signullClue.trim() || !signullWord.trim()
+                : !inputValue.trim() || isInputDisabled
+            }
+            isGameEnded={game?.phase === "ended"}
+            onPlayAgain={() => {
+              resetGame();
+            }}
+          />
+        </div>
 
         {/* Keyboard Safe Area - Dynamic padding for iOS */}
         <div className="h-[env(safe-area-inset-bottom)]" />
