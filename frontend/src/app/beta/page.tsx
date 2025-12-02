@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useBetaStore } from "@/lib/beta/store";
 import { generateRoomCode } from "@/lib/beta/firebase";
@@ -13,7 +13,7 @@ import { X } from "lucide-react";
 type NicknameFormData = z.infer<typeof nicknameSchema>;
 type JoinGameFormData = z.infer<typeof joinGameSchema>;
 
-export default function BetaHome() {
+function BetaHomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -439,5 +439,19 @@ export default function BetaHome() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function BetaHome() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <BetaHomeContent />
+    </Suspense>
   );
 }
