@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { nicknameSchema, joinGameSchema } from "@/lib/validation";
@@ -21,9 +21,6 @@ export default function Home() {
     joinRoom,
     setError,
   } = useStore();
-  const [showJoinForm, setShowJoinForm] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
 
   const nicknameForm = useForm<NicknameFormData>({
     resolver: zodResolver(nicknameSchema),
@@ -49,7 +46,6 @@ export default function Home() {
       return;
     }
 
-    setIsJoining(true);
     setError(null);
 
     // Normalize room code: trim and convert to uppercase
@@ -65,8 +61,6 @@ export default function Home() {
         code: "JOIN_FAILED",
         message: err instanceof Error ? err.message : "Failed to join game",
       });
-    } finally {
-      setIsJoining(false);
     }
   };
 
@@ -79,7 +73,6 @@ export default function Home() {
       return;
     }
 
-    setIsCreating(true);
     setError(null);
 
     try {
@@ -91,8 +84,6 @@ export default function Home() {
         code: "CREATE_FAILED",
         message: err instanceof Error ? err.message : "Failed to create game",
       });
-    } finally {
-      setIsCreating(false);
     }
   };
 

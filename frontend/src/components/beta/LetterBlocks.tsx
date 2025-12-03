@@ -8,7 +8,6 @@ interface LetterBlocksProps {
   revealedCount: number;
   isDirectGuessMode?: boolean;
   isGameEnded?: boolean;
-  onDirectGuessClick?: () => void;
   onSubmit?: (guess: string) => void;
   onCancel?: () => void;
   className?: string;
@@ -19,7 +18,6 @@ export const LetterBlocks = ({
   revealedCount,
   isDirectGuessMode = false,
   isGameEnded = false,
-  onDirectGuessClick,
   onSubmit,
   onCancel,
   className = "",

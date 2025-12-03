@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useBetaStore } from "@/lib/beta/store";
-import { RoomInfoButton } from "@/components/beta";
 import {
   RoomCodeCard,
   SettingsCard,

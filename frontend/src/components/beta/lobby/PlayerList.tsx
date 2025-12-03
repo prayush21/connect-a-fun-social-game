@@ -20,7 +20,6 @@ export function PlayerList({
   players,
   currentUserId,
   hostId,
-  setterId,
   onRemovePlayer,
   isHost,
 }: PlayerListProps) {

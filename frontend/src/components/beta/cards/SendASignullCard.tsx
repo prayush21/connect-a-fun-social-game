@@ -35,7 +35,7 @@ export function SendASignullCard({
         <textarea
           value={clueMessage}
           onChange={(e) => onClueChange(e.target.value)}
-          placeholder="Type clue for your teammates for a word with same prefix as above"
+          placeholder="Type clue for your teammates for a word with same prefix as above but can be of any length"
           className="w-full resize-none bg-transparent text-center text-sm leading-relaxed text-neutral-700 placeholder-neutral-400 focus:outline-none"
           rows={3}
           autoFocus={autoFocus}

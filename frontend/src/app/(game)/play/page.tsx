@@ -34,7 +34,6 @@ export default function PlayRoute() {
     sessionId,
     setWord,
     setReference,
-    submitSetterGuess,
     submitConnect,
     submitDirectGuess,
     volunteerAsClueGiver,

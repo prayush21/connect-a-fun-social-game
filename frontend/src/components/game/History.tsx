@@ -21,13 +21,7 @@ interface HistoryProps {
 }
 
 export const History = memo<HistoryProps>(
-  ({
-    entries,
-    className = "",
-    maxHeight = "h-64",
-    autoScroll = true,
-    currentUserId: _currentUserId,
-  }) => {
+  ({ entries, className = "", maxHeight = "h-64", autoScroll = true }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom when new entries are added

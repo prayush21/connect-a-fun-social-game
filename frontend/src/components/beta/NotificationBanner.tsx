@@ -55,11 +55,7 @@ interface NotificationItemProps {
   index?: number;
 }
 
-function NotificationItem({
-  notification,
-  onDismiss,
-  index = 0,
-}: NotificationItemProps) {
+function NotificationItem({ notification, onDismiss }: NotificationItemProps) {
   const styles = NotificationStyles[notification.category];
 
   return (

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
-import { FloatingFeedbackButton } from "@/components/ui/FloatingFeedbackButton";
 import "./globals.css";
 
 const geistSans = Geist({

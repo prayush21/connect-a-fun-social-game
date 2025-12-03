@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { CardContainer } from "@/components/beta/cards/CardContainer";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
 import {
   WaitingCard,
@@ -108,7 +107,6 @@ export default function BetaPlayPage() {
   // Store hooks
   const game = useGame();
   const userId = useBetaStore((state) => state.userId);
-  const username = useBetaStore((state) => state.username);
   const isSetter = useIsSetter();
   const addSignull = useBetaStore((state) => state.addSignull);
   const submitConnect = useBetaStore((state) => state.submitConnect);
@@ -149,7 +147,6 @@ export default function BetaPlayPage() {
 
   const connectsRequired = game?.settings.connectsRequired || 3;
   const directGuessesLeft = game?.directGuessesLeft || 0;
-  const currentUsername = username || "Guest";
 
   // Centralized notification system - watches game state for events from other players
   useGameNotifications();
@@ -157,7 +154,6 @@ export default function BetaPlayPage() {
 
   // Local UI state
   const [inputValue, setInputValue] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isComposingSignull, setIsComposingSignull] = useState(false);
@@ -251,7 +247,6 @@ export default function BetaPlayPage() {
 
     // 3. Add Phase-specific cards at the bottom (end of array)
     // If we are in lobby or setting phase, these should be the only cards or at the bottom
-    const playerCount = Object.keys(game.players || {}).length;
 
     if (game.phase === "lobby") {
       // Don't show waiting card in lobby - lobby page handles this
@@ -294,7 +289,7 @@ export default function BetaPlayPage() {
     }
 
     return mappedCards;
-  }, [game, userId, isComposingSignull]);
+  }, [game, userId, isComposingSignull, revealedCount]);
 
   // Reset active index when cards change significantly?
   // For now, keep it simple.
