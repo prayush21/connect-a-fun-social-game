@@ -284,7 +284,7 @@ export default function BetaLobbyPage() {
                 <span>
                   Any guesser can now give clues(called Signulls) by providing a
                   reference word sharing prefix with the secret word (no need to
-                  be of same length!)
+                  be of same length!). Press on the Lightning icon to generate a signull.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -293,7 +293,7 @@ export default function BetaLobbyPage() {
                 </span>
                 <span>
                   Other Guessers race against the word setter to figure out the
-                  reference word based on the clues!
+                  reference word based on the clues! Press the Right Arrow icon to submit your match.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -302,7 +302,16 @@ export default function BetaLobbyPage() {
                 </span>
                 <span>
                   Guessers win the next letter in secret word if they get their
-                  reference word matched before the Setter.
+                  reference word matched before the Setter. Press on the Signull card to view who connected and guessed to a Signull
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                  5
+                </span>
+                <span>
+                  At any point a guessers have a total of 3 direct guesses to directly
+                  guess the secret word. Use them wisely! Press on top right Arrow icon to make a direct guess.
                 </span>
               </li>
             </ol>
