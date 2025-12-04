@@ -17,6 +17,14 @@ export const metadata: Metadata = {
   title: "Signull | Collaborative Word Game",
   description:
     "A collaborative word guessing game where teams work together to reveal secret words through clever clues and connections.",
+  manifest: "/favicon/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon/icon1.png" },
+      { url: "/favicon/icon0.svg", type: "image/svg+xml" },
+    ],
+    apple: "/favicon/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
