@@ -8,3 +8,8 @@ export { BaseCard } from "./cards/BaseCard";
 export { CardContainer } from "./cards/CardContainer";
 export { CardTransition } from "./cards/CardTransition";
 export { NotificationBanner, useNotify } from "./NotificationBanner";
+export {
+  SignullHistoryToast,
+  SignullHistoryInline,
+} from "./SignullHistoryToast";
+export type { SignullHistoryItem } from "./SignullHistoryToast";

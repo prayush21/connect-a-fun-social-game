@@ -19,6 +19,7 @@ import {
   RoomInfoButton,
   NotificationBanner,
   useNotify,
+  SignullHistoryInline,
 } from "@/components/beta";
 import { useGameNotifications } from "@/lib/beta/useGameNotifications";
 import { AnimatePresence, motion } from "framer-motion";
@@ -72,6 +73,9 @@ type SignullCardData = BaseCardData & {
     username: string;
     message: string;
     timestamp?: string;
+    isCorrect?: boolean;
+    role?: "setter" | "guesser";
+    isClueGiver?: boolean;
   }>;
 };
 
@@ -155,7 +159,6 @@ export default function BetaPlayPage() {
   // Local UI state
   const [inputValue, setInputValue] = useState("");
   const [isDirectGuessMode, setIsDirectGuessMode] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isComposingSignull, setIsComposingSignull] = useState(false);
   const [signullClue, setSignullClue] = useState("");
   const [signullWord, setSignullWord] = useState("");
@@ -187,14 +190,39 @@ export default function BetaPlayPage() {
         if (!entry) return null;
 
         // Map history - all connects (includes setter intercepts)
-        // Censor guesser guesses but show setter guesses
-        const messageHistory = metrics.allConnects.map((c, idx) => ({
-          id: `${entry.id}-msg-${idx}`,
-          username: c.playerName,
-          message: c.playerRole === "setter" ? c.guess : "Connect Sent",
-          // : `Connected ${c.isCorrect ? "✓" : "✗"}`,
-          timestamp: "Just now", // TODO: Format timestamp
-        }));
+        // Only show actual guesses for resolved signulls, censor for all other states
+        const isResolved = metrics.status === "resolved";
+
+        type HistoryItem = {
+          id: string;
+          username: string;
+          message: string;
+          timestamp?: string;
+          isCorrect?: boolean;
+          role?: "setter" | "guesser";
+          isClueGiver?: boolean;
+        };
+
+        const messageHistory: HistoryItem[] = metrics.allConnects.map(
+          (c, idx) => ({
+            id: `${entry.id}-msg-${idx}`,
+            username: c.playerName,
+            // Show actual guess only if:
+            // 1. Player is setter (always show their intercept guesses)
+            // 2. Signull is resolved (show all guesser responses)
+            message:
+              c.playerRole === "setter"
+                ? c.guess
+                : isResolved
+                  ? c.guess
+                  : "Connect Sent",
+            timestamp: "Just now", // TODO: Format timestamp
+            // Only include isCorrect for resolved signulls to trigger styling
+            isCorrect: isResolved ? c.isCorrect : undefined,
+            role: c.playerRole as "setter" | "guesser",
+            isClueGiver: false,
+          })
+        );
 
         // Add initial clue as first message
         messageHistory.unshift({
@@ -202,6 +230,8 @@ export default function BetaPlayPage() {
           username: metrics.clueGiverName,
           message: metrics.clue,
           timestamp: "Just now",
+          role: "guesser",
+          isClueGiver: true,
         });
 
         const playerHasConnected = hasPlayerConnected(
@@ -293,8 +323,6 @@ export default function BetaPlayPage() {
 
   // Reset active index when cards change significantly?
   // For now, keep it simple.
-
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   // Refs for scroll control
   const headerRef = useRef<HTMLDivElement>(null);
@@ -457,26 +485,14 @@ export default function BetaPlayPage() {
     }
   };
 
-  // Handle history card click
-  const handleSignullCardClick = (cardId: string) => {
-    setSelectedCardId(cardId);
-    setIsHistoryOpen(true);
-  };
-
-  const handleCloseHistory = () => {
-    setIsHistoryOpen(false);
-    setTimeout(() => setSelectedCardId(null), 300); // Clear after animation
-  };
-
-  // Selected card history derived from cards array
-  const selectedCardHistory = useMemo(() => {
-    if (!selectedCardId) return [];
-    const card = cards.find((c) => String(c.id) === selectedCardId);
-    if (card && card.type === "signull") {
-      return (card as SignullCardData).messageHistory || [];
+  // Current card history - derived from the active card
+  const currentCardHistory = useMemo(() => {
+    const currentCard = cards[activeIndex];
+    if (currentCard && currentCard.type === "signull") {
+      return (currentCard as SignullCardData).messageHistory || [];
     }
     return [];
-  }, [cards, selectedCardId]);
+  }, [cards, activeIndex]);
 
   // Determine if input should be disabled
   const isInputDisabled = useMemo(() => {
@@ -512,7 +528,7 @@ export default function BetaPlayPage() {
         {/* SECTION 1: Top Header Bar */}
         <header
           ref={headerRef}
-          className={`sticky top-0 z-[100] flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200 ${isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+          className="sticky top-0 z-[100] flex h-16 items-center justify-between gap-3 bg-neutral-100 px-4 py-2 transition-all duration-200"
         >
           {/* Room Info Button */}
           <div
@@ -560,9 +576,7 @@ export default function BetaPlayPage() {
 
         {/* SECTION 3: Letter Blocks Display */}
         {isWordSet && (
-          <div
-            className={`px-6 transition-all duration-200 ${isHistoryOpen ? "pointer-events-none opacity-50 blur-sm" : ""}`}
-          >
+          <div className="px-6 transition-all duration-200">
             <LetterBlocks
               secretWord={word}
               revealedCount={revealedCount}
@@ -577,7 +591,7 @@ export default function BetaPlayPage() {
 
         {/* SECTION 4: Card Container - Main Game Area */}
         <div
-          className={`relative flex-shrink-0 overflow-visible px-6 transition-all duration-300 ${isHistoryOpen ? "translate-y-[-100px]" : ""} ${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+          className={`relative flex-shrink-0 overflow-visible px-6 transition-all duration-300 ${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Navigation Arrows */}
           <div className="absolute left-0 top-1/2 z-[60] -translate-y-1/2 pl-1">
@@ -665,12 +679,7 @@ export default function BetaPlayPage() {
                       />
                     );
                   case "signull":
-                    return (
-                      <SignullCard
-                        data={card.metrics}
-                        onClick={() => handleSignullCardClick(String(card.id))}
-                      />
-                    );
+                    return <SignullCard data={card.metrics} />;
                   case "game-ended":
                     return (
                       <WinningCard
@@ -766,92 +775,15 @@ export default function BetaPlayPage() {
           />
         </div>
 
+        {/* Signull History - Always visible stacked toasts for current signull */}
+        {currentCardHistory.length > 0 && (
+          <div className="px-4 pb-2">
+            <SignullHistoryInline items={currentCardHistory} maxVisible={3} />
+          </div>
+        )}
+
         {/* Keyboard Safe Area - Dynamic padding for iOS */}
         <div className="h-[env(safe-area-inset-bottom)]" />
-
-        {/* History Overlay */}
-        <AnimatePresence>
-          {isHistoryOpen && (
-            <>
-              {/* Backdrop / Close Area */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 z-[70] bg-black/20"
-                onClick={handleCloseHistory}
-              />
-
-              {/* History Cards Container - Positioned below the main card */}
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 50 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="absolute bottom-0 left-0 right-0 z-[80] flex flex-col px-6 pb-6"
-                style={{
-                  maxHeight: "calc(100dvh - 300px)", // Leave space for header and main card
-                }}
-              >
-                {/* History Header */}
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-bold uppercase tracking-wider text-black">
-                    Signull Log
-                  </span>
-                  <button
-                    onClick={handleCloseHistory}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-white transition-colors hover:bg-neutral-100"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Scrollable History Cards */}
-                <div className="flex-1 space-y-2 overflow-y-auto rounded-2xl">
-                  {selectedCardHistory.map((historyItem) => (
-                    <motion.div
-                      key={historyItem.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="rounded-2xl border-2 border-black bg-white p-4 shadow-md"
-                    >
-                      {/* History Card Header */}
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-black">
-                          {historyItem.username}
-                        </span>
-                        {historyItem.timestamp && (
-                          <span className="text-xs text-neutral-500">
-                            {historyItem.timestamp}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* History Card Message */}
-                      <p className="text-sm leading-relaxed text-black">
-                        {historyItem.message}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
