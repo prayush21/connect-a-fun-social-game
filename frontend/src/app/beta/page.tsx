@@ -221,7 +221,7 @@ function BetaHomeContent() {
 
         {/* Header */}
         <div className="space-y-2 text-center">
-          <h1 className="text-5xl font-bold text-slate-900">Signull</h1>
+          <h1 className="text-5xl font-bold text-slate-900">Signull⚡</h1>
           <p className="text-lg text-slate-600">
             A collaborative word guessing game
           </p>
