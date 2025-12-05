@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   // Optimize for production deployment (uncomment for Docker/container deployments)
   // output: 'standalone',
   
+  // Turbopack configuration
+  turbopack: {
+    root: process.cwd(),
+  },
+  
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react'],
