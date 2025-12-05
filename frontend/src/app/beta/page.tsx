@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X } from "lucide-react";
+import Image from "next/image";
 
 type NicknameFormData = z.infer<typeof nicknameSchema>;
 type JoinGameFormData = z.infer<typeof joinGameSchema>;
@@ -221,7 +222,16 @@ function BetaHomeContent() {
 
         {/* Header */}
         <div className="space-y-2 text-center">
-          <h1 className="text-5xl font-bold text-slate-900">Signull⚡</h1>
+          <h1 className="flex items-center justify-center gap-2 text-5xl font-bold text-slate-900">
+            Signull
+            <Image
+              src="/lightning.svg"
+              alt="Lightning"
+              width={40}
+              height={35}
+              className="inline-block"
+            />
+          </h1>
           <p className="text-lg text-slate-600">
             A collaborative word guessing game
           </p>
