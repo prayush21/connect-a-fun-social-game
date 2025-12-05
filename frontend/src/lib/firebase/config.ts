@@ -5,13 +5,6 @@ import {
   Firestore,
   connectFirestoreEmulator,
 } from "firebase/firestore";
-import {
-  getAnalytics,
-  Analytics,
-  isSupported,
-  logEvent,
-  EventParams,
-} from "firebase/analytics";
 import { getAuth, Auth, signInAnonymously } from "firebase/auth";
 
 // Default configuration for development
@@ -29,7 +22,6 @@ import { getAuth, Auth, signInAnonymously } from "firebase/auth";
 let firebaseAppInstance: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
-let analyticsInstance: Analytics | null = null;
 
 const getFirebaseConfig = () => {
   // console.log("--- DEBUG: Checking Environment Variables ---");
@@ -146,20 +138,6 @@ export const getFirebaseAuth = (): Auth => {
   return authInstance;
 };
 
-// Initialize Analytics (client-side only)
-export const getFirebaseAnalytics = async (): Promise<Analytics | null> => {
-  if (typeof window === "undefined") return null;
-
-  if (analyticsInstance) return analyticsInstance;
-
-  const supported = await isSupported();
-  if (!supported) return null;
-
-  const firebaseApp = getFirebaseApp();
-  analyticsInstance = getAnalytics(firebaseApp);
-  return analyticsInstance;
-};
-
 // Environment detection
 export const getEnvironment = (): "dev" | "prod" => {
   const hostname =
@@ -174,39 +152,11 @@ export const getEnvironment = (): "dev" | "prod" => {
   return "prod";
 };
 
-// Analytics logging with environment prefix
-export const logAnalyticsEvent = async (
-  eventName: string,
-  parameters: EventParams = {}
-) => {
-  try {
-    const analytics = await getFirebaseAnalytics();
-    if (analytics) {
-      const environment = getEnvironment();
-      const prefixedEventName = `${environment}_${eventName}`;
-
-      const enrichedParameters = {
-        ...parameters,
-        environment,
-      };
-
-      logEvent(analytics, prefixedEventName, enrichedParameters);
-      console.log(
-        `Analytics event logged: ${prefixedEventName}`,
-        enrichedParameters
-      );
-    }
-  } catch (error) {
-    console.error(`Failed to log analytics event ${eventName}:`, error);
-  }
-};
-
 // Authentication helpers
 export const initializeAuth = async (): Promise<string | null> => {
   try {
     const auth = getFirebaseAuth();
     const userCredential = await signInAnonymously(auth);
-    await logAnalyticsEvent("app_session", { timestamp: Date.now() });
     return userCredential.user.uid;
   } catch (error) {
     console.error("Authentication failed:", error);

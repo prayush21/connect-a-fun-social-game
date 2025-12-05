@@ -179,13 +179,6 @@ export const createPrefixValidationSchema = (
   );
 };
 
-// Analytics validation
-export const analyticsEventSchema = z.object({
-  name: z.string().min(1, "Event name required"),
-  properties: z.record(z.unknown()).optional(),
-  timestamp: z.date().optional(),
-});
-
 // Error validation
 export const gameErrorSchema = z.object({
   code: z.string().min(1, "Error code required"),

@@ -31,4 +31,4 @@ export {
   gameStateToFirestore,
 } from "./game";
 
-export { db, getFirebaseAnalytics, firebaseApp } from "./config";
+export { db, firebaseApp } from "./config";

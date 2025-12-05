@@ -25,7 +25,7 @@ import {
   startGameRound,
   generateRoomCode,
 } from "./firebase";
-import { initializeAuth, logAnalyticsEvent } from "./firebase/config";
+import { initializeAuth } from "./firebase/config";
 import { getOrderedGuesserIds } from "./game-logic";
 import { withErrorHandling, ERROR_CODES, createGameError } from "./errors";
 import {
@@ -289,7 +289,6 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           const userId = await initializeAuth();
           if (userId) {
             set({ sessionId: userId });
-            await logAnalyticsEvent("app_session", { timestamp: Date.now() });
           } else {
             // Fallback to random UUID if auth fails
             set({ sessionId: crypto.randomUUID() });
@@ -827,10 +826,6 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
           get().applyOptimisticUpdate(optimisticUpdate);
 
           await submitGameDirectGuess(currentRoomId, sessionId, word);
-          await logAnalyticsEvent("direct_guess_submitted", {
-            room_id: currentRoomId,
-            word_length: word.length,
-          });
         }, "submitDirectGuess");
 
         if (error) {

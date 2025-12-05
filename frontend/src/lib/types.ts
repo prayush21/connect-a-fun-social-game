@@ -235,35 +235,6 @@ export interface GameError {
   details?: Record<string, unknown>;
 }
 
-// Analytics events
-export type AnalyticsEvent =
-  | {
-      name: "game_created";
-      properties: { roomId: string; playerCount: number };
-    }
-  | { name: "game_joined"; properties: { roomId: string; playerCount: number } }
-  | {
-      name: "game_started";
-      properties: { roomId: string; playerCount: number };
-    }
-  | { name: "word_set"; properties: { roomId: string; wordLength: number } }
-  | {
-      name: "reference_set";
-      properties: { roomId: string; clueLength: number };
-    }
-  | {
-      name: "guess_submitted";
-      properties: { roomId: string; isDirect: boolean };
-    }
-  | {
-      name: "game_ended";
-      properties: { roomId: string; winner: GameWinner; duration: number };
-    }
-  | {
-      name: "player_left";
-      properties: { roomId: string; playerCount: number };
-    };
-
 // Utility types for derived state
 export interface DerivedGameState {
   activeGuessers: Player[];
