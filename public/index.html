@@ -292,13 +292,6 @@
                 </div>
             </div>
             
-            <!-- Progress dots -->
-            <div class="flex justify-center gap-2 mt-6 mb-4">
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-            </div>
             
             <div class="text-center">
                 <button id="got-it-btn" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
@@ -372,15 +365,7 @@
                         <p class="text-slate-600">Guessers win by revealing the full word or making a correct direct guess. Setter wins by blocking them!</p>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Progress dots -->
-            <div class="flex justify-center gap-2 mt-6 mb-4">
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
-            </div>
+            </div>            
             
             <div class="text-center">
                 <button id="got-it-btn" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
@@ -1175,7 +1160,7 @@
             const isClueGiver = currentUserId === clueGiverId;
             let referenceUI = '';
             if (!currentReference) {
-                 referenceUI = isClueGiver ? `<h3 class="font-bold text-lg mb-2">You are the Clue Giver!</h3><p class="text-slate-600 mb-4">Give a clue for a reference word.</p><form id="set-clue-form"><input type="text" id="reference-word-input" placeholder="Your Reference Word" class="w-full px-4 py-2 mb-2 border rounded-lg" required><input type="text" id="clue-input" placeholder="Your Clue for the Word" class="w-full px-4 py-2 mb-4 border rounded-lg" required><button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg">Set Clue</button></form>` : `<p class="text-center text-slate-500">Waiting for ${players[clueGiverId]?.name || 'a Clue Giver'} to provide a clue...</p>`;
+                 referenceUI = isClueGiver ? `<h3 class="font-bold text-lg mb-2">You are the Clue Giver!</h3><p class="text-slate-600 mb-4">Give a clue for a reference word.</p><form id="set-clue-form"><input type="text" id="reference-word-input" placeholder="think of a word starting with ${gameData.secretWord.slice(0, gameData.revealedCount)}" class="w-full px-4 py-2 mb-2 border rounded-lg" required><input type="text" id="clue-input" placeholder="Your Clue for the Word" class="w-full px-4 py-2 mb-4 border rounded-lg" required><button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg">Set Clue</button></form>` : `<p class="text-center text-slate-500">Waiting for ${players[clueGiverId]?.name || 'a Clue Giver'} to provide a clue...</p>`;
             } else {
                 const myGuess = currentReference.guesses?.[currentUserId];
                 const isClimatic = currentReference.isClimactic;
@@ -1631,9 +1616,11 @@
                 if (activeGuesserIds.length === 0) return;
 
                 const guesses = currentReference.guesses || {};
-                const allGuessed = activeGuesserIds.every(id => guesses[id]);
+                const guessedCount = activeGuesserIds.filter(id => guesses[id]).length;
+                const majorityThreshold = Math.ceil(activeGuesserIds.length / 2);
+                const hasMajority = guessedCount >= majorityThreshold;
                 
-                if (allGuessed) {
+                if (hasMajority) {
                     // In climactic rounds, guessers always win regardless of their actual guesses
                     const playersCount = Object.keys(gameData.players).length;
                     const currentRoundNumber = gameData.roundNumber || 1;
@@ -1667,29 +1654,41 @@
             }
 
             const guesses = currentReference.guesses || {};
-            const allGuessed = activeGuesserIds.every(id => guesses[id]);
+            const guessedCount = activeGuesserIds.filter(id => guesses[id]).length;
+            const majorityThreshold = Math.ceil(activeGuesserIds.length / 2);
+            const hasMajority = guessedCount >= majorityThreshold;
             
-            if (allGuessed) {
-                const firstGuess = guesses[activeGuesserIds[0]];
-                const allMatch = activeGuesserIds.every(id => guesses[id] === firstGuess);
-                if (allMatch && firstGuess === currentReference.referenceWord) {
-                    const nextLetter = secretWord[gameData.revealedCount];
-                    if (nextLetter) {
-                        const newRevealedCount = gameData.revealedCount + 1;
-                        if (newRevealedCount === secretWord.length) {
-                            batch.update(gameRef, { gamePhase: 'ended', winner: 'guessers', revealedCount: newRevealedCount, gameHistory: arrayUnion(`All letters revealed!`) });
-                            // Log game ended analytics event - guessers won by revealing all letters
-                            const playersCount = Object.keys(gameData.players).length;
-                            const currentRoundNumber = gameData.roundNumber || 1;
-                            logGameEnded(currentGameId, playersCount, 'guessers', currentRoundNumber);
-                        } else {
-                            batch.update(gameRef, { revealedCount: newRevealedCount, currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`Success! Revealed '${nextLetter}'.`) });
+            if (hasMajority) {
+                // Only consider guesses from players who actually submitted
+                const submittedGuessers = activeGuesserIds.filter(id => guesses[id]);
+                const submittedGuesses = submittedGuessers.map(id => guesses[id]);
+                
+                if (submittedGuesses.length > 0) {
+                    const firstGuess = submittedGuesses[0];
+                    const allMatch = submittedGuesses.every(guess => guess === firstGuess);
+                    
+                    if (allMatch && firstGuess === currentReference.referenceWord) {
+                        const nextLetter = secretWord[gameData.revealedCount];
+                        if (nextLetter) {
+                            const newRevealedCount = gameData.revealedCount + 1;
+                            if (newRevealedCount === secretWord.length) {
+                                batch.update(gameRef, { gamePhase: 'ended', winner: 'guessers', revealedCount: newRevealedCount, gameHistory: arrayUnion(`All letters revealed!`) });
+                                // Log game ended analytics event - guessers won by revealing all letters
+                                const playersCount = Object.keys(gameData.players).length;
+                                const currentRoundNumber = gameData.roundNumber || 1;
+                                logGameEnded(currentGameId, playersCount, 'guessers', currentRoundNumber);
+                            } else {
+                                batch.update(gameRef, { revealedCount: newRevealedCount, currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`Success! Revealed '${nextLetter}'. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`) });
+                            }
                         }
+                    } else {
+                        const failureReason = allMatch ? 
+                            `Guesses matched but were incorrect. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)` :
+                            `Guesses didn't match. (${submittedGuessers.length}/${activeGuesserIds.length} guessers participated)`;
+                        batch.update(gameRef, { currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(failureReason) });
                     }
-                } else {
-                    batch.update(gameRef, { currentReference: null, clueGiverTurn: nextTurn, gameHistory: arrayUnion(`Guesses didn't match. Round failed.`) });
+                    await batch.commit();
                 }
-                await batch.commit();
             }
         }
         

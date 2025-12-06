@@ -1,0 +1,383 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === CSS Custom Properties for Design Tokens === */
+:root {
+  /* Background colors */
+  --background: #ffffff;
+  --foreground: #171717;
+  
+  /* Card design tokens */
+  --card-bg: #ffffff;
+  --card-border: #000000;
+  --card-shadow: rgba(0, 0, 0, 0.08);
+  --card-radius: 24px;
+  --card-radius-sm: 16px;
+  
+  /* Card states */
+  --card-active: #000000;
+  --card-inactive: #e5e5e5;
+  --card-disabled: #f5f5f5;
+  --card-hover: #f9f9f9;
+  
+  /* Card spacing */
+  --card-padding: 2rem;
+  --card-gap: 1rem;
+  
+  /* Letter block sizing (responsive) */
+  --letter-block-size: clamp(2rem, 8vw, 3rem);
+  --letter-font-size: clamp(1rem, 4vw, 1.5rem);
+  --letter-gap: clamp(0.25rem, 1vw, 0.5rem);
+  
+  /* Notification area */
+  --notification-height: 2.5rem;
+  
+  /* Transitions */
+  --transition-card: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-swipe: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-snap: 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Safe area insets (iOS support) */
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+/* === Custom Animations === */
+
+/* Custom animations for game components */
+@keyframes letterReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* === Beta Card System Animations === */
+
+/* Card entrance animation */
+@keyframes cardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Card exit animation */
+@keyframes cardExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}
+
+/* Letter block slide up from behind card */
+@keyframes letterSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Notification fade in Section 2 */
+@keyframes notificationFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Card stack depth effect */
+@keyframes cardStackIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* === Animation Utility Classes === */
+
+/* Animation delay utilities */
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+/* Custom component animations */
+.letter-reveal {
+  animation: letterReveal 0.3s ease-out;
+}
+
+.letter-slide-up {
+  animation: letterSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-enter {
+  animation: cardEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-exit {
+  animation: cardExit 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-card-enter {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+.modal-enter {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.status-indicator {
+  animation: pulseGlow 2s infinite;
+}
+
+.notification-fade {
+  animation: notificationFade 0.3s ease-in-out;
+}
+
+/* === Dynamic Letter Block Sizing Utilities === */
+
+.letter-block-dynamic {
+  width: var(--letter-block-size);
+  height: var(--letter-block-size);
+  font-size: var(--letter-font-size);
+}
+
+.letter-block-gap {
+  gap: var(--letter-gap);
+}
+
+/* === GPU Acceleration Utilities === */
+
+.gpu-accelerate {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.gpu-accelerate-active {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Remove will-change after animation */
+.gpu-accelerate-done {
+  will-change: auto;
+}
+
+/* === Responsive Text Sizing === */
+
+/* Responsive text sizing for mobile */
+@media (max-width: 640px) {
+  .responsive-text-xs {
+    font-size: 0.75rem;
+  }
+  
+  .responsive-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .responsive-text-base {
+    font-size: 1rem;
+  }
+}
+
+/* === Base Styles === */
+
+/* Dark mode removed - light mode only for now
+@media (prefers-color-scheme: dark) { 
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+*/
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode only utilities */
+@layer base {
+  html {
+    @apply bg-white text-slate-900;
+  }
+  
+  /* Dark mode utilities removed - light mode only for now
+  @media (prefers-color-scheme: dark) {
+    html {
+      @apply bg-slate-900 text-slate-100;
+    }
+  }
+  */
+}
+
+/* === Beta Play Page Specific Styles === */
+
+/* Prevent pull-to-refresh on mobile */
+.beta-play-page {
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Prevent zoom on input focus */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="search"],
+  textarea {
+    font-size: 16px ; /* Prevents iOS zoom */
+  }
+}
+
+/* Safe area padding utilities */
+.pt-safe {
+  padding-top: var(--safe-area-top);
+}
+
+.pb-safe {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+/* Backdrop blur for sticky sections */
+.backdrop-blur-section {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* === Accessibility === */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --card-border: #000000;
+  }
+  
+  .card-border {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .letter-slide-up {
+    animation: none;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .card-enter,
+  .card-exit {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Focus visible indicators */
+:focus-visible {
+  outline: 2px solid var(--card-active);
+  outline-offset: 2px;
+}
