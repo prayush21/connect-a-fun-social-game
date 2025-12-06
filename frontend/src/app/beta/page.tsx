@@ -215,7 +215,7 @@ function BetaHomeContent() {
       <div className="mx-auto max-w-md space-y-8">
         {/* Beta Badge */}
         <div className="flex justify-center">
-          <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-indigo-700">
             BETA VERSION
           </span>
         </div>
@@ -278,7 +278,7 @@ function BetaHomeContent() {
             <button
               onClick={handleCreateNewGame}
               disabled={isCreating}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-neutral-600 px-4 py-3 font-semibold text-white transition-all hover:bg-neutral-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating ? "Creating..." : "Create a New Game"}
             </button>
@@ -296,23 +296,26 @@ function BetaHomeContent() {
               onSubmit={joinGameForm.handleSubmit(onJoinGameSubmit)}
               className="space-y-3"
             >
-              <div className="flex gap-2">
-                <input
-                  {...joinGameForm.register("gameCode")}
-                  type="text"
-                  placeholder="Enter Game Code"
-                  className="flex-1 rounded-lg border-2 border-slate-300 px-4 py-3 uppercase shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  maxLength={6}
-                  onChange={(e) => {
-                    // Convert to uppercase as user types
-                    e.target.value = e.target.value.toUpperCase();
-                    joinGameForm.setValue("gameCode", e.target.value);
-                  }}
-                />
+              <div className="flex flex-row items-center gap-2">
+                <div className="flex-1">
+                  <input
+                    {...joinGameForm.register("gameCode")}
+                    type="text"
+                    placeholder="Enter Game Code"
+                    className="w-full rounded-lg border-2 border-slate-300 px-4 py-3 uppercase shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    maxLength={6}
+                    onChange={(e) => {
+                      // Convert to uppercase as user types
+                      e.target.value = e.target.value.toUpperCase();
+                      joinGameForm.setValue("gameCode", e.target.value);
+                    }}
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={isJoining}
-                  className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ml-2 rounded-lg bg-neutral-600 px-6 py-3 font-semibold text-white transition-all hover:bg-neutral-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ minWidth: "80px" }}
                 >
                   {isJoining ? "..." : "Join"}
                 </button>
@@ -333,7 +336,7 @@ function BetaHomeContent() {
           </h2>
           <ol className="space-y-4 text-sm text-slate-600">
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-indigo-600">
                 1
               </span>
               <span>
@@ -341,7 +344,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-indigo-600">
                 2
               </span>
               <span>
@@ -351,7 +354,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-indigo-600">
                 3
               </span>
               <span>
@@ -360,7 +363,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-indigo-600">
                 4
               </span>
               <span>
@@ -388,7 +391,7 @@ function BetaHomeContent() {
             </div>
 
             {/* Room Code Display */}
-            <div className="mb-6 rounded-lg bg-indigo-50 p-4 text-center">
+            <div className="mb-6 rounded-lg bg-neutral-50 p-4 text-center">
               <p className="mb-1 text-sm text-slate-600">Room Code</p>
               <p className="text-2xl font-bold tracking-wider text-indigo-600">
                 {pendingRoomCode}
@@ -440,7 +443,7 @@ function BetaHomeContent() {
               <button
                 onClick={handleModalJoin}
                 disabled={isJoining || !modalNickname.trim()}
-                className="flex-1 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-lg bg-neutral-600 px-4 py-3 font-semibold text-white transition-all hover:bg-neutral-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isJoining ? "Joining..." : "Join Game"}
               </button>
