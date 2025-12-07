@@ -727,7 +727,9 @@ export default function BetaPlayPage() {
                     className={
                       card.type === "waiting"
                         ? "border-2 border-dashed border-black"
-                        : "border-2 border-black"
+                        : card.type === "send-signull"
+                          ? "border-draft-border bg-draft-bg/95 border-2 border-dashed shadow-[6px_6px_0px_0px_rgba(115,115,115,0.8)] backdrop-blur-sm"
+                          : "border-2 border-black"
                     }
                     stackIndex={Math.abs(offset)}
                   >

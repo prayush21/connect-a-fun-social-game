@@ -196,10 +196,11 @@ export const LetterBlocks = ({
                 className={`
                   flex items-center justify-center 
                   border-2 border-black bg-white font-bold
+                  shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
                   transition-all duration-200
                   ${
                     isDirectGuessMode && focusedIndex === index && isEditable
-                      ? "shadow-lg ring-4 ring-black ring-opacity-30"
+                      ? "shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ring-2 ring-black ring-opacity-30"
                       : ""
                   }
                   ${isEditable ? "cursor-text" : ""}

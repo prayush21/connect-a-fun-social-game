@@ -57,13 +57,13 @@ export function SettingsCard({
             {/* Custom Toggle */}
             <button
               onClick={onToggleMode}
-              className={`relative h-8 w-14 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${isSignullMode ? "bg-[#1a1f2e]" : "bg-neutral-200"}`}
+              className={`relative h-8 w-14 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${isSignullMode ? "bg-primary" : "bg-neutral-200"}`}
             >
               <div
                 className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${isSignullMode ? "translate-x-6" : "translate-x-0"}`}
               >
                 {isSignullMode && (
-                  <Check className="m-1 h-3 w-3 text-[#1a1f2e]" />
+                  <Check className="text-primary m-1 h-3 w-3" />
                 )}
               </div>
             </button>

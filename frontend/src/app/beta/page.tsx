@@ -211,18 +211,18 @@ function BetaHomeContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8">
+    <main className="bg-surface min-h-screen px-4 py-8">
       <div className="mx-auto max-w-md space-y-8">
         {/* Beta Badge */}
         <div className="flex justify-center">
-          <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <span className="text-primary rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             BETA VERSION
           </span>
         </div>
 
         {/* Header */}
         <div className="space-y-2 text-center">
-          <h1 className="flex items-center justify-center gap-2 text-5xl font-bold text-slate-900">
+          <h1 className="text-primary flex items-center justify-center gap-2 text-5xl font-bold">
             Signull
             <Image
               src="/lightning.svg"
@@ -232,19 +232,19 @@ function BetaHomeContent() {
               className="inline-block"
             />
           </h1>
-          <p className="text-lg text-slate-600">
+          <p className="text-lg text-neutral-500">
             A collaborative word guessing game
           </p>
         </div>
 
         {/* Main Card */}
-        <div className="rounded-2xl bg-white p-8 shadow-xl">
+        <div className="rounded-2xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           {/* Nickname Section */}
           <div className="space-y-4">
             <div>
               <label
                 htmlFor="nickname"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-sm font-medium text-neutral-600"
               >
                 Your Nickname
               </label>
@@ -252,7 +252,7 @@ function BetaHomeContent() {
                 <input
                   id="nickname"
                   type="text"
-                  className="flex-1 rounded-lg border-2 border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 rounded-lg border-2 border-black px-4 py-3 shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
                   placeholder="Enter your nickname"
                   value={username || ""}
                   onChange={(e) => setUsername(e.target.value)}
@@ -260,7 +260,7 @@ function BetaHomeContent() {
                 <button
                   type="button"
                   onClick={generateNewUsername}
-                  className="rounded-lg bg-slate-100 px-4 py-3 text-xl transition-colors hover:bg-slate-200"
+                  className="rounded-lg border-2 border-black bg-white px-4 py-3 text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
                 >
                   🎲
                 </button>
@@ -278,17 +278,17 @@ function BetaHomeContent() {
             <button
               onClick={handleCreateNewGame}
               disabled={isCreating}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-primary w-full rounded-lg border-2 border-black px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating ? "Creating..." : "Create a New Game"}
             </button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-300" />
+                <div className="w-full border-t border-neutral-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-3 text-slate-500">or</span>
+                <span className="bg-white px-3 text-neutral-500">or</span>
               </div>
             </div>
 
@@ -302,7 +302,7 @@ function BetaHomeContent() {
                     {...joinGameForm.register("gameCode")}
                     type="text"
                     placeholder="Enter Game Code"
-                    className="w-full rounded-lg border-2 border-slate-300 px-4 py-3 uppercase shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border-2 border-black px-4 py-3 uppercase shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
                     maxLength={6}
                     onChange={(e) => {
                       // Convert to uppercase as user types
@@ -314,7 +314,7 @@ function BetaHomeContent() {
                 <button
                   type="submit"
                   disabled={isJoining}
-                  className="ml-2 rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-primary ml-2 rounded-lg border-2 border-black px-6 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ minWidth: "80px" }}
                 >
                   {isJoining ? "..." : "Join"}
@@ -330,13 +330,13 @@ function BetaHomeContent() {
         </div>
 
         {/* How to Play Section */}
-        <div className="space-y-4 rounded-2xl bg-white p-6 shadow-xl">
-          <h2 className="text-center text-xl font-semibold text-slate-900">
+        <div className="space-y-4 rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <h2 className="text-primary text-center text-xl font-semibold">
             How to Play?
           </h2>
-          <ol className="space-y-4 text-sm text-slate-600">
+          <ol className="space-y-4 text-sm text-neutral-600">
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
                 1
               </span>
               <span>
@@ -344,7 +344,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
                 2
               </span>
               <span>
@@ -354,7 +354,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
                 3
               </span>
               <span>
@@ -363,7 +363,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
                 4
               </span>
               <span>
@@ -378,22 +378,22 @@ function BetaHomeContent() {
       {/* Join Game Modal */}
       {showJoinModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             {/* Modal Header */}
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900">Join Game</h2>
+              <h2 className="text-primary text-2xl font-bold">Join Game</h2>
               <button
                 onClick={handleModalClose}
-                className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg border-2 border-black p-1 text-neutral-600 transition-all hover:bg-neutral-100 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
 
             {/* Room Code Display */}
-            <div className="mb-6 rounded-lg bg-indigo-50 p-4 text-center">
-              <p className="mb-1 text-sm text-slate-600">Room Code</p>
-              <p className="text-2xl font-bold tracking-wider text-indigo-600">
+            <div className="mb-6 rounded-lg border-2 border-black bg-neutral-50 p-4 text-center">
+              <p className="mb-1 text-sm text-neutral-600">Room Code</p>
+              <p className="text-primary text-2xl font-bold tracking-wider">
                 {pendingRoomCode}
               </p>
             </div>
@@ -402,7 +402,7 @@ function BetaHomeContent() {
             <div className="mb-6">
               <label
                 htmlFor="modal-nickname"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-sm font-medium text-neutral-600"
               >
                 Enter your nickname to join
               </label>
@@ -410,7 +410,7 @@ function BetaHomeContent() {
                 <input
                   id="modal-nickname"
                   type="text"
-                  className="flex-1 rounded-lg border-2 border-slate-300 px-4 py-3 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 rounded-lg border-2 border-black px-4 py-3 shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
                   placeholder="Your nickname"
                   value={modalNickname}
                   onChange={(e) => setModalNickname(e.target.value)}
@@ -424,7 +424,7 @@ function BetaHomeContent() {
                 <button
                   type="button"
                   onClick={generateNewUsername}
-                  className="rounded-lg bg-slate-100 px-4 py-3 text-xl transition-colors hover:bg-slate-200"
+                  className="rounded-lg border-2 border-black bg-white px-4 py-3 text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
                 >
                   🎲
                 </button>
@@ -436,14 +436,14 @@ function BetaHomeContent() {
               <button
                 onClick={handleModalClose}
                 disabled={isJoining}
-                className="flex-1 rounded-lg border-2 border-slate-300 px-4 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-primary flex-1 rounded-lg border-2 border-black bg-white px-4 py-3 font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleModalJoin}
                 disabled={isJoining || !modalNickname.trim()}
-                className="flex-1 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-primary flex-1 rounded-lg border-2 border-black px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isJoining ? "Joining..." : "Join Game"}
               </button>

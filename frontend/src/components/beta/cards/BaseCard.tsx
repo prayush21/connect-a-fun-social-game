@@ -40,7 +40,8 @@ export function BaseCard({
    * Determine card styling based on state and stack index
    */
   const getCardStyle = () => {
-    const baseStyle = "relative w-full bg-white rounded-3xl shadow-lg";
+    const baseStyle =
+      "relative w-full bg-white rounded-3xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]";
 
     switch (state) {
       case "active":

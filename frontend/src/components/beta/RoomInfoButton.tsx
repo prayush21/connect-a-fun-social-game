@@ -72,7 +72,7 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
       <motion.button
         onClick={handleButtonClick}
         className={cn(
-          "flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white transition-all hover:bg-neutral-50 active:scale-95",
+          "flex items-center justify-center gap-2 rounded-full border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none",
           isExpanded ? "px-3 py-2" : "h-12 w-12"
         )}
         animate={{
@@ -138,7 +138,7 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute left-0 top-full z-[100] mt-2 w-64 rounded-2xl border-2 border-black bg-white shadow-lg"
+            className="absolute left-0 top-full z-[100] mt-2 w-64 rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
             {/* Game Settings Section */}
             <div className="border-b-2 border-black p-4">
