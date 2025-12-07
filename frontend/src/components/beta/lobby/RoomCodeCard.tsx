@@ -25,7 +25,7 @@ export function RoomCodeCard({
 
       <button
         onClick={onCopy}
-        className="flex items-center gap-2 rounded-full border-2 border-black bg-white px-6 py-3 font-medium transition-transform hover:bg-neutral-50 active:scale-95"
+        className="flex items-center gap-2 rounded-full border-2 border-black bg-white px-6 py-3 font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
       >
         <Copy className="h-4 w-4" />
         <span>{copied ? "Copied!" : "Copy Invite Link"}</span>

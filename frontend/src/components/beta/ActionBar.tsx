@@ -83,7 +83,7 @@ export function ActionBar({
         title="Send Signull"
         disabled={disableSignull}
         className={`disabled:cursor-not-allowed disabled:opacity-50 ${
-          isSignullPressed ? "translate-y-[2px] shadow-none" : ""
+          isSignullPressed ? "translate-y-[2px] bg-yellow-50 shadow-none" : ""
         }`}
       >
         <RoundButtonIcon size="lg">
@@ -100,7 +100,7 @@ export function ActionBar({
 
       {/* Input Field */}
       <div
-        className={`flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3 ${disableInput ? "bg-neutral-200 opacity-50" : ""}`}
+        className={`flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${disableInput ? "bg-neutral-200 opacity-50" : "focus-within:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"}`}
       >
         <input
           ref={inputRef}
@@ -121,7 +121,7 @@ export function ActionBar({
         disabled={disableSubmit}
         className="disabled:border-neutral-300 disabled:bg-neutral-100"
       >
-        <RoundButtonIcon size="lg">
+        <RoundButtonIcon size="sm">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -131,7 +131,7 @@ export function ActionBar({
             />
           </svg>
         </RoundButtonIcon>
-        <RoundButtonIcon size="lg" className="-ml-4">
+        <RoundButtonIcon size="sm" className="-ml-2">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
