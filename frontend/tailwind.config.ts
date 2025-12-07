@@ -19,14 +19,16 @@ const config: Config = {
           disabled: "#F5F5F5",
           hover: "#F9F9F9",
         },
-        // Game-specific color palette
+        // Game-specific color palette - Neobrutalist theme
         primary: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          900: "#312e81",
+          DEFAULT: "#1a1f2e",
+          light: "#2a3142",
+          dark: "#0f1219",
+        },
+        // Background color for pages
+        surface: {
+          DEFAULT: "#F2F3F5",
+          light: "#FFFFFF",
         },
         // Semantic colors
         success: {
