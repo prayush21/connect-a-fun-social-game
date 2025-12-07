@@ -783,3 +783,28 @@ export const resetGame = async (
     });
   }
 };
+
+/**
+ * Reset only player scores without affecting game state.
+ * Can be called from lobby to reset scores before starting a new game.
+ */
+export const resetScoresOnly = async (roomId: RoomId): Promise<void> => {
+  const docRef = doc(getRoomsCollection(), roomId);
+
+  await runTransaction(getDb(), async (trx) => {
+    const snap = await trx.get(docRef);
+    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+    const data = snap.data() as FirestoreGameRoom;
+
+    const updates: Record<string, unknown> = {
+      updatedAt: serverTimestamp(),
+    };
+
+    // Reset all player scores to 0
+    for (const playerId of Object.keys(data.players)) {
+      updates[`players.${playerId}.score`] = 0;
+    }
+
+    trx.update(docRef, updates);
+  });
+};

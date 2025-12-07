@@ -8,9 +8,10 @@ import {
   EnterSecretWordCard,
   SendASignullCard,
   SignullCard,
-  WinningCard,
+  FlippableBaseCard,
+  useWinningCardContent,
 } from "@/components/beta/cards";
-import type { WinCondition } from "@/components/beta/cards";
+import type { WinCondition, WinningCardProps } from "@/components/beta/cards";
 import {
   ActionBar,
   LetterBlocks,
@@ -31,7 +32,7 @@ import {
   hasPlayerConnected,
 } from "@/lib/beta/selectors";
 import type { SignullMetrics } from "@/lib/beta/selectors";
-import type { GameWinner } from "@/lib/beta/types";
+import type { GameWinner, Player, PlayerId } from "@/lib/beta/types";
 import { useRouter } from "next/navigation";
 
 // Define card types
@@ -85,6 +86,7 @@ type GameEndedCardData = BaseCardData & {
   winCondition?: WinCondition;
   secretWord?: string;
   winningPlayerName?: string;
+  players?: Record<PlayerId, Player>;
 };
 
 type CardData =
@@ -94,6 +96,81 @@ type CardData =
   | SendSignullCardData
   | SignullCardData
   | GameEndedCardData;
+
+/**
+ * GameEndedCardWrapper Component
+ *
+ * Renders the game-ended card with flip animation on the full card (including borders/shadow).
+ * Uses FlippableBaseCard for the flip effect.
+ */
+interface GameEndedCardWrapperProps {
+  card: GameEndedCardData;
+  isFlipped: boolean;
+  onFlip: () => void;
+  xOffset: number;
+  scale: number;
+  rotation: number;
+  opacity: number;
+  zIndex: number;
+  isActive: boolean;
+  stackIndex: number;
+}
+
+function GameEndedCardWrapper({
+  card,
+  isFlipped,
+  onFlip,
+  xOffset,
+  scale,
+  rotation,
+  opacity,
+  zIndex,
+  isActive,
+  stackIndex,
+}: GameEndedCardWrapperProps) {
+  const winningCardProps: WinningCardProps = {
+    winnerRole: card.winnerRole,
+    winCondition: card.winCondition,
+    secretWord: card.secretWord,
+    winningPlayerName: card.winningPlayerName,
+    players: card.players,
+  };
+
+  const { frontContent, backContent, canFlip } =
+    useWinningCardContent(winningCardProps);
+
+  return (
+    <motion.div
+      key={card.id}
+      className="absolute left-0 right-0"
+      initial={false}
+      animate={{
+        x: xOffset,
+        scale,
+        rotate: rotation,
+        opacity,
+        zIndex,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 200,
+        damping: 25,
+      }}
+      style={{
+        transformOrigin: "center bottom",
+      }}
+    >
+      <FlippableBaseCard
+        frontContent={frontContent}
+        backContent={backContent}
+        isFlipped={isFlipped}
+        onFlip={canFlip ? onFlip : undefined}
+        state={isActive ? "active" : "stacked"}
+        stackIndex={stackIndex}
+      />
+    </motion.div>
+  );
+}
 
 /**
  * Beta Play Page - Card-Based Game Interface
@@ -162,6 +239,7 @@ export default function BetaPlayPage() {
   const [isComposingSignull, setIsComposingSignull] = useState(false);
   const [signullClue, setSignullClue] = useState("");
   const [signullWord, setSignullWord] = useState("");
+  const [isWinningCardFlipped, setIsWinningCardFlipped] = useState(false);
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
@@ -315,6 +393,7 @@ export default function BetaPlayPage() {
         winCondition,
         secretWord: game.secretWord,
         winningPlayerName,
+        players: game.players,
       });
     }
 
@@ -690,16 +769,31 @@ export default function BetaPlayPage() {
                   case "signull":
                     return <SignullCard data={card.metrics} />;
                   case "game-ended":
-                    return (
-                      <WinningCard
-                        winnerRole={card.winnerRole}
-                        winCondition={card.winCondition}
-                        secretWord={card.secretWord}
-                        winningPlayerName={card.winningPlayerName}
-                      />
-                    );
+                    // Game ended card is handled separately with FlippableBaseCard
+                    return null;
                 }
               };
+
+              // Special rendering for game-ended card with FlippableBaseCard
+              if (card.type === "game-ended") {
+                return (
+                  <GameEndedCardWrapper
+                    key={card.id}
+                    card={card}
+                    isFlipped={isWinningCardFlipped}
+                    onFlip={() =>
+                      setIsWinningCardFlipped(!isWinningCardFlipped)
+                    }
+                    xOffset={xOffset}
+                    scale={scale}
+                    rotation={rotation}
+                    opacity={opacity}
+                    zIndex={zIndex}
+                    isActive={isActive}
+                    stackIndex={Math.abs(offset)}
+                  />
+                );
+              }
 
               return (
                 <motion.div
@@ -728,7 +822,7 @@ export default function BetaPlayPage() {
                       card.type === "waiting"
                         ? "border-2 border-dashed border-black"
                         : card.type === "send-signull"
-                          ? "border-draft-border bg-draft-bg/95 border-2 border-dashed shadow-[6px_6px_0px_0px_rgba(115,115,115,0.8)] backdrop-blur-sm"
+                          ? "border-2 border-dashed border-draft-border bg-draft-bg/95 shadow-[6px_6px_0px_0px_rgba(115,115,115,0.8)] backdrop-blur-sm"
                           : "border-2 border-black"
                     }
                     stackIndex={Math.abs(offset)}

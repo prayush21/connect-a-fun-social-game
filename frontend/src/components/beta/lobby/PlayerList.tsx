@@ -1,10 +1,12 @@
 import { Trash2 } from "lucide-react";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
+import { useShowPlayerScores } from "@/lib/posthog";
 
 interface Player {
   id: string;
   name: string;
   role?: string;
+  score?: number;
 }
 
 interface PlayerListProps {
@@ -23,6 +25,8 @@ export function PlayerList({
   onRemovePlayer,
   isHost,
 }: PlayerListProps) {
+  const showPlayerScores = useShowPlayerScores();
+
   return (
     <div className="w-full space-y-3">
       {players.map((player) => (
@@ -43,14 +47,22 @@ export function PlayerList({
               {player.id === hostId && " (Host)"}
             </span>
           </div>
-          {isHost && player.id !== currentUserId && (
-            <button
-              onClick={() => onRemovePlayer(player.id)}
-              className="rounded-full border-2 border-transparent p-2 text-neutral-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] transition-all hover:border-red-500 hover:bg-red-50 hover:text-red-500 hover:shadow-[2px_2px_0px_0px_rgba(239,68,68,0.3)] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(239,68,68,0.3)]"
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Player score - shown when feature flag is enabled */}
+            {showPlayerScores && player.score !== undefined && (
+              <span className="text-sm font-medium text-neutral-500">
+                {player.score} pts
+              </span>
+            )}
+            {isHost && player.id !== currentUserId && (
+              <button
+                onClick={() => onRemovePlayer(player.id)}
+                className="rounded-full border-2 border-transparent p-2 text-neutral-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] transition-all hover:border-red-500 hover:bg-red-50 hover:text-red-500 hover:shadow-[2px_2px_0px_0px_rgba(239,68,68,0.3)] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(239,68,68,0.3)]"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </BaseCard>
       ))}
 
