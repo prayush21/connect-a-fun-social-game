@@ -30,6 +30,15 @@ const config: Config = {
           DEFAULT: "#F2F3F5",
           light: "#FFFFFF",
         },
+        // Draft state colors - for pending/uncommitted items
+        draft: {
+          bg: "#F5F5F5",
+          border: "#A3A3A3",
+          shadow: "#737373",
+          text: "#525252",
+          muted: "#737373",
+          accent: "#404040",
+        },
         // Semantic colors
         success: {
           50: "#f0fdf4",

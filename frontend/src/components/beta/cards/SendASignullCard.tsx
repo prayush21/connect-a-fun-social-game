@@ -21,14 +21,16 @@ export function SendASignullCard({
   autoFocus = false,
 }: SendASignullCardProps) {
   return (
-    <div className="flex h-full w-full flex-col bg-white">
-      {/* Title */}
-      <h2 className="mb-4 text-center text-sm font-bold uppercase tracking-wider text-black">
-        Send a Signull
-      </h2>
+    <div className=" flex h-full w-full flex-col rounded-2xl backdrop-blur-sm">
+      {/* Title with pencil/draft icon */}
+      <div className="mb-4 flex items-center justify-center gap-2">
+        <h2 className="text-draft-accent text-center text-sm font-bold uppercase tracking-wider">
+          Send a Signull
+        </h2>
+      </div>
 
-      {/* Horizontal Divider */}
-      <div className="mb-4 w-full border-t-2 border-black" />
+      {/* Horizontal Divider - dashed draft */}
+      <div className="border-draft-border mb-4 w-full border-t-2 border-dashed" />
 
       {/* Editable Text Area */}
       <div className="flex flex-1 items-center justify-center">
@@ -36,14 +38,14 @@ export function SendASignullCard({
           value={clueMessage}
           onChange={(e) => onClueChange(e.target.value)}
           placeholder="Type clue for your teammates for a word with same prefix as above but can be of any length"
-          className="w-full resize-none bg-transparent text-center text-sm leading-relaxed text-neutral-700 placeholder-neutral-400 focus:outline-none"
+          className="text-draft-text placeholder-draft-muted/70 w-full resize-none bg-transparent text-center text-sm leading-relaxed focus:outline-none"
           rows={3}
           autoFocus={autoFocus}
         />
       </div>
 
       {/* Subtitle Text */}
-      <p className="mt-4 text-center text-xs text-neutral-500">
+      <p className="text-draft-muted mt-4 text-center text-xs">
         (Type the word below)
       </p>
 
