@@ -121,7 +121,7 @@ export function ActionBar({
         disabled={disableSubmit}
         className="disabled:border-neutral-300 disabled:bg-neutral-100"
       >
-        <RoundButtonIcon size="lg">
+        <RoundButtonIcon size="sm">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -131,7 +131,7 @@ export function ActionBar({
             />
           </svg>
         </RoundButtonIcon>
-        <RoundButtonIcon size="lg" className="-ml-4">
+        <RoundButtonIcon size="sm" className="-ml-2">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
