@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   Timestamp,
   deleteField,
+  increment,
 } from "firebase/firestore";
 import { getDb } from "../firebase/config";
 import type {
@@ -21,7 +22,16 @@ import type {
   GameSettings,
   GameError,
   FirestoreTimeValue,
+  ScoreUpdates,
 } from "./types";
+import {
+  calculateCorrectSignullGuessScore,
+  calculateInterceptScore,
+  calculateSignullResolvedScore,
+  calculateDirectGuessScore,
+  calculateGameEndScore,
+  mergeScoreUpdates,
+} from "./scoring";
 
 // Collection name for beta schema
 const BETA_COLLECTION = "game_rooms_v2";
@@ -420,6 +430,27 @@ export const submitConnect = async (
       isCorrect,
     };
     entry.connects.push(newConnect);
+
+    // ==================== Scoring Logic ====================
+    let scoreUpdates: ScoreUpdates = {};
+
+    // Award points for correct guess on signull
+    if (isCorrect) {
+      if (player.role === "setter") {
+        // Setter intercepted the signull
+        scoreUpdates = mergeScoreUpdates(
+          scoreUpdates,
+          calculateInterceptScore(playerId)
+        );
+      } else {
+        // Guesser made a correct guess
+        scoreUpdates = mergeScoreUpdates(
+          scoreUpdates,
+          calculateCorrectSignullGuessScore(playerId)
+        );
+      }
+    }
+
     // Evaluate resolution
     const resolution = evaluateResolution(entry, data);
     let newRevealedCount = data.revealedCount ?? 0;
@@ -429,6 +460,12 @@ export const submitConnect = async (
       if (resolution.resolvedAt) entry.resolvedAt = resolution.resolvedAt;
       if (resolution.status === "resolved") {
         newRevealedCount++;
+
+        // Award points for signull being resolved
+        scoreUpdates = mergeScoreUpdates(
+          scoreUpdates,
+          calculateSignullResolvedScore(entry, data)
+        );
 
         // Invalidate other pending signulls if one is resolved
         // This prevents multiple signulls from being active/resolved simultaneously
@@ -473,13 +510,32 @@ export const submitConnect = async (
       data.phase = "ended";
       data.winner = resolution.winner;
     }
-    trx.update(docRef, {
+
+    // Calculate game end scores if the game ended
+    if (resolution?.gameEnded && resolution.winner) {
+      scoreUpdates = mergeScoreUpdates(
+        scoreUpdates,
+        calculateGameEndScore(data, resolution.winner)
+      );
+    }
+
+    // Build the update object with score increments
+    const updatePayload: Record<string, unknown> = {
       signullState: data.signullState,
       phase: data.phase,
       winner: data.winner ?? null,
       revealedCount: newRevealedCount,
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    // Apply score updates using atomic increment
+    for (const [pid, delta] of Object.entries(scoreUpdates)) {
+      if (delta !== 0) {
+        updatePayload[`players.${pid}.score`] = increment(delta);
+      }
+    }
+
+    trx.update(docRef, updatePayload);
   });
 };
 
@@ -505,31 +561,82 @@ export const submitDirectGuess = async (
       word: upperGuess,
       timestamp: serverTimestamp(),
     };
-    if (upperGuess === data.secretWord) {
-      trx.update(docRef, {
+
+    const isCorrect = upperGuess === data.secretWord;
+
+    // Calculate direct guess score (bonus/penalty based on remaining letters)
+    let scoreUpdates: ScoreUpdates = calculateDirectGuessScore(
+      playerId,
+      isCorrect,
+      data
+    );
+
+    if (isCorrect) {
+      // Calculate game end scores for guessers winning
+      scoreUpdates = mergeScoreUpdates(
+        scoreUpdates,
+        calculateGameEndScore(data, "guessers")
+      );
+
+      // Build update payload with score increments
+      const updatePayload: Record<string, unknown> = {
         winner: "guessers",
         phase: "ended",
         directGuessesLeft: remaining,
         lastDirectGuess,
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      for (const [pid, delta] of Object.entries(scoreUpdates)) {
+        if (delta !== 0) {
+          updatePayload[`players.${pid}.score`] = increment(delta);
+        }
+      }
+
+      trx.update(docRef, updatePayload);
       return;
     }
+
+    // Wrong guess
     if (remaining <= 0) {
-      trx.update(docRef, {
+      // Setter wins - no more direct guesses
+      scoreUpdates = mergeScoreUpdates(
+        scoreUpdates,
+        calculateGameEndScore(data, "setter")
+      );
+
+      const updatePayload: Record<string, unknown> = {
         winner: "setter",
         phase: "ended",
         directGuessesLeft: 0,
         lastDirectGuess,
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      for (const [pid, delta] of Object.entries(scoreUpdates)) {
+        if (delta !== 0) {
+          updatePayload[`players.${pid}.score`] = increment(delta);
+        }
+      }
+
+      trx.update(docRef, updatePayload);
       return;
     }
-    trx.update(docRef, {
+
+    // Wrong guess but still have guesses left
+    const updatePayload: Record<string, unknown> = {
       directGuessesLeft: remaining,
       lastDirectGuess,
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    for (const [pid, delta] of Object.entries(scoreUpdates)) {
+      if (delta !== 0) {
+        updatePayload[`players.${pid}.score`] = increment(delta);
+      }
+    }
+
+    trx.update(docRef, updatePayload);
   });
 };
 
@@ -627,18 +734,52 @@ export const startGame = async (roomId: RoomId): Promise<void> => {
   });
 };
 
-export const resetGame = async (roomId: RoomId): Promise<void> => {
+export const resetGame = async (
+  roomId: RoomId,
+  resetScores: boolean = false
+): Promise<void> => {
   const docRef = doc(getRoomsCollection(), roomId);
-  await updateDoc(docRef, {
-    phase: "lobby",
-    secretWord: deleteField(),
-    revealedCount: 0,
-    "signullState.order": {},
-    "signullState.itemsById": {},
-    "signullState.activeIndex": null,
-    directGuessesLeft: 3,
-    lastDirectGuess: null,
-    winner: deleteField(),
-    updatedAt: serverTimestamp(),
-  });
+
+  if (resetScores) {
+    // Use transaction to reset all player scores
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
+
+      const updates: Record<string, unknown> = {
+        phase: "lobby",
+        secretWord: deleteField(),
+        revealedCount: 0,
+        "signullState.order": {},
+        "signullState.itemsById": {},
+        "signullState.activeIndex": null,
+        directGuessesLeft: 3,
+        lastDirectGuess: null,
+        winner: deleteField(),
+        updatedAt: serverTimestamp(),
+      };
+
+      // Reset all player scores to 0
+      for (const playerId of Object.keys(data.players)) {
+        updates[`players.${playerId}.score`] = 0;
+      }
+
+      trx.update(docRef, updates);
+    });
+  } else {
+    // Simple update without score reset
+    await updateDoc(docRef, {
+      phase: "lobby",
+      secretWord: deleteField(),
+      revealedCount: 0,
+      "signullState.order": {},
+      "signullState.itemsById": {},
+      "signullState.activeIndex": null,
+      directGuessesLeft: 3,
+      lastDirectGuess: null,
+      winner: deleteField(),
+      updatedAt: serverTimestamp(),
+    });
+  }
 };

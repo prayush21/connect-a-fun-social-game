@@ -7,6 +7,60 @@ export type RoomId = string;
 export type SignullId = string;
 export type GameWinner = null | "guessers" | "setter";
 
+// ==================== Scoring Types ====================
+
+/**
+ * Scoring constants for the game
+ */
+export const SCORING = {
+  // Signull scenarios
+  CORRECT_GUESS_ON_SIGNULL: 5, // Player who makes a correct guess to signull
+  INTERCEPT_SIGNULL: 5, // Setter who intercepts a signull
+  SIGNULL_RESOLVED_BASE: 5, // Player whose signull gets resolved (base points)
+  SIGNULL_RESOLVED_PER_CONNECT: 2, // Additional points per correct connect on resolved signull
+  SIGNULL_MATCHES_SECRET_BONUS: 5, // Bonus for all guessers when signull word equals secret word
+
+  // Direct guess scenarios
+  DIRECT_GUESS_CORRECT_BONUS: 5, // +5 if >=50% of word length remains
+  DIRECT_GUESS_WRONG_PENALTY: -5, // -5 if wrong guess when >=50% of word remains
+
+  // Game end scenarios
+  GAME_END_PER_REMAINING_LETTER: 10, // Points per remaining unrevealed letter
+  GAME_END_PER_DIRECT_GUESS_LEFT: 10, // Points per remaining direct guess
+} as const;
+
+/**
+ * Represents a single score change event for audit/history
+ */
+export interface ScoreEvent {
+  playerId: PlayerId;
+  delta: number;
+  reason: ScoreReason;
+  timestamp: Date;
+  details?: Record<string, unknown>;
+}
+
+/**
+ * Reason codes for score changes
+ */
+export type ScoreReason =
+  | "correct_signull_guess" // Player guessed the signull word correctly
+  | "intercept_signull" // Setter intercepted a signull
+  | "signull_resolved" // Player's signull was resolved
+  | "signull_resolved_connects" // Bonus for correct connects on resolved signull
+  | "signull_secret_match_bonus" // Bonus when signull word matches secret word
+  | "direct_guess_correct" // Correct direct guess with >=50% letters remaining
+  | "direct_guess_wrong" // Wrong direct guess with >=50% letters remaining
+  | "game_end_guessers_win" // End game bonus for guessers
+  | "game_end_setter_win"; // End game bonus for setter
+
+/**
+ * Represents score updates to be applied in a transaction
+ */
+export interface ScoreUpdates {
+  [playerId: PlayerId]: number; // delta to add to current score
+}
+
 export type PlayerRole = "setter" | "guesser";
 export type GamePhase = "lobby" | "setting" | "signulls" | "ended";
 export type PlayMode = "round_robin" | "free"; // free = no enforced turn order
