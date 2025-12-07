@@ -438,6 +438,15 @@ export default function BetaPlayPage() {
       return;
     }
 
+    // Check if setter is trying to connect when signull word matches secret word
+    if (isSetter && currentCard.metrics.word === word) {
+      showNotification(
+        "Cannot connect to a signull that matches the secret word",
+        "error"
+      );
+      return;
+    }
+
     try {
       // We need the signull ID. The card ID is the signull ID (as string)
       await submitConnect(inputValue.trim(), currentCard.id as string);
