@@ -28,6 +28,8 @@ interface ActionBarProps {
   isGameEnded?: boolean;
   /** Callback when Play Again button is clicked */
   onPlayAgain?: () => void;
+  /** Callback when Back to Lobby button is clicked */
+  onBackToLobby?: () => void;
 }
 
 export function ActionBar({
@@ -43,6 +45,7 @@ export function ActionBar({
   className = "",
   isGameEnded = false,
   onPlayAgain,
+  onBackToLobby,
 }: ActionBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isSignullPressed, setIsSignullPressed] = useState(false);
@@ -62,6 +65,12 @@ export function ActionBar({
       <div
         className={`z-50 mt-4 flex h-20 flex-shrink-0 items-center justify-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
       >
+        <button
+          onClick={onBackToLobby}
+          className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-neutral-200 px-8 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+        >
+          Back to Lobby
+        </button>
         <button
           onClick={onPlayAgain}
           className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-white px-8 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"

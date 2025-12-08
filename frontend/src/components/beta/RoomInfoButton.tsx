@@ -15,6 +15,8 @@ interface RoomInfoButtonProps {
   players: Player[];
   currentPlayerId?: string;
   connectsRequired: number;
+  canChangeSetter?: boolean;
+  onChangeSetter?: (playerId: string) => void;
   className?: string;
 }
 
@@ -31,6 +33,8 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
   players,
   currentPlayerId,
   connectsRequired,
+  canChangeSetter = false,
+  onChangeSetter,
   className,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -157,7 +161,7 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
               {players.map((player) => (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 transition-colors hover:bg-neutral-50"
+                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-neutral-50"
                 >
                   <span
                     className={cn(
@@ -174,6 +178,17 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
                       (setter)
                     </span>
                   )}
+                  {canChangeSetter &&
+                    onChangeSetter &&
+                    player.role !== "setter" && (
+                      <button
+                        type="button"
+                        onClick={() => onChangeSetter(player.id)}
+                        className="rounded-full border border-black px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white"
+                      >
+                        Make Setter
+                      </button>
+                    )}
                 </div>
               ))}
             </div>

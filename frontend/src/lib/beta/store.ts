@@ -13,7 +13,8 @@ import {
   updateGameSettings as fxUpdateGameSettings,
   changeSetter as fxChangeSetter,
   startGame as fxStartGame,
-  resetGame as fxResetGame,
+  playAgain as fxPlayAgain,
+  backToLobby as fxBackToLobby,
   resetScoresOnly as fxResetScoresOnly,
   subscribeToRoom,
 } from "./firebase";
@@ -79,7 +80,8 @@ interface BetaStoreState {
   changeSetter: (newSetterId: PlayerId) => Promise<void>;
   removePlayerFromRoom: (playerId: PlayerId) => Promise<void>;
   startGame: () => Promise<void>;
-  resetGame: (resetScores?: boolean) => Promise<void>;
+  playAgain: () => Promise<void>;
+  backToLobby: (resetScores?: boolean) => Promise<void>;
   resetScores: () => Promise<void>;
   setSecretWord: (word: string) => Promise<void>;
   addSignull: (word: string, clue: string) => Promise<SignullId | null>;
@@ -360,11 +362,20 @@ export const useBetaStore = create<BetaStoreState>()(
           set({ error: mapError(e) });
         }
       },
-      resetGame: async (resetScores?: boolean) => {
+      playAgain: async () => {
         const { roomId } = get();
         if (!roomId) return;
         try {
-          await fxResetGame(roomId, resetScores);
+          await fxPlayAgain(roomId);
+        } catch (e) {
+          set({ error: mapError(e) });
+        }
+      },
+      backToLobby: async (resetScores?: boolean) => {
+        const { roomId } = get();
+        if (!roomId) return;
+        try {
+          await fxBackToLobby(roomId, resetScores);
         } catch (e) {
           set({ error: mapError(e) });
         }

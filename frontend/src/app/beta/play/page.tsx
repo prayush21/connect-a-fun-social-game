@@ -193,7 +193,9 @@ export default function BetaPlayPage() {
   const submitConnect = useBetaStore((state) => state.submitConnect);
   const submitDirectGuess = useBetaStore((state) => state.submitDirectGuess);
   const setSecretWord = useBetaStore((state) => state.setSecretWord);
-  const resetGame = useBetaStore((state) => state.resetGame);
+  const backToLobby = useBetaStore((state) => state.backToLobby);
+  const playAgain = useBetaStore((state) => state.playAgain);
+  const changeSetter = useBetaStore((state) => state.changeSetter);
 
   // Derived state from store
   const roomCode = game?.roomId || "----";
@@ -627,6 +629,10 @@ export default function BetaPlayPage() {
               players={players}
               currentPlayerId={userId || undefined}
               connectsRequired={connectsRequired}
+              canChangeSetter={isSetter && game?.phase === "setting"}
+              onChangeSetter={(pid) => {
+                void changeSetter(pid);
+              }}
             />
           </div>
 
@@ -867,7 +873,7 @@ export default function BetaPlayPage() {
                   : "Enter your response word"
             }
             disableInput={isInputDisabled}
-            disableSignull={isSetter}
+            disableSignull={isSetter || game?.phase === "setting"}
             disableSubmit={
               isComposingSignull
                 ? !signullClue.trim() || !signullWord.trim()
@@ -875,7 +881,10 @@ export default function BetaPlayPage() {
             }
             isGameEnded={game?.phase === "ended"}
             onPlayAgain={() => {
-              resetGame();
+              void playAgain();
+            }}
+            onBackToLobby={() => {
+              backToLobby();
             }}
           />
         </div>
