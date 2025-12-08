@@ -597,6 +597,9 @@ export default function BetaPlayPage() {
       // If card is not pending, disable input
       if (signullCard.metrics.status !== "pending") return true;
 
+      // Disable input if player is trying to connect to their own signull
+      if (signullCard.metrics.clueGiverId === userId) return true;
+
       // If user is setter, they can always input (as long as pending)
       if (isSetter) return false;
 
@@ -609,7 +612,7 @@ export default function BetaPlayPage() {
     if (currentCard.type === "enter-secret") return false;
 
     return true;
-  }, [cards, activeIndex, isComposingSignull, isSetter]);
+  }, [cards, activeIndex, isComposingSignull, isSetter, userId]);
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-neutral-200 p-0 md:p-4">
