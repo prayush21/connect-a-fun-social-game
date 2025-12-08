@@ -23,6 +23,7 @@ export default function BetaLobbyPage() {
     removePlayerFromRoom,
     changeSetter,
     startGame,
+    resetScores,
     teardown,
   } = useBetaStore();
 
@@ -154,6 +155,16 @@ export default function BetaLobbyPage() {
     }
   };
 
+  // Handle reset scores
+  const handleResetScores = async () => {
+    if (!isSetter) return;
+    try {
+      await resetScores();
+    } catch (err) {
+      console.error("Failed to reset scores:", err);
+    }
+  };
+
   // Handle start game
   const handleStartGame = async () => {
     if (!gameState) return;
@@ -174,10 +185,10 @@ export default function BetaLobbyPage() {
   }
 
   return (
-    <div className="bg-surface relative flex min-h-screen w-full flex-col px-4 py-6 md:px-6">
+    <div className="relative flex min-h-screen w-full flex-col bg-surface px-4 py-6 md:px-6">
       <div className="mx-auto w-full max-w-md space-y-6 pb-32">
         <div className="mb-8 space-y-2 text-center">
-          <h1 className="text-primary text-3xl font-bold">Game Lobby</h1>
+          <h1 className="text-3xl font-bold text-primary">Game Lobby</h1>
           <p className="text-neutral-500">
             Share the code below to invite your friends
           </p>
@@ -199,6 +210,7 @@ export default function BetaLobbyPage() {
             setterName={players[setterUid]?.name || "Unknown"}
             isSetter={isSetter}
             onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}
+            onResetScores={handleResetScores}
           />
 
           {/* Setter Dropdown */}
@@ -240,7 +252,7 @@ export default function BetaLobbyPage() {
       </div>
 
       {isSetter && (
-        <div className="from-surface via-surface fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t to-transparent px-4 pb-6 pt-12 md:px-6">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-surface via-surface to-transparent px-4 pb-6 pt-12 md:px-6">
           <div className="mx-auto max-w-md">
             <StartGameButton
               onClick={handleStartGame}

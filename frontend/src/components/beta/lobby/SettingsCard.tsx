@@ -1,5 +1,14 @@
-import { Minus, Plus, Info, Check, Edit2, ChevronDown } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Info,
+  Check,
+  Edit2,
+  ChevronDown,
+  RotateCcw,
+} from "lucide-react";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
+import { useShowPlayerScores } from "@/lib/posthog";
 
 interface SettingsCardProps {
   connectsRequired: number;
@@ -9,6 +18,7 @@ interface SettingsCardProps {
   setterName: string;
   isSetter: boolean;
   onSetterChange: () => void;
+  onResetScores?: () => void;
 }
 
 export function SettingsCard({
@@ -19,7 +29,10 @@ export function SettingsCard({
   setterName,
   isSetter,
   onSetterChange,
+  onResetScores,
 }: SettingsCardProps) {
+  const showPlayerScores = useShowPlayerScores();
+
   return (
     <BaseCard className="space-y-6 !p-6">
       {/* Connects Required & Signull Mode Row */}
@@ -63,7 +76,7 @@ export function SettingsCard({
                 className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${isSignullMode ? "translate-x-6" : "translate-x-0"}`}
               >
                 {isSignullMode && (
-                  <Check className="text-primary m-1 h-3 w-3" />
+                  <Check className="m-1 h-3 w-3 text-primary" />
                 )}
               </div>
             </button>
@@ -73,6 +86,26 @@ export function SettingsCard({
           </div>
         </div>
       </div>
+
+      {/* Reset Scores - Only visible when feature flag is enabled */}
+      {showPlayerScores && (
+        <div className="flex items-center justify-between border-t border-neutral-100 pt-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
+            <RotateCcw className="h-4 w-4" />
+            <span>Player Scores</span>
+          </div>
+          {isSetter ? (
+            <button
+              onClick={onResetScores}
+              className="rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+            >
+              Reset
+            </button>
+          ) : (
+            <span className="text-sm text-neutral-400">Setter only</span>
+          )}
+        </div>
+      )}
 
       {/* Setter Selection */}
       <div className="mt-4 flex flex-col items-center gap-2 border-t border-neutral-100 pt-2">

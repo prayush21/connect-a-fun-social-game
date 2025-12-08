@@ -8,6 +8,9 @@
 export { BaseCard } from "./BaseCard";
 export type { BaseCardProps, CardState } from "./BaseCard";
 
+export { FlippableBaseCard, useFlipCard } from "./FlippableBaseCard";
+export type { FlippableBaseCardProps } from "./FlippableBaseCard";
+
 export { CardContainer, CardStack } from "./CardContainer";
 export type { CardContainerProps, CardStackProps } from "./CardContainer";
 
@@ -23,5 +26,16 @@ export { StartingGameCard } from "./StartingGameCard";
 export { EnterSecretWordCard } from "./EnterSecretWordCard";
 export { SendASignullCard } from "./SendASignullCard";
 export { SignullCard } from "./SignullCard";
-export { WinningCard } from "./WinningCard";
-export type { WinCondition, WinningCardProps } from "./WinningCard";
+export {
+  WinningCard,
+  WinningCardFront,
+  WinningCardBack,
+  useWinningCardContent,
+} from "./WinningCard";
+export type {
+  WinCondition,
+  WinningCardProps,
+  FlippableWinningCardProps,
+} from "./WinningCard";
+export { ScoresCard } from "./ScoresCard";
+export type { ScoresCardProps, PlayerScoreEntry } from "./ScoresCard";
