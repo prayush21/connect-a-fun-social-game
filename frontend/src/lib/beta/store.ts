@@ -13,6 +13,7 @@ import {
   updateGameSettings as fxUpdateGameSettings,
   changeSetter as fxChangeSetter,
   startGame as fxStartGame,
+  playAgain as fxPlayAgain,
   backToLobby as fxBackToLobby,
   resetScoresOnly as fxResetScoresOnly,
   subscribeToRoom,
@@ -79,6 +80,7 @@ interface BetaStoreState {
   changeSetter: (newSetterId: PlayerId) => Promise<void>;
   removePlayerFromRoom: (playerId: PlayerId) => Promise<void>;
   startGame: () => Promise<void>;
+  playAgain: () => Promise<void>;
   backToLobby: (resetScores?: boolean) => Promise<void>;
   resetScores: () => Promise<void>;
   setSecretWord: (word: string) => Promise<void>;
@@ -356,6 +358,15 @@ export const useBetaStore = create<BetaStoreState>()(
         if (!roomId) return;
         try {
           await fxStartGame(roomId);
+        } catch (e) {
+          set({ error: mapError(e) });
+        }
+      },
+      playAgain: async () => {
+        const { roomId } = get();
+        if (!roomId) return;
+        try {
+          await fxPlayAgain(roomId);
         } catch (e) {
           set({ error: mapError(e) });
         }

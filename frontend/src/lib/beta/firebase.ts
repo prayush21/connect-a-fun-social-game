@@ -734,6 +734,24 @@ export const startGame = async (roomId: RoomId): Promise<void> => {
   });
 };
 
+// Start a new round while keeping existing scores intact
+export const playAgain = async (roomId: RoomId): Promise<void> => {
+  const docRef = doc(getRoomsCollection(), roomId);
+
+  await updateDoc(docRef, {
+    phase: "setting",
+    secretWord: deleteField(),
+    revealedCount: 0,
+    "signullState.order": {},
+    "signullState.itemsById": {},
+    "signullState.activeIndex": null,
+    directGuessesLeft: 3,
+    lastDirectGuess: null,
+    winner: deleteField(),
+    updatedAt: serverTimestamp(),
+  });
+};
+
 export const backToLobby = async (
   roomId: RoomId,
   resetScores: boolean = false
