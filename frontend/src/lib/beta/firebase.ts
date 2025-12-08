@@ -734,7 +734,7 @@ export const startGame = async (roomId: RoomId): Promise<void> => {
   });
 };
 
-export const resetGame = async (
+export const backToLobby = async (
   roomId: RoomId,
   resetScores: boolean = false
 ): Promise<void> => {

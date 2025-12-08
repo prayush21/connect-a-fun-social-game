@@ -193,7 +193,7 @@ export default function BetaPlayPage() {
   const submitConnect = useBetaStore((state) => state.submitConnect);
   const submitDirectGuess = useBetaStore((state) => state.submitDirectGuess);
   const setSecretWord = useBetaStore((state) => state.setSecretWord);
-  const resetGame = useBetaStore((state) => state.resetGame);
+  const backToLobby = useBetaStore((state) => state.backToLobby);
 
   // Derived state from store
   const roomCode = game?.roomId || "----";
@@ -875,7 +875,10 @@ export default function BetaPlayPage() {
             }
             isGameEnded={game?.phase === "ended"}
             onPlayAgain={() => {
-              resetGame();
+              console.log("Play Again clicked - to be implemented");
+            }}
+            onBackToLobby={() => {
+              backToLobby();
             }}
           />
         </div>
