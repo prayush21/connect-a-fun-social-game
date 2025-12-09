@@ -42,7 +42,14 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [feedbackMessage, setFeedbackMessage] = React.useState<string | null>(
+    null
+  );
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const sortedPlayers = React.useMemo(() => {
+    return [...players].sort((a, b) => a.name.localeCompare(b.name));
+  }, [players]);
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -189,7 +196,7 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
             </div>
 
             {/* Players List Section */}
-            <div className="flex flex-col">
+            <div className="relative flex flex-col">
               <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
                   Players
@@ -201,22 +208,28 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
                 </div>
               </div>
               <div className="max-h-64 overflow-y-auto p-2">
-                {players.map((player) => (
+                {sortedPlayers.map((player) => (
                   <div
                     key={player.id}
                     className={cn(
                       "flex items-center justify-between gap-2 rounded-xl px-3 py-2 transition-colors",
                       canChangeSetter && player.role !== "setter"
                         ? "cursor-pointer hover:bg-neutral-50"
-                        : ""
+                        : "cursor-pointer"
                     )}
                     onClick={() => {
-                      if (
-                        canChangeSetter &&
-                        onChangeSetter &&
-                        player.role !== "setter"
-                      ) {
+                      if (player.role === "setter") return;
+
+                      if (canChangeSetter && onChangeSetter) {
                         onChangeSetter(player.id);
+                      } else {
+                        const currentPlayer = players.find(
+                          (p) => p.id === currentPlayerId
+                        );
+                        if (currentPlayer?.role !== "setter") {
+                          setFeedbackMessage("Only setter can change setter");
+                          setTimeout(() => setFeedbackMessage(null), 2000);
+                        }
                       }
                     }}
                   >
@@ -247,6 +260,20 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
                   </div>
                 ))}
               </div>
+
+              {/* Feedback Overlay */}
+              <AnimatePresence>
+                {feedbackMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-neutral-900/90 px-4 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-sm"
+                  >
+                    {feedbackMessage}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
