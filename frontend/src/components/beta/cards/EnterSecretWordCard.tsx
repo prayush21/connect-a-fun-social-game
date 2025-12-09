@@ -11,7 +11,7 @@ export function EnterSecretWordCard() {
     <div className="flex h-full w-full flex-col bg-white">
       {/* Title */}
       <h2 className="mb-4 text-center text-sm font-bold uppercase tracking-wider text-black">
-        Enter Secret Word
+        You are setter
       </h2>
 
       {/* Horizontal Divider */}
@@ -20,7 +20,7 @@ export function EnterSecretWordCard() {
       {/* Instructions Text */}
       <div className="flex flex-1 items-center justify-center">
         <p className="text-center text-sm leading-relaxed text-neutral-700">
-          Enter the secret word in the input field below to start the game.
+          Enter a secret word below for others to guess, and let the game begin!
         </p>
       </div>
 
