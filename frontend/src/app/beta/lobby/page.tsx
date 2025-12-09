@@ -40,6 +40,7 @@ export default function BetaLobbyPage() {
     timeLimitSeconds: 60,
     maxPlayers: 4,
     wordValidation: "strict" as const,
+    prefixMode: false,
   };
 
   const [copied, setCopied] = useState(false);
@@ -117,13 +118,11 @@ export default function BetaLobbyPage() {
     }
   };
 
-  // Handle play mode toggle
-  const handleModeToggle = () => {
+  // Handle prefix mode toggle
+  const handlePrefixModeToggle = () => {
     if (!isSetter) return;
-    const newMode =
-      settings.playMode === "round_robin" ? "free" : "round_robin";
     updateGameSettings({
-      playMode: newMode,
+      prefixMode: !settings.prefixMode,
     });
   };
 
@@ -205,8 +204,8 @@ export default function BetaLobbyPage() {
           <SettingsCard
             connectsRequired={settings.connectsRequired}
             onConnectsChange={handleConnectsChange}
-            isSignullMode={settings.playMode === "free"}
-            onToggleMode={handleModeToggle}
+            prefixMode={settings.prefixMode}
+            onTogglePrefixMode={handlePrefixModeToggle}
             setterName={players[setterUid]?.name || "Unknown"}
             isSetter={isSetter}
             onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}

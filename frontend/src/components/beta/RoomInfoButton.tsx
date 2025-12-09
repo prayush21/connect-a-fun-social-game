@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Player {
@@ -15,6 +16,7 @@ interface RoomInfoButtonProps {
   players: Player[];
   currentPlayerId?: string;
   connectsRequired: number;
+  prefixMode: boolean;
   canChangeSetter?: boolean;
   onChangeSetter?: (playerId: string) => void;
   className?: string;
@@ -33,6 +35,7 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
   players,
   currentPlayerId,
   connectsRequired,
+  prefixMode,
   canChangeSetter = false,
   onChangeSetter,
   className,
@@ -145,14 +148,43 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
             className="absolute left-0 top-full z-[100] mt-2 w-64 rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
             {/* Game Settings Section */}
-            <div className="border-b-2 border-black p-4">
+            <div className="space-y-2 border-b-2 border-black p-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                   Connects Required
                 </span>
-                <span className="text-lg font-bold text-black">
-                  {connectsRequired}
+                <div className="flex w-10 justify-center">
+                  <span className="text-lg font-bold text-black">
+                    {connectsRequired}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                  Prefix Mode
                 </span>
+                <div className="flex w-10 justify-center">
+                  <div
+                    className={cn(
+                      "relative h-6 w-10 rounded-full border-2 border-black transition-colors",
+                      prefixMode ? "bg-primary" : "bg-neutral-200"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "absolute left-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white transition-transform",
+                        prefixMode ? "translate-x-4" : "translate-x-0"
+                      )}
+                    >
+                      {prefixMode && (
+                        <Check
+                          className="h-3 w-3 text-primary"
+                          strokeWidth={3}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

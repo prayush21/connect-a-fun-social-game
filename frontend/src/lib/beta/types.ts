@@ -111,6 +111,7 @@ export interface GameSettings {
   maxPlayers: number;
   timeLimitSeconds: number; // limit for setting secret word or signull
   wordValidation: "strict" | "relaxed";
+  prefixMode: boolean;
 }
 
 export interface LastDirectGuess {
@@ -205,6 +206,7 @@ export interface FirestoreGameRoom {
     maxPlayers: number;
     timeLimitSeconds: number;
     wordValidation: "strict" | "relaxed";
+    prefixMode: boolean;
   };
   createdAt: FirestoreTimeValue;
   updatedAt: FirestoreTimeValue;

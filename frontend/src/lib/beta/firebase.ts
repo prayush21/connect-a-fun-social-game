@@ -146,6 +146,7 @@ export const createRoom = async (
     maxPlayers: settings?.maxPlayers || 8,
     timeLimitSeconds: settings?.timeLimitSeconds || 30,
     wordValidation: settings?.wordValidation || "strict",
+    prefixMode: settings?.prefixMode || false,
   };
   const initial: FirestoreGameRoom = {
     schemaVersion: 2,
@@ -270,6 +271,16 @@ export const addSignull = async (
     if (player.role !== "guesser") throw new Error("ONLY_GUESSER_CAN_CREATE");
     const playMode = data.settings.playMode;
     const upperWord = word.trim().toUpperCase();
+
+    // Prefix Mode Validation
+    if (data.settings.prefixMode) {
+      const revealedCount = data.revealedCount ?? 0;
+      const requiredPrefix = data.secretWord.slice(0, revealedCount);
+      if (!upperWord.startsWith(requiredPrefix)) {
+        throw new Error(`WORD_MUST_START_WITH_${requiredPrefix}`);
+      }
+    }
+
     const isFinal = upperWord === data.secretWord;
     const newEntry: FirestoreSignullEntry = {
       id: signullId,

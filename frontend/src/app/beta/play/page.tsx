@@ -229,6 +229,7 @@ export default function BetaPlayPage() {
   }, [game?.phase]);
 
   const connectsRequired = game?.settings.connectsRequired || 3;
+  const prefixMode = game?.settings.prefixMode || false;
   const directGuessesLeft = game?.directGuessesLeft || 0;
 
   // Centralized notification system - watches game state for events from other players
@@ -632,6 +633,7 @@ export default function BetaPlayPage() {
               players={players}
               currentPlayerId={userId || undefined}
               connectsRequired={connectsRequired}
+              prefixMode={prefixMode}
               canChangeSetter={isSetter && game?.phase === "setting"}
               onChangeSetter={(pid) => {
                 void changeSetter(pid);
@@ -773,6 +775,7 @@ export default function BetaPlayPage() {
                         clueMessage={signullClue}
                         onClueChange={setSignullClue}
                         autoFocus={isActive}
+                        prefixMode={prefixMode}
                       />
                     );
                   case "signull":

@@ -13,8 +13,8 @@ import { useShowPlayerScores } from "@/lib/posthog";
 interface SettingsCardProps {
   connectsRequired: number;
   onConnectsChange: (delta: number) => void;
-  isSignullMode: boolean;
-  onToggleMode: () => void;
+  prefixMode: boolean;
+  onTogglePrefixMode: () => void;
   setterName: string;
   isSetter: boolean;
   onSetterChange: () => void;
@@ -24,8 +24,8 @@ interface SettingsCardProps {
 export function SettingsCard({
   connectsRequired,
   onConnectsChange,
-  isSignullMode,
-  onToggleMode,
+  prefixMode,
+  onTogglePrefixMode,
   setterName,
   isSetter,
   onSetterChange,
@@ -64,24 +64,22 @@ export function SettingsCard({
         <div className="flex flex-col items-end space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
             <Info className="h-4 w-4" />
-            <span>Signull Mode</span>
+            <span>Prefix Mode</span>
           </div>
           <div className="flex items-center gap-3">
             {/* Custom Toggle */}
             <button
-              onClick={onToggleMode}
-              className={`relative h-8 w-14 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${isSignullMode ? "bg-primary" : "bg-neutral-200"}`}
+              onClick={onTogglePrefixMode}
+              className={`relative h-8 w-14 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${prefixMode ? "bg-primary" : "bg-neutral-200"}`}
             >
               <div
-                className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${isSignullMode ? "translate-x-6" : "translate-x-0"}`}
+                className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${prefixMode ? "translate-x-6" : "translate-x-0"}`}
               >
-                {isSignullMode && (
-                  <Check className="m-1 h-3 w-3 text-primary" />
-                )}
+                {prefixMode && <Check className="m-1 h-3 w-3 text-primary" />}
               </div>
             </button>
             <span className="min-w-[20px] font-medium">
-              {isSignullMode ? "On" : "Off"}
+              {prefixMode ? "On" : "Off"}
             </span>
           </div>
         </div>
