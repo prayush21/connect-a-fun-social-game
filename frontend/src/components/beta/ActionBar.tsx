@@ -30,6 +30,8 @@ interface ActionBarProps {
   onPlayAgain?: () => void;
   /** Callback when Back to Lobby button is clicked */
   onBackToLobby?: () => void;
+  /** Callback when Memories button is clicked */
+  onMemoriesClick?: () => void;
 }
 
 export function ActionBar({
@@ -46,6 +48,7 @@ export function ActionBar({
   isGameEnded = false,
   onPlayAgain,
   onBackToLobby,
+  onMemoriesClick,
 }: ActionBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isSignullPressed, setIsSignullPressed] = useState(false);
@@ -63,20 +66,33 @@ export function ActionBar({
   if (isGameEnded) {
     return (
       <div
-        className={`z-50 mt-4 flex h-20 flex-shrink-0 items-center justify-center gap-3 bg-neutral-100 p-6 transition-all duration-200 ${className}`}
+        className={`z-50 mt-4 flex flex-shrink-0 flex-col items-center justify-center gap-3 bg-neutral-100 p-4 pb-6 transition-all duration-200 ${className}`}
       >
-        <button
-          onClick={onBackToLobby}
-          className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-neutral-200 px-8 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
-        >
-          Back to Lobby
-        </button>
-        <button
-          onClick={onPlayAgain}
-          className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-white px-8 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
-        >
-          Play Again
-        </button>
+        {/* Top row: Back to Lobby and Play Again */}
+        <div className="flex w-full justify-center gap-3">
+          <button
+            onClick={onBackToLobby}
+            className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-neutral-200 px-6 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+          >
+            Back to Lobby
+          </button>
+          <button
+            onClick={onPlayAgain}
+            className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-white px-6 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+          >
+            Play Again
+          </button>
+        </div>
+
+        {/* Bottom row: Memories button */}
+        {onMemoriesClick && (
+          <button
+            onClick={onMemoriesClick}
+            className="flex h-10 items-center justify-center rounded-full border-2 border-black bg-purple-100 px-6 text-xs font-bold uppercase tracking-wider text-purple-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+          >
+            📸 Memories
+          </button>
+        )}
       </div>
     );
   }

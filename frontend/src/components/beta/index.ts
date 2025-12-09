@@ -13,3 +13,4 @@ export {
   SignullHistoryInline,
 } from "./SignullHistoryToast";
 export type { SignullHistoryItem } from "./SignullHistoryToast";
+export { MemoriesModal } from "./MemoriesModal";
