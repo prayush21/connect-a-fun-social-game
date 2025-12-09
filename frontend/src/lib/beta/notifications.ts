@@ -47,24 +47,24 @@ export const NotificationTemplates = {
   SIGNULL_SENT_SELF: (word: string) => ({
     category: "signull" as const,
     priority: "normal" as const,
-    message: `Signull sent: ${word}`,
+    message: `Sent: ${word}`,
     isFromCurrentUser: true,
   }),
   SIGNULL_SENT_OTHER: (playerName: string) => ({
     category: "signull" as const,
     priority: "normal" as const,
-    message: `${playerName} sent a Signull`,
+    message: `${playerName} sent Signull`,
     isFromCurrentUser: false,
   }),
   SIGNULL_RESOLVED: (clueGiverName: string) => ({
     category: "signull" as const,
     priority: "high" as const,
-    message: `${clueGiverName}'s Signull resolved!`,
+    message: `${clueGiverName}'s Signull resolved`,
   }),
   SIGNULL_INTERCEPTED: (setterName: string) => ({
     category: "signull" as const,
     priority: "high" as const,
-    message: `Signull intercepted by ${setterName}!`,
+    message: `Intercepted by ${setterName}`,
   }),
   SIGNULL_FAILED: (clueGiverName: string) => ({
     category: "signull" as const,
@@ -76,7 +76,7 @@ export const NotificationTemplates = {
   CONNECT_SENT_SELF: (targetName: string) => ({
     category: "connect" as const,
     priority: "normal" as const,
-    message: `Response sent to ${targetName}`,
+    message: `Sent to ${targetName}`,
     isFromCurrentUser: true,
   }),
   CONNECT_RECEIVED: (playerName: string) => ({
@@ -90,12 +90,12 @@ export const NotificationTemplates = {
   GAME_STARTED: () => ({
     category: "game" as const,
     priority: "high" as const,
-    message: "Game started!",
+    message: "Game started",
   }),
   GAME_ENDED_GUESSERS_WIN: () => ({
     category: "game" as const,
     priority: "high" as const,
-    message: "Guessers win! 🎉",
+    message: "Guessers win 🎉",
   }),
   GAME_ENDED_SETTER_WINS: () => ({
     category: "game" as const,
@@ -254,4 +254,20 @@ export const NotificationStyles: Record<
     borderColor: "border-black",
     textColor: "text-black",
   },
+};
+
+export const GameErrorMessages: Record<string, string> = {
+  ROOM_NOT_FOUND: "Room not found",
+  ROOM_FULL: "Room is full",
+  NOT_SETTER: "Only setter can do this",
+  INVALID_PHASE: "Action not allowed now",
+  PLAYER_NOT_FOUND: "Player not found",
+  ONLY_GUESSER_CAN_CREATE: "Only guessers can create Signulls",
+  NO_ACTIVE_SIGNULL: "No active Signull",
+  SIGNULL_ID_REQUIRED: "Signull ID required",
+  SIGNULL_NOT_FOUND: "Signull not found",
+  SIGNULL_NOT_PENDING: "Signull already resolved",
+  ALREADY_CONNECTED: "You already connected",
+  NOT_GUESSER: "Only guessers can do this",
+  NO_GUESSES_LEFT: "No guesses left",
 };
