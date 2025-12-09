@@ -32,6 +32,8 @@ import {
   calculateGameEndScore,
   mergeScoreUpdates,
 } from "./scoring";
+import { useNotificationStore } from "./notification-store";
+import { GameErrorMessages } from "./notifications";
 
 // Collection name for beta schema
 const BETA_COLLECTION = "game_rooms_v2";
@@ -56,6 +58,26 @@ export const generateSignullId = (): SignullId => {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 9);
   return `sn_${ts}_${rand}`;
+};
+
+const handleFirebaseError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : "Unknown error";
+  let userMessage = GameErrorMessages[message] || message;
+
+  // Handle dynamic error messages
+  if (message.startsWith("WORD_MUST_START_WITH_")) {
+    const prefix = message.replace("WORD_MUST_START_WITH_", "");
+    userMessage = `Word must start with ${prefix}`;
+  }
+
+  useNotificationStore.getState().addNotification({
+    category: "error",
+    priority: "high",
+    message: userMessage,
+    autoDismissMs: 4000,
+  });
+
+  throw error;
 };
 
 // ---------------- Snapshot Conversion ----------------
@@ -139,44 +161,48 @@ export const createRoom = async (
   username: string,
   settings?: Partial<GameSettings>
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const finalSettings: GameSettings = {
-    playMode: settings?.playMode || "round_robin",
-    connectsRequired: settings?.connectsRequired || 2,
-    maxPlayers: settings?.maxPlayers || 8,
-    timeLimitSeconds: settings?.timeLimitSeconds || 30,
-    wordValidation: settings?.wordValidation || "strict",
-    prefixMode: settings?.prefixMode || false,
-  };
-  const initial: FirestoreGameRoom = {
-    schemaVersion: 2,
-    roomId,
-    phase: "lobby",
-    players: {
-      [creatorId]: {
-        name: username,
-        role: "setter",
-        isOnline: true,
-        lastActive: serverTimestamp() as Timestamp,
-        score: 0,
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const finalSettings: GameSettings = {
+      playMode: settings?.playMode || "round_robin",
+      connectsRequired: settings?.connectsRequired || 2,
+      maxPlayers: settings?.maxPlayers || 8,
+      timeLimitSeconds: settings?.timeLimitSeconds || 30,
+      wordValidation: settings?.wordValidation || "strict",
+      prefixMode: settings?.prefixMode || false,
+    };
+    const initial: FirestoreGameRoom = {
+      schemaVersion: 2,
+      roomId,
+      phase: "lobby",
+      players: {
+        [creatorId]: {
+          name: username,
+          role: "setter",
+          isOnline: true,
+          lastActive: serverTimestamp() as Timestamp,
+          score: 0,
+        },
       },
-    },
-    setterId: creatorId,
-    secretWord: "",
-    revealedCount: 0,
-    signullState: {
-      order: {},
-      activeIndex: finalSettings.playMode === "round_robin" ? 0 : null,
-      itemsById: {},
-    },
-    directGuessesLeft: 3,
-    lastDirectGuess: null,
-    winner: null,
-    settings: finalSettings,
-    createdAt: serverTimestamp() as Timestamp,
-    updatedAt: serverTimestamp() as Timestamp,
-  };
-  await setDoc(docRef, initial);
+      setterId: creatorId,
+      secretWord: "",
+      revealedCount: 0,
+      signullState: {
+        order: {},
+        activeIndex: finalSettings.playMode === "round_robin" ? 0 : null,
+        itemsById: {},
+      },
+      directGuessesLeft: 3,
+      lastDirectGuess: null,
+      winner: null,
+      settings: finalSettings,
+      createdAt: serverTimestamp() as Timestamp,
+      updatedAt: serverTimestamp() as Timestamp,
+    };
+    await setDoc(docRef, initial);
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const joinRoom = async (
@@ -184,51 +210,59 @@ export const joinRoom = async (
   playerId: PlayerId,
   username: string
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
-    if (Object.keys(data.players).length >= data.settings.maxPlayers) {
-      throw new Error("ROOM_FULL");
-    }
-    trx.update(docRef, {
-      [`players.${playerId}`]: {
-        name: username,
-        role: "guesser",
-        isOnline: true,
-        lastActive: serverTimestamp(),
-        score: 0,
-      },
-      updatedAt: serverTimestamp(),
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
+      if (Object.keys(data.players).length >= data.settings.maxPlayers) {
+        throw new Error("ROOM_FULL");
+      }
+      trx.update(docRef, {
+        [`players.${playerId}`]: {
+          name: username,
+          role: "guesser",
+          isOnline: true,
+          lastActive: serverTimestamp(),
+          score: 0,
+        },
+        updatedAt: serverTimestamp(),
+      });
     });
-  });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const leaveRoom = async (
   roomId: RoomId,
   playerId: PlayerId
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) return; // no-op
-    const data = snap.data() as FirestoreGameRoom;
-    if (!data.players[playerId]) return;
-    const isSetter = data.setterId === playerId;
-    const remainingIds = Object.keys(data.players).filter(
-      (id) => id !== playerId
-    );
-    const updates: Record<string, unknown> = {
-      [`players.${playerId}`]: deleteField(),
-      updatedAt: serverTimestamp(),
-    };
-    if (isSetter && remainingIds.length > 0) {
-      updates["setterId"] = remainingIds[0];
-      updates[`players.${remainingIds[0]}.role`] = "setter";
-    }
-    trx.update(docRef, updates);
-  });
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) return; // no-op
+      const data = snap.data() as FirestoreGameRoom;
+      if (!data.players[playerId]) return;
+      const isSetter = data.setterId === playerId;
+      const remainingIds = Object.keys(data.players).filter(
+        (id) => id !== playerId
+      );
+      const updates: Record<string, unknown> = {
+        [`players.${playerId}`]: deleteField(),
+        updatedAt: serverTimestamp(),
+      };
+      if (isSetter && remainingIds.length > 0) {
+        updates["setterId"] = remainingIds[0];
+        updates[`players.${remainingIds[0]}.role`] = "setter";
+      }
+      trx.update(docRef, updates);
+    });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const setSecretWord = async (
@@ -236,21 +270,25 @@ export const setSecretWord = async (
   setterId: PlayerId,
   word: string
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const upper = word.trim().toUpperCase();
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
-    if (data.setterId !== setterId) throw new Error("NOT_SETTER");
-    if (data.phase !== "lobby" && data.phase !== "setting")
-      throw new Error("INVALID_PHASE");
-    trx.update(docRef, {
-      secretWord: upper,
-      phase: "signulls",
-      updatedAt: serverTimestamp(),
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const upper = word.trim().toUpperCase();
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
+      if (data.setterId !== setterId) throw new Error("NOT_SETTER");
+      if (data.phase !== "lobby" && data.phase !== "setting")
+        throw new Error("INVALID_PHASE");
+      trx.update(docRef, {
+        secretWord: upper,
+        phase: "signulls",
+        updatedAt: serverTimestamp(),
+      });
     });
-  });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const addSignull = async (
@@ -259,67 +297,72 @@ export const addSignull = async (
   word: string,
   clue: string
 ): Promise<SignullId> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const signullId = generateSignullId();
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
-    if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
-    const player = data.players[playerId];
-    if (!player) throw new Error("PLAYER_NOT_FOUND");
-    if (player.role !== "guesser") throw new Error("ONLY_GUESSER_CAN_CREATE");
-    const playMode = data.settings.playMode;
-    const upperWord = word.trim().toUpperCase();
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const signullId = generateSignullId();
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
+      if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
+      const player = data.players[playerId];
+      if (!player) throw new Error("PLAYER_NOT_FOUND");
+      if (player.role !== "guesser") throw new Error("ONLY_GUESSER_CAN_CREATE");
+      const playMode = data.settings.playMode;
+      const upperWord = word.trim().toUpperCase();
 
-    // Prefix Mode Validation
-    if (data.settings.prefixMode) {
-      const revealedCount = data.revealedCount ?? 0;
-      const requiredPrefix = data.secretWord.slice(0, revealedCount);
-      if (!upperWord.startsWith(requiredPrefix)) {
-        throw new Error(`WORD_MUST_START_WITH_${requiredPrefix}`);
+      // Prefix Mode Validation
+      if (data.settings.prefixMode) {
+        const revealedCount = data.revealedCount ?? 0;
+        const requiredPrefix = data.secretWord.slice(0, revealedCount);
+        if (!upperWord.startsWith(requiredPrefix)) {
+          throw new Error(`WORD_MUST_START_WITH_${requiredPrefix}`);
+        }
       }
-    }
 
-    const isFinal = upperWord === data.secretWord;
-    const newEntry: FirestoreSignullEntry = {
-      id: signullId,
-      playerId,
-      word: upperWord,
-      clue,
-      connects: [],
-      isFinal,
-      status: "pending",
-      createdAt: serverTimestamp() as Timestamp,
-    };
+      const isFinal = upperWord === data.secretWord;
+      const newEntry: FirestoreSignullEntry = {
+        id: signullId,
+        playerId,
+        word: upperWord,
+        clue,
+        connects: [],
+        isFinal,
+        status: "pending",
+        createdAt: serverTimestamp() as Timestamp,
+      };
 
-    const currentOrder = data.signullState.order || {};
-    const revealedCount = data.revealedCount ?? 0;
-    const stageKey = String(revealedCount);
-    const currentStageList = currentOrder[stageKey] || [];
-    const newStageList = [...currentStageList, signullId];
+      const currentOrder = data.signullState.order || {};
+      const revealedCount = data.revealedCount ?? 0;
+      const stageKey = String(revealedCount);
+      const currentStageList = currentOrder[stageKey] || [];
+      const newStageList = [...currentStageList, signullId];
 
-    // Calculate flattened order for activeIndex
-    const newOrder = { ...currentOrder, [stageKey]: newStageList };
-    const sortedKeys = Object.keys(newOrder)
-      .map(Number)
-      .sort((a, b) => a - b);
-    const flattenedOrder = sortedKeys.reduce(
-      (acc, key) => acc.concat(newOrder[String(key)]),
-      [] as string[]
-    );
+      // Calculate flattened order for activeIndex
+      const newOrder = { ...currentOrder, [stageKey]: newStageList };
+      const sortedKeys = Object.keys(newOrder)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const flattenedOrder = sortedKeys.reduce(
+        (acc, key) => acc.concat(newOrder[String(key)]),
+        [] as string[]
+      );
 
-    const activeIndex =
-      playMode === "round_robin" ? flattenedOrder.length - 1 : null;
+      const activeIndex =
+        playMode === "round_robin" ? flattenedOrder.length - 1 : null;
 
-    trx.update(docRef, {
-      "signullState.order": newOrder,
-      "signullState.activeIndex": activeIndex,
-      [`signullState.itemsById.${signullId}`]: newEntry,
-      updatedAt: serverTimestamp(),
+      trx.update(docRef, {
+        "signullState.order": newOrder,
+        "signullState.activeIndex": activeIndex,
+        [`signullState.itemsById.${signullId}`]: newEntry,
+        updatedAt: serverTimestamp(),
+      });
     });
-  });
-  return signullId;
+    return signullId;
+  } catch (error) {
+    handleFirebaseError(error);
+    throw error; // Should be unreachable because handleFirebaseError throws, but for TS
+  }
 };
 
 // Helper to compute resolution outcome
@@ -391,163 +434,167 @@ export const submitConnect = async (
   signullId?: SignullId, // if provided, targets specific signull; in round_robin falls back to activeIndex if not provided
   guess?: string
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const upperGuess = (guess || "").trim().toUpperCase();
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const upperGuess = (guess || "").trim().toUpperCase();
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
 
-    if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
-    const player = data.players[playerId];
-    if (!player) throw new Error("PLAYER_NOT_FOUND");
+      if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
+      const player = data.players[playerId];
+      if (!player) throw new Error("PLAYER_NOT_FOUND");
 
-    // Helper to flatten order
-    const getFlattenedOrder = (order: Record<string, SignullId[]>) => {
-      const keys = Object.keys(order || {})
-        .map(Number)
-        .sort((a, b) => a - b);
-      return keys.reduce(
-        (acc, key) => acc.concat(order[String(key)]),
-        [] as SignullId[]
-      );
-    };
-
-    // Determine target signull
-    // Use the explicitly passed signullId if provided, otherwise fall back to activeIndex in round_robin mode
-    let targetId: SignullId | undefined = signullId;
-    if (!targetId && data.settings.playMode === "round_robin") {
-      const idx = data.signullState.activeIndex;
-      if (idx === null) throw new Error("NO_ACTIVE_SIGNULL");
-      const flattenedOrder = getFlattenedOrder(data.signullState.order);
-      targetId = flattenedOrder[idx];
-    }
-    if (!targetId) throw new Error("SIGNULL_ID_REQUIRED");
-    const entry = data.signullState.itemsById[targetId];
-    if (!entry) throw new Error("SIGNULL_NOT_FOUND");
-    if (entry.status !== "pending") throw new Error("SIGNULL_NOT_PENDING");
-    // Prevent duplicate from same player (unless setter)
-    if (
-      player.role !== "setter" &&
-      entry.connects.some((c) => c.playerId === playerId)
-    ) {
-      throw new Error("ALREADY_CONNECTED");
-    }
-    const isCorrect = upperGuess === entry.word;
-    const newConnect = {
-      playerId,
-      guess: upperGuess,
-      timestamp: Timestamp.now(),
-      isCorrect,
-    };
-    entry.connects.push(newConnect);
-
-    // ==================== Scoring Logic ====================
-    let scoreUpdates: ScoreUpdates = {};
-
-    // Award points for correct guess on signull
-    if (isCorrect) {
-      if (player.role === "setter") {
-        // Setter intercepted the signull
-        scoreUpdates = mergeScoreUpdates(
-          scoreUpdates,
-          calculateInterceptScore(playerId)
+      // Helper to flatten order
+      const getFlattenedOrder = (order: Record<string, SignullId[]>) => {
+        const keys = Object.keys(order || {})
+          .map(Number)
+          .sort((a, b) => a - b);
+        return keys.reduce(
+          (acc, key) => acc.concat(order[String(key)]),
+          [] as SignullId[]
         );
-      } else {
-        // Guesser made a correct guess
-        scoreUpdates = mergeScoreUpdates(
-          scoreUpdates,
-          calculateCorrectSignullGuessScore(playerId)
-        );
-      }
-    }
+      };
 
-    // Evaluate resolution
-    const resolution = evaluateResolution(entry, data);
-    let newRevealedCount = data.revealedCount ?? 0;
-
-    if (resolution) {
-      entry.status = resolution.status;
-      if (resolution.resolvedAt) entry.resolvedAt = resolution.resolvedAt;
-      if (resolution.status === "resolved") {
-        newRevealedCount++;
-
-        // Award points for signull being resolved
-        scoreUpdates = mergeScoreUpdates(
-          scoreUpdates,
-          calculateSignullResolvedScore(entry, data)
-        );
-
-        // Invalidate other pending signulls if one is resolved
-        // This prevents multiple signulls from being active/resolved simultaneously
-        // when they were all pending at the same time.
+      // Determine target signull
+      // Use the explicitly passed signullId if provided, otherwise fall back to activeIndex in round_robin mode
+      let targetId: SignullId | undefined = signullId;
+      if (!targetId && data.settings.playMode === "round_robin") {
+        const idx = data.signullState.activeIndex;
+        if (idx === null) throw new Error("NO_ACTIVE_SIGNULL");
         const flattenedOrder = getFlattenedOrder(data.signullState.order);
-        const otherPendingIds = flattenedOrder.filter(
-          (id) =>
-            id !== targetId &&
-            data.signullState.itemsById[id].status === "pending"
-        );
+        targetId = flattenedOrder[idx];
+      }
+      if (!targetId) throw new Error("SIGNULL_ID_REQUIRED");
+      const entry = data.signullState.itemsById[targetId];
+      if (!entry) throw new Error("SIGNULL_NOT_FOUND");
+      if (entry.status !== "pending") throw new Error("SIGNULL_NOT_PENDING");
+      // Prevent duplicate from same player (unless setter)
+      if (
+        player.role !== "setter" &&
+        entry.connects.some((c) => c.playerId === playerId)
+      ) {
+        throw new Error("ALREADY_CONNECTED");
+      }
+      const isCorrect = upperGuess === entry.word;
+      const newConnect = {
+        playerId,
+        guess: upperGuess,
+        timestamp: Timestamp.now(),
+        isCorrect,
+      };
+      entry.connects.push(newConnect);
 
-        otherPendingIds.forEach((id) => {
-          const pendingEntry = data.signullState.itemsById[id];
-          if (pendingEntry) {
-            pendingEntry.status = "inactive";
-            pendingEntry.resolvedAt = serverTimestamp();
-          }
-        });
+      // ==================== Scoring Logic ====================
+      let scoreUpdates: ScoreUpdates = {};
+
+      // Award points for correct guess on signull
+      if (isCorrect) {
+        if (player.role === "setter") {
+          // Setter intercepted the signull
+          scoreUpdates = mergeScoreUpdates(
+            scoreUpdates,
+            calculateInterceptScore(playerId)
+          );
+        } else {
+          // Guesser made a correct guess
+          scoreUpdates = mergeScoreUpdates(
+            scoreUpdates,
+            calculateCorrectSignullGuessScore(playerId)
+          );
+        }
       }
-    }
-    // Advance activeIndex for round_robin if resolved/failed/blocked
-    if (
-      data.settings.playMode === "round_robin" &&
-      resolution &&
-      ["resolved", "failed", "blocked"].includes(resolution.status)
-    ) {
-      const flattenedOrder = getFlattenedOrder(data.signullState.order);
-      const pendingIds = flattenedOrder.filter(
-        (id) => data.signullState.itemsById[id].status === "pending"
-      );
-      if (pendingIds.length === 0) {
-        data.signullState.activeIndex = null;
-      } else {
-        const nextId = pendingIds[0];
-        data.signullState.activeIndex = flattenedOrder.indexOf(nextId);
+
+      // Evaluate resolution
+      const resolution = evaluateResolution(entry, data);
+      let newRevealedCount = data.revealedCount ?? 0;
+
+      if (resolution) {
+        entry.status = resolution.status;
+        if (resolution.resolvedAt) entry.resolvedAt = resolution.resolvedAt;
+        if (resolution.status === "resolved") {
+          newRevealedCount++;
+
+          // Award points for signull being resolved
+          scoreUpdates = mergeScoreUpdates(
+            scoreUpdates,
+            calculateSignullResolvedScore(entry, data)
+          );
+
+          // Invalidate other pending signulls if one is resolved
+          // This prevents multiple signulls from being active/resolved simultaneously
+          // when they were all pending at the same time.
+          const flattenedOrder = getFlattenedOrder(data.signullState.order);
+          const otherPendingIds = flattenedOrder.filter(
+            (id) =>
+              id !== targetId &&
+              data.signullState.itemsById[id].status === "pending"
+          );
+
+          otherPendingIds.forEach((id) => {
+            const pendingEntry = data.signullState.itemsById[id];
+            if (pendingEntry) {
+              pendingEntry.status = "inactive";
+              pendingEntry.resolvedAt = serverTimestamp();
+            }
+          });
+        }
       }
-      if (resolution.gameEnded) {
+      // Advance activeIndex for round_robin if resolved/failed/blocked
+      if (
+        data.settings.playMode === "round_robin" &&
+        resolution &&
+        ["resolved", "failed", "blocked"].includes(resolution.status)
+      ) {
+        const flattenedOrder = getFlattenedOrder(data.signullState.order);
+        const pendingIds = flattenedOrder.filter(
+          (id) => data.signullState.itemsById[id].status === "pending"
+        );
+        if (pendingIds.length === 0) {
+          data.signullState.activeIndex = null;
+        } else {
+          const nextId = pendingIds[0];
+          data.signullState.activeIndex = flattenedOrder.indexOf(nextId);
+        }
+        if (resolution.gameEnded) {
+          data.phase = "ended";
+          data.winner = resolution.winner;
+        }
+      } else if (resolution?.gameEnded) {
         data.phase = "ended";
         data.winner = resolution.winner;
       }
-    } else if (resolution?.gameEnded) {
-      data.phase = "ended";
-      data.winner = resolution.winner;
-    }
 
-    // Calculate game end scores if the game ended
-    if (resolution?.gameEnded && resolution.winner) {
-      scoreUpdates = mergeScoreUpdates(
-        scoreUpdates,
-        calculateGameEndScore(data, resolution.winner)
-      );
-    }
-
-    // Build the update object with score increments
-    const updatePayload: Record<string, unknown> = {
-      signullState: data.signullState,
-      phase: data.phase,
-      winner: data.winner ?? null,
-      revealedCount: newRevealedCount,
-      updatedAt: serverTimestamp(),
-    };
-
-    // Apply score updates using atomic increment
-    for (const [pid, delta] of Object.entries(scoreUpdates)) {
-      if (delta !== 0) {
-        updatePayload[`players.${pid}.score`] = increment(delta);
+      // Calculate game end scores if the game ended
+      if (resolution?.gameEnded && resolution.winner) {
+        scoreUpdates = mergeScoreUpdates(
+          scoreUpdates,
+          calculateGameEndScore(data, resolution.winner)
+        );
       }
-    }
 
-    trx.update(docRef, updatePayload);
-  });
+      // Build the update object with score increments
+      const updatePayload: Record<string, unknown> = {
+        signullState: data.signullState,
+        phase: data.phase,
+        winner: data.winner ?? null,
+        revealedCount: newRevealedCount,
+        updatedAt: serverTimestamp(),
+      };
+
+      // Apply score updates using atomic increment
+      for (const [pid, delta] of Object.entries(scoreUpdates)) {
+        if (delta !== 0) {
+          updatePayload[`players.${pid}.score`] = increment(delta);
+        }
+      }
+
+      trx.update(docRef, updatePayload);
+    });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const submitDirectGuess = async (
@@ -555,112 +602,95 @@ export const submitDirectGuess = async (
   playerId: PlayerId,
   guess: string
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const upperGuess = guess.trim().toUpperCase();
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
-    if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
-    const player = data.players[playerId];
-    if (!player || player.role !== "guesser") throw new Error("NOT_GUESSER");
-    if (data.directGuessesLeft <= 0) throw new Error("NO_GUESSES_LEFT");
-    const remaining = data.directGuessesLeft - 1;
-    const lastDirectGuess = {
-      playerId,
-      playerName: player.name,
-      word: upperGuess,
-      timestamp: serverTimestamp(),
-    };
-
-    const isCorrect = upperGuess === data.secretWord;
-
-    // Calculate direct guess score (bonus/penalty based on remaining letters)
-    let scoreUpdates: ScoreUpdates = calculateDirectGuessScore(
-      playerId,
-      isCorrect,
-      data
-    );
-
-    if (isCorrect) {
-      // Calculate game end scores for guessers winning
-      scoreUpdates = mergeScoreUpdates(
-        scoreUpdates,
-        calculateGameEndScore(data, "guessers")
-      );
-
-      // Build update payload with score increments
-      const updatePayload: Record<string, unknown> = {
-        winner: "guessers",
-        phase: "ended",
-        directGuessesLeft: remaining,
-        lastDirectGuess,
-        updatedAt: serverTimestamp(),
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const upperGuess = guess.trim().toUpperCase();
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
+      if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
+      const player = data.players[playerId];
+      if (!player || player.role !== "guesser") throw new Error("NOT_GUESSER");
+      if (data.directGuessesLeft <= 0) throw new Error("NO_GUESSES_LEFT");
+      const remaining = data.directGuessesLeft - 1;
+      const lastDirectGuess = {
+        playerId,
+        playerName: player.name,
+        word: upperGuess,
+        timestamp: serverTimestamp(),
       };
 
-      for (const [pid, delta] of Object.entries(scoreUpdates)) {
-        if (delta !== 0) {
-          updatePayload[`players.${pid}.score`] = increment(delta);
-        }
-      }
+      const isCorrect = upperGuess === data.secretWord;
 
-      trx.update(docRef, updatePayload);
-      return;
-    }
-
-    // Wrong guess
-    if (remaining <= 0) {
-      // Setter wins - no more direct guesses
-      scoreUpdates = mergeScoreUpdates(
-        scoreUpdates,
-        calculateGameEndScore(data, "setter")
+      // Calculate direct guess score (bonus/penalty based on remaining letters)
+      let scoreUpdates: ScoreUpdates = calculateDirectGuessScore(
+        playerId,
+        isCorrect,
+        data
       );
 
-      const updatePayload: Record<string, unknown> = {
-        winner: "setter",
-        phase: "ended",
-        directGuessesLeft: 0,
-        lastDirectGuess,
-        updatedAt: serverTimestamp(),
-      };
+      if (isCorrect) {
+        // Calculate game end scores for guessers winning
+        scoreUpdates = mergeScoreUpdates(
+          scoreUpdates,
+          calculateGameEndScore(data, "guessers")
+        );
 
-      for (const [pid, delta] of Object.entries(scoreUpdates)) {
-        if (delta !== 0) {
-          updatePayload[`players.${pid}.score`] = increment(delta);
+        // Build update payload with score increments
+        const updatePayload: Record<string, unknown> = {
+          winner: "guessers",
+          phase: "ended",
+          directGuessesLeft: remaining,
+          lastDirectGuess,
+          updatedAt: serverTimestamp(),
+        };
+
+        // Apply score updates
+        for (const [pid, delta] of Object.entries(scoreUpdates)) {
+          if (delta !== 0) {
+            updatePayload[`players.${pid}.score`] = increment(delta);
+          }
         }
+
+        trx.update(docRef, updatePayload);
+      } else {
+        // Wrong guess
+        const updatePayload: Record<string, unknown> = {
+          directGuessesLeft: remaining,
+          lastDirectGuess,
+          updatedAt: serverTimestamp(),
+        };
+
+        // Apply score updates (penalty)
+        for (const [pid, delta] of Object.entries(scoreUpdates)) {
+          if (delta !== 0) {
+            updatePayload[`players.${pid}.score`] = increment(delta);
+          }
+        }
+
+        trx.update(docRef, updatePayload);
       }
-
-      trx.update(docRef, updatePayload);
-      return;
-    }
-
-    // Wrong guess but still have guesses left
-    const updatePayload: Record<string, unknown> = {
-      directGuessesLeft: remaining,
-      lastDirectGuess,
-      updatedAt: serverTimestamp(),
-    };
-
-    for (const [pid, delta] of Object.entries(scoreUpdates)) {
-      if (delta !== 0) {
-        updatePayload[`players.${pid}.score`] = increment(delta);
-      }
-    }
-
-    trx.update(docRef, updatePayload);
-  });
+    });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const endGame = async (
   roomId: RoomId,
   winner: GameState["winner"]
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  await updateDoc(docRef, {
-    phase: "ended",
-    winner: winner,
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    await updateDoc(docRef, {
+      phase: "ended",
+      winner: winner,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const subscribeToRoom = (
@@ -696,110 +726,81 @@ export const subscribeToRoom = (
 };
 
 export const checkRoomExists = async (roomId: RoomId): Promise<boolean> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const snap = await import("firebase/firestore").then((m) => m.getDoc(docRef));
-  return snap.exists();
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const snap = await import("firebase/firestore").then((m) =>
+      m.getDoc(docRef)
+    );
+    return snap.exists();
+  } catch (error) {
+    // Don't notify for checkRoomExists as it might be used for validation
+    throw error;
+  }
 };
 
 export const updateGameSettings = async (
   roomId: RoomId,
   settings: Partial<GameSettings>
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  const updates: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(settings)) {
-    updates[`settings.${key}`] = value;
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    const updates: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(settings)) {
+      updates[`settings.${key}`] = value;
+    }
+    updates.updatedAt = serverTimestamp();
+    await updateDoc(docRef, updates);
+  } catch (error) {
+    handleFirebaseError(error);
   }
-  updates.updatedAt = serverTimestamp();
-  await updateDoc(docRef, updates);
 };
 
 export const changeSetter = async (
   roomId: RoomId,
   newSetterId: PlayerId
 ): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
-
-    if (!data.players[newSetterId]) throw new Error("PLAYER_NOT_FOUND");
-
-    const oldSetterId = data.setterId;
-
-    trx.update(docRef, {
-      setterId: newSetterId,
-      [`players.${oldSetterId}.role`]: "guesser",
-      [`players.${newSetterId}.role`]: "setter",
-      updatedAt: serverTimestamp(),
-    });
-  });
-};
-
-export const startGame = async (roomId: RoomId): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-  await updateDoc(docRef, {
-    phase: "setting",
-    updatedAt: serverTimestamp(),
-  });
-};
-
-// Start a new round while keeping existing scores intact
-export const playAgain = async (roomId: RoomId): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-
-  await updateDoc(docRef, {
-    phase: "setting",
-    secretWord: deleteField(),
-    revealedCount: 0,
-    "signullState.order": {},
-    "signullState.itemsById": {},
-    "signullState.activeIndex": null,
-    directGuessesLeft: 3,
-    lastDirectGuess: null,
-    winner: deleteField(),
-    updatedAt: serverTimestamp(),
-  });
-};
-
-export const backToLobby = async (
-  roomId: RoomId,
-  resetScores: boolean = false
-): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
-
-  if (resetScores) {
-    // Use transaction to reset all player scores
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
     await runTransaction(getDb(), async (trx) => {
       const snap = await trx.get(docRef);
       if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
       const data = snap.data() as FirestoreGameRoom;
 
-      const updates: Record<string, unknown> = {
-        phase: "lobby",
-        secretWord: deleteField(),
-        revealedCount: 0,
-        "signullState.order": {},
-        "signullState.itemsById": {},
-        "signullState.activeIndex": null,
-        directGuessesLeft: 3,
-        lastDirectGuess: null,
-        winner: deleteField(),
+      if (!data.players[newSetterId]) throw new Error("PLAYER_NOT_FOUND");
+
+      const oldSetterId = data.setterId;
+
+      trx.update(docRef, {
+        setterId: newSetterId,
+        [`players.${oldSetterId}.role`]: "guesser",
+        [`players.${newSetterId}.role`]: "setter",
         updatedAt: serverTimestamp(),
-      };
-
-      // Reset all player scores to 0
-      for (const playerId of Object.keys(data.players)) {
-        updates[`players.${playerId}.score`] = 0;
-      }
-
-      trx.update(docRef, updates);
+      });
     });
-  } else {
-    // Simple update without score reset
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+export const startGame = async (roomId: RoomId): Promise<void> => {
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
     await updateDoc(docRef, {
-      phase: "lobby",
+      phase: "setting",
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+// Start a new round while keeping existing scores intact
+export const playAgain = async (roomId: RoomId): Promise<void> => {
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+
+    await updateDoc(docRef, {
+      phase: "setting",
       secretWord: deleteField(),
       revealedCount: 0,
       "signullState.order": {},
@@ -810,6 +811,62 @@ export const backToLobby = async (
       winner: deleteField(),
       updatedAt: serverTimestamp(),
     });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+export const backToLobby = async (
+  roomId: RoomId,
+  resetScores: boolean = false
+): Promise<void> => {
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+
+    if (resetScores) {
+      // Use transaction to reset all player scores
+      await runTransaction(getDb(), async (trx) => {
+        const snap = await trx.get(docRef);
+        if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+        const data = snap.data() as FirestoreGameRoom;
+
+        const updates: Record<string, unknown> = {
+          phase: "lobby",
+          secretWord: deleteField(),
+          revealedCount: 0,
+          "signullState.order": {},
+          "signullState.itemsById": {},
+          "signullState.activeIndex": null,
+          directGuessesLeft: 3,
+          lastDirectGuess: null,
+          winner: deleteField(),
+          updatedAt: serverTimestamp(),
+        };
+
+        // Reset scores for all players
+        Object.keys(data.players).forEach((pid) => {
+          updates[`players.${pid}.score`] = 0;
+        });
+
+        trx.update(docRef, updates);
+      });
+    } else {
+      // Just reset game state, keep scores
+      await updateDoc(docRef, {
+        phase: "lobby",
+        secretWord: deleteField(),
+        revealedCount: 0,
+        "signullState.order": {},
+        "signullState.itemsById": {},
+        "signullState.activeIndex": null,
+        directGuessesLeft: 3,
+        lastDirectGuess: null,
+        winner: deleteField(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    handleFirebaseError(error);
   }
 };
 
@@ -818,22 +875,26 @@ export const backToLobby = async (
  * Can be called from lobby to reset scores before starting a new game.
  */
 export const resetScoresOnly = async (roomId: RoomId): Promise<void> => {
-  const docRef = doc(getRoomsCollection(), roomId);
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
 
-  await runTransaction(getDb(), async (trx) => {
-    const snap = await trx.get(docRef);
-    if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-    const data = snap.data() as FirestoreGameRoom;
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
+      const data = snap.data() as FirestoreGameRoom;
 
-    const updates: Record<string, unknown> = {
-      updatedAt: serverTimestamp(),
-    };
+      const updates: Record<string, unknown> = {
+        updatedAt: serverTimestamp(),
+      };
 
-    // Reset all player scores to 0
-    for (const playerId of Object.keys(data.players)) {
-      updates[`players.${playerId}.score`] = 0;
-    }
+      // Reset all player scores to 0
+      for (const playerId of Object.keys(data.players)) {
+        updates[`players.${playerId}.score`] = 0;
+      }
 
-    trx.update(docRef, updates);
-  });
+      trx.update(docRef, updates);
+    });
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
