@@ -189,40 +189,64 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
             </div>
 
             {/* Players List Section */}
-            <div className="max-h-64 overflow-y-auto p-2">
-              {players.map((player) => (
-                <div
-                  key={player.id}
-                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-neutral-50"
-                >
-                  <span
-                    className={cn(
-                      "text-sm text-black",
-                      player.id === currentPlayerId
-                        ? "font-bold"
-                        : "font-medium"
-                    )}
-                  >
-                    {player.name}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  Players
+                </span>
+                <div className="flex w-14 justify-center">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                    Setter
                   </span>
-                  {player.role === "setter" && (
-                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                      (setter)
-                    </span>
-                  )}
-                  {canChangeSetter &&
-                    onChangeSetter &&
-                    player.role !== "setter" && (
-                      <button
-                        type="button"
-                        onClick={() => onChangeSetter(player.id)}
-                        className="rounded-full border border-black px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white"
-                      >
-                        Make Setter
-                      </button>
-                    )}
                 </div>
-              ))}
+              </div>
+              <div className="max-h-64 overflow-y-auto p-2">
+                {players.map((player) => (
+                  <div
+                    key={player.id}
+                    className={cn(
+                      "flex items-center justify-between gap-2 rounded-xl px-3 py-2 transition-colors",
+                      canChangeSetter && player.role !== "setter"
+                        ? "cursor-pointer hover:bg-neutral-50"
+                        : ""
+                    )}
+                    onClick={() => {
+                      if (
+                        canChangeSetter &&
+                        onChangeSetter &&
+                        player.role !== "setter"
+                      ) {
+                        onChangeSetter(player.id);
+                      }
+                    }}
+                  >
+                    <span
+                      className={cn(
+                        "text-sm text-black",
+                        player.id === currentPlayerId
+                          ? "font-bold"
+                          : "font-medium"
+                      )}
+                    >
+                      {player.name}
+                    </span>
+
+                    {/* Radio Button */}
+                    <div className="flex w-14 justify-center">
+                      <div
+                        className={cn(
+                          "flex h-5 w-5 items-center justify-center rounded-full border-2 border-black transition-all",
+                          player.role === "setter" ? "bg-black" : "bg-white"
+                        )}
+                      >
+                        {player.role === "setter" && (
+                          <div className="h-2 w-2 rounded-full bg-white" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
