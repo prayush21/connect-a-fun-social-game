@@ -22,6 +22,7 @@ import {
   useNotify,
   SignullHistoryInline,
 } from "@/components/beta";
+import { MemoriesModal } from "@/components/beta/MemoriesModal";
 import { useGameNotifications } from "@/lib/beta/useGameNotifications";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBetaStore } from "@/lib/beta/store";
@@ -243,6 +244,7 @@ export default function BetaPlayPage() {
   const [signullClue, setSignullClue] = useState("");
   const [signullWord, setSignullWord] = useState("");
   const [isWinningCardFlipped, setIsWinningCardFlipped] = useState(false);
+  const [isMemoriesModalOpen, setIsMemoriesModalOpen] = useState(false);
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
@@ -892,6 +894,9 @@ export default function BetaPlayPage() {
             onBackToLobby={() => {
               backToLobby();
             }}
+            onMemoriesClick={() => {
+              setIsMemoriesModalOpen(true);
+            }}
           />
         </div>
 
@@ -905,6 +910,16 @@ export default function BetaPlayPage() {
         {/* Keyboard Safe Area - Dynamic padding for iOS */}
         <div className="h-[env(safe-area-inset-bottom)]" />
       </div>
+
+      {/* Memories Modal */}
+      {game?.phase === "ended" && (
+        <MemoriesModal
+          isOpen={isMemoriesModalOpen}
+          onClose={() => setIsMemoriesModalOpen(false)}
+          secretWord={game.secretWord}
+          signullEntries={Object.values(game.signullState.itemsById)}
+        />
+      )}
     </div>
   );
 }
