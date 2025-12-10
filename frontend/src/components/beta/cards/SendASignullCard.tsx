@@ -41,13 +41,20 @@ export function SendASignullCard({
         {!clueMessage && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-2">
             <div className="text-center text-sm leading-relaxed text-draft-muted/70">
-              <p>Type a clue for your teammates of a word that:</p>
-              <ul className="mt-1 space-y-0.5">
-                <li className={!prefixMode ? "line-through opacity-50" : ""}>
-                  - begins with same letters as above
-                </li>
-                <li>- can be of any length</li>
-              </ul>
+              {prefixMode ? (
+                <p>
+                  Type a clue for a word{" "}
+                  <b>beginning with same letters as above </b> to make guessers
+                  figure out faster than setter!
+                  <br />
+                  (can be of ANY length)
+                </p>
+              ) : (
+                <p>
+                  Type a clue for ANY word to make guessers figure out faster
+                  than setter!
+                </p>
+              )}
             </div>
           </div>
         )}

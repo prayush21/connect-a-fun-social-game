@@ -656,20 +656,46 @@ export const submitDirectGuess = async (
         trx.update(docRef, updatePayload);
       } else {
         // Wrong guess
-        const updatePayload: Record<string, unknown> = {
-          directGuessesLeft: remaining,
-          lastDirectGuess,
-          updatedAt: serverTimestamp(),
-        };
+        if (remaining <= 0) {
+          // Out of guesses - setter wins!
+          scoreUpdates = mergeScoreUpdates(
+            scoreUpdates,
+            calculateGameEndScore(data, "setter")
+          );
 
-        // Apply score updates (penalty)
-        for (const [pid, delta] of Object.entries(scoreUpdates)) {
-          if (delta !== 0) {
-            updatePayload[`players.${pid}.score`] = increment(delta);
+          const updatePayload: Record<string, unknown> = {
+            winner: "setter",
+            phase: "ended",
+            directGuessesLeft: 0,
+            lastDirectGuess,
+            updatedAt: serverTimestamp(),
+          };
+
+          // Apply score updates (penalty for wrong guess + end game scores)
+          for (const [pid, delta] of Object.entries(scoreUpdates)) {
+            if (delta !== 0) {
+              updatePayload[`players.${pid}.score`] = increment(delta);
+            }
           }
-        }
 
-        trx.update(docRef, updatePayload);
+          trx.update(docRef, updatePayload);
+        } else {
+          // Still have guesses remaining
+          const updatePayload: Record<string, unknown> = {
+            directGuessesLeft: remaining,
+            lastDirectGuess,
+            updatedAt: serverTimestamp(),
+          };
+
+          // Apply score updates (penalty)
+          for (const [pid, delta] of Object.entries(scoreUpdates)) {
+            if (delta !== 0) {
+              updatePayload[`players.${pid}.score`] = increment(delta);
+            }
+          }
+
+          trx.update(docRef, updatePayload);
+        }
       }
     });
   } catch (error) {
