@@ -273,6 +273,12 @@ export const setSecretWord = async (
   try {
     const docRef = doc(getRoomsCollection(), roomId);
     const upper = word.trim().toUpperCase();
+    
+    // Validate that word contains only alphabets
+    if (!/^[A-Z]+$/.test(upper)) {
+      throw new Error("INVALID_WORD_FORMAT");
+    }
+    
     await runTransaction(getDb(), async (trx) => {
       const snap = await trx.get(docRef);
       if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
@@ -515,6 +521,14 @@ export const submitConnect = async (
         if (resolution.resolvedAt) entry.resolvedAt = resolution.resolvedAt;
         if (resolution.status === "resolved") {
           newRevealedCount++;
+
+          // Check if all letters are revealed - guessers win!
+          if (newRevealedCount >= data.secretWord.length) {
+            data.phase = "ended";
+            data.winner = "guessers";
+            resolution.gameEnded = true;
+            resolution.winner = "guessers";
+          }
 
           // Award points for signull being resolved
           scoreUpdates = mergeScoreUpdates(

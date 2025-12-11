@@ -33,8 +33,14 @@ import {
   hasPlayerConnected,
 } from "@/lib/beta/selectors";
 import type { SignullMetrics } from "@/lib/beta/selectors";
-import type { GameWinner, Player, PlayerId } from "@/lib/beta/types";
+import type {
+  GameWinner,
+  Player,
+  PlayerId,
+  SignullStatus,
+} from "@/lib/beta/types";
 import { useRouter } from "next/navigation";
+import { logScorecard, getSignullStatusLabel } from "@/lib/beta/debug";
 
 // Define card types
 type CardType =
@@ -248,6 +254,33 @@ export default function BetaPlayPage() {
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Track signull statuses to log scorecard on status changes
+  const prevSignullStatusesRef = useRef<Record<string, SignullStatus>>({});
+
+  // Log scorecard when any signull status changes
+  useEffect(() => {
+    if (!game) return;
+
+    const currentStatuses: Record<string, SignullStatus> = {};
+    Object.entries(game.signullState.itemsById).forEach(([id, entry]) => {
+      currentStatuses[id] = entry.status;
+    });
+
+    // Compare with previous statuses
+    Object.entries(currentStatuses).forEach(([id, status]) => {
+      const prevStatus = prevSignullStatusesRef.current[id];
+
+      // Only log if status changed from pending to something else (resolved/failed/blocked/inactive)
+      if (prevStatus === "pending" && status !== "pending") {
+        const label = getSignullStatusLabel(status);
+        logScorecard(game, label);
+      }
+    });
+
+    // Update ref for next comparison
+    prevSignullStatusesRef.current = currentStatuses;
+  }, [game]);
 
   // Transform game state to cards
   const cards = useMemo<CardData[]>(() => {

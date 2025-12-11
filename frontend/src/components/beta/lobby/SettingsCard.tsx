@@ -86,22 +86,15 @@ export function SettingsCard({
       </div>
 
       {/* Reset Scores - Only visible when feature flag is enabled */}
-      {showPlayerScores && (
-        <div className="flex items-center justify-between border-t border-neutral-100 pt-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
+      {showPlayerScores && isSetter && (
+        <div className="border-t border-neutral-100 pt-4">
+          <button
+            onClick={onResetScores}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+          >
             <RotateCcw className="h-4 w-4" />
-            <span>Player Scores</span>
-          </div>
-          {isSetter ? (
-            <button
-              onClick={onResetScores}
-              className="rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
-            >
-              Reset
-            </button>
-          ) : (
-            <span className="text-sm text-neutral-400">Setter only</span>
-          )}
+            <span>Reset Scores</span>
+          </button>
         </div>
       )}
 

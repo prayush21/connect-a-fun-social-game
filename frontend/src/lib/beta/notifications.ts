@@ -270,4 +270,5 @@ export const GameErrorMessages: Record<string, string> = {
   ALREADY_CONNECTED: "You already connected",
   NOT_GUESSER: "Only guessers can do this",
   NO_GUESSES_LEFT: "No guesses left",
+  INVALID_WORD_FORMAT: "Only alphabets allowed",
 };

@@ -25,6 +25,7 @@ export default function BetaLobbyPage() {
     startGame,
     resetScores,
     teardown,
+    leaveRoom,
   } = useBetaStore();
 
   // Use store's roomId (set immediately) instead of gameState?.roomId (async from Firebase)
@@ -176,6 +177,16 @@ export default function BetaLobbyPage() {
     }
   };
 
+  // Handle leave room
+  const handleLeaveRoom = async () => {
+    try {
+      await leaveRoom();
+      router.push("/beta");
+    } catch (err) {
+      console.error("Failed to leave room:", err);
+    }
+  };
+
   // Check if game can start (at least 3 players)
   const canStartGame = playersList.length >= 3;
 
@@ -240,12 +251,19 @@ export default function BetaLobbyPage() {
         />
 
         {/* How to Play Button - visible to all players */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 flex items-center justify-center gap-4 text-center">
           <button
             onClick={() => setShowHowToPlay(true)}
             className="text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
           >
             How to play?
+          </button>
+          <span className="text-neutral-300">|</span>
+          <button
+            onClick={handleLeaveRoom}
+            className="text-sm text-red-500 underline transition-colors hover:text-red-700"
+          >
+            Leave Room
           </button>
         </div>
       </div>
