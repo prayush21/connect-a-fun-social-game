@@ -10,6 +10,7 @@ import {
   SignullCard,
   FlippableBaseCard,
   useWinningCardContent,
+  ScoreBreakdownCard,
 } from "@/components/beta/cards";
 import type { WinCondition, WinningCardProps } from "@/components/beta/cards";
 import {
@@ -52,6 +53,7 @@ type CardType =
   | "enter-secret"
   | "send-signull"
   | "signull"
+  | "score-counting"
   | "game-ended";
 
 type BaseCardData = {
@@ -99,12 +101,17 @@ type GameEndedCardData = BaseCardData & {
   players?: Record<PlayerId, Player>;
 };
 
+type ScoreCountingCardData = BaseCardData & {
+  type: "score-counting";
+};
+
 type CardData =
   | WaitingCardData
   | StartingGameCardData
   | EnterSecretCardData
   | SendSignullCardData
   | SignullCardData
+  | ScoreCountingCardData
   | GameEndedCardData;
 
 /**
@@ -410,35 +417,49 @@ export default function BetaPlayPage() {
         mappedCards.push({ id: -1, type: "starting-game" });
       }
     } else if (game.phase === "ended") {
-      // Add winning card at the front when game ends
-      // Determine how the game was won
-      let winCondition: WinCondition | undefined;
-      let winningPlayerName: string | undefined;
+      // Check if we should show score counting card (display mode + showScoreBreakdown + not complete)
+      const showScoreCounting =
+        game.isDisplayMode &&
+        game.settings.showScoreBreakdown &&
+        !game.scoreCountingComplete;
 
-      if (game.winner === "setter") {
-        // Setter wins when guessers run out of direct guesses
-        winCondition = "out_of_guesses";
-      } else if (game.winner === "guessers") {
-        // Check if all letters were revealed (won by signulls)
-        if (game.revealedCount >= game.secretWord.length) {
-          winCondition = "all_letters_revealed";
-        } else {
-          // Won by direct guess (revealed count is less than word length)
-          winCondition = "direct_guess";
-          // TODO: Track who made the winning guess in game state
-          // For now, we don't have this info stored
+      if (showScoreCounting) {
+        // Show score counting card while display is animating
+        mappedCards.unshift({
+          id: "score-counting",
+          type: "score-counting",
+        });
+      } else {
+        // Add winning card at the front when game ends
+        // Determine how the game was won
+        let winCondition: WinCondition | undefined;
+        let winningPlayerName: string | undefined;
+
+        if (game.winner === "setter") {
+          // Setter wins when guessers run out of direct guesses
+          winCondition = "out_of_guesses";
+        } else if (game.winner === "guessers") {
+          // Check if all letters were revealed (won by signulls)
+          if (game.revealedCount >= game.secretWord.length) {
+            winCondition = "all_letters_revealed";
+          } else {
+            // Won by direct guess (revealed count is less than word length)
+            winCondition = "direct_guess";
+            // TODO: Track who made the winning guess in game state
+            // For now, we don't have this info stored
+          }
         }
-      }
 
-      mappedCards.unshift({
-        id: "game-ended",
-        type: "game-ended",
-        winnerRole: game.winner,
-        winCondition,
-        secretWord: game.secretWord,
-        winningPlayerName,
-        players: game.players,
-      });
+        mappedCards.unshift({
+          id: "game-ended",
+          type: "game-ended",
+          winnerRole: game.winner,
+          winCondition,
+          secretWord: game.secretWord,
+          winningPlayerName,
+          players: game.players,
+        });
+      }
     }
 
     return mappedCards;
@@ -823,6 +844,8 @@ export default function BetaPlayPage() {
                     );
                   case "signull":
                     return <SignullCard data={card.metrics} />;
+                  case "score-counting":
+                    return <ScoreBreakdownCard />;
                   case "game-ended":
                     // Game ended card is handled separately with FlippableBaseCard
                     return null;

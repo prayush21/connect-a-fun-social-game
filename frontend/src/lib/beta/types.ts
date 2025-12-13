@@ -112,6 +112,7 @@ export interface GameSettings {
   timeLimitSeconds: number; // limit for setting secret word or signull
   wordValidation: "strict" | "relaxed";
   prefixMode: boolean;
+  showScoreBreakdown: boolean; // Whether to show score counting animation at game end
 }
 
 export interface LastDirectGuess {
@@ -136,6 +137,8 @@ export interface GameState {
   lastDirectGuess: LastDirectGuess | null; // tracks who made the last direct guess
   winner: GameWinner;
   settings: GameSettings;
+  scoreEvents: ScoreEvent[]; // Chronological history of all scoring events
+  scoreCountingComplete: boolean; // Whether score counting animation has completed
   createdAt: Date; // snapshot conversion from Firestore Timestamp
   updatedAt: Date;
 }
@@ -177,6 +180,14 @@ export interface FirestoreLastDirectGuess {
   timestamp: FirestoreTimeValue;
 }
 
+export interface FirestoreScoreEvent {
+  playerId: PlayerId;
+  delta: number;
+  reason: ScoreReason;
+  timestamp: FirestoreTimeValue;
+  details?: Record<string, unknown>;
+}
+
 export interface FirestoreGameRoom {
   schemaVersion: 2;
   roomId: RoomId;
@@ -211,7 +222,10 @@ export interface FirestoreGameRoom {
     timeLimitSeconds: number;
     wordValidation: "strict" | "relaxed";
     prefixMode: boolean;
+    showScoreBreakdown: boolean;
   };
+  scoreEvents: FirestoreScoreEvent[];
+  scoreCountingComplete: boolean;
   createdAt: FirestoreTimeValue;
   updatedAt: FirestoreTimeValue;
 }

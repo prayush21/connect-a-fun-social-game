@@ -39,3 +39,4 @@ export type {
 } from "./WinningCard";
 export { ScoresCard } from "./ScoresCard";
 export type { ScoresCardProps, PlayerScoreEntry } from "./ScoresCard";
+export { ScoreBreakdownCard } from "./ScoreBreakdownCard";

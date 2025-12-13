@@ -139,6 +139,14 @@ export default function BetaLobbyPage() {
     });
   };
 
+  // Handle score breakdown toggle
+  const handleScoreBreakdownToggle = () => {
+    if (!isHost) return;
+    updateGameSettings({
+      showScoreBreakdown: !settings.showScoreBreakdown,
+    });
+  };
+
   // Handle remove player
   const handleRemovePlayer = async (playerId: string) => {
     if (!isHost) return;
@@ -229,6 +237,8 @@ export default function BetaLobbyPage() {
             onConnectsChange={handleConnectsChange}
             prefixMode={settings.prefixMode}
             onTogglePrefixMode={handlePrefixModeToggle}
+            showScoreBreakdown={settings.showScoreBreakdown ?? true}
+            onToggleScoreBreakdown={handleScoreBreakdownToggle}
             setterName={players[setterUid]?.name || "Unknown"}
             isSetter={isHost}
             onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}

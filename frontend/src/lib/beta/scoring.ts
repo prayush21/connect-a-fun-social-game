@@ -22,10 +22,40 @@
 import type {
   PlayerId,
   ScoreUpdates,
+  ScoreEvent,
+  ScoreReason,
   FirestoreGameRoom,
   FirestoreSignullEntry,
+  SignullId,
 } from "./types";
 import { SCORING } from "./types";
+
+// ==================== Score Result Type ====================
+
+/**
+ * Result of a score calculation, containing both the updates to apply
+ * and the events to record for score breakdown display.
+ */
+export interface ScoreResult {
+  updates: ScoreUpdates;
+  events: ScoreEvent[];
+}
+
+/**
+ * Helper to create a score event
+ */
+const createScoreEvent = (
+  playerId: PlayerId,
+  delta: number,
+  reason: ScoreReason,
+  details?: Record<string, unknown>
+): ScoreEvent => ({
+  playerId,
+  delta,
+  reason,
+  timestamp: new Date(),
+  details,
+});
 
 // ==================== Helper Functions ====================
 
@@ -64,13 +94,19 @@ export const isHalfWordRemaining = (data: FirestoreGameRoom): boolean => {
  * Called when a player (guesser) correctly guesses the signull word.
  *
  * @param playerId - The player who made the correct guess
- * @returns Score updates to apply
+ * @param signullId - The signull that was guessed correctly
+ * @returns Score result with updates and events
  */
 export const calculateCorrectSignullGuessScore = (
-  playerId: PlayerId
-): ScoreUpdates => {
+  playerId: PlayerId,
+  signullId?: SignullId
+): ScoreResult => {
+  const delta = SCORING.CORRECT_GUESS_ON_SIGNULL;
   return {
-    [playerId]: SCORING.CORRECT_GUESS_ON_SIGNULL,
+    updates: { [playerId]: delta },
+    events: [
+      createScoreEvent(playerId, delta, "correct_signull_guess", { signullId }),
+    ],
   };
 };
 
@@ -79,11 +115,19 @@ export const calculateCorrectSignullGuessScore = (
  * Called when the setter correctly guesses the signull word (blocking it).
  *
  * @param setterId - The setter who intercepted
- * @returns Score updates to apply
+ * @param signullId - The signull that was intercepted
+ * @returns Score result with updates and events
  */
-export const calculateInterceptScore = (setterId: PlayerId): ScoreUpdates => {
+export const calculateInterceptScore = (
+  setterId: PlayerId,
+  signullId?: SignullId
+): ScoreResult => {
+  const delta = SCORING.INTERCEPT_SIGNULL;
   return {
-    [setterId]: SCORING.INTERCEPT_SIGNULL,
+    updates: { [setterId]: delta },
+    events: [
+      createScoreEvent(setterId, delta, "intercept_signull", { signullId }),
+    ],
   };
 };
 
@@ -93,32 +137,63 @@ export const calculateInterceptScore = (setterId: PlayerId): ScoreUpdates => {
  *
  * @param entry - The signull entry that was resolved
  * @param data - The current game room data
- * @returns Score updates to apply
+ * @returns Score result with updates and events
  */
 export const calculateSignullResolvedScore = (
   entry: FirestoreSignullEntry,
   data: FirestoreGameRoom
-): ScoreUpdates => {
+): ScoreResult => {
   const updates: ScoreUpdates = {};
+  const events: ScoreEvent[] = [];
   const correctConnects = entry.connects.filter((c) => c.isCorrect);
   const correctConnectCount = correctConnects.length;
 
   // Award points to the signull creator
   // Base points + 2x correct connects
-  const creatorPoints =
-    SCORING.SIGNULL_RESOLVED_BASE +
+  const basePoints = SCORING.SIGNULL_RESOLVED_BASE;
+  const connectsBonus =
     correctConnectCount * SCORING.SIGNULL_RESOLVED_PER_CONNECT;
-  updates[entry.playerId] = (updates[entry.playerId] ?? 0) + creatorPoints;
+
+  updates[entry.playerId] = basePoints + connectsBonus;
+
+  // Create separate events for base and connects bonus
+  events.push(
+    createScoreEvent(entry.playerId, basePoints, "signull_resolved", {
+      signullId: entry.id,
+      word: entry.word,
+    })
+  );
+
+  if (connectsBonus > 0) {
+    events.push(
+      createScoreEvent(
+        entry.playerId,
+        connectsBonus,
+        "signull_resolved_connects",
+        {
+          signullId: entry.id,
+          correctConnectCount,
+        }
+      )
+    );
+  }
 
   // If signull word matches secret word, all guessers get bonus
   if (entry.isFinal) {
     const guesserIds = getGuesserIds(data);
     guesserIds.forEach((gid) => {
-      updates[gid] = (updates[gid] ?? 0) + SCORING.SIGNULL_MATCHES_SECRET_BONUS;
+      const bonus = SCORING.SIGNULL_MATCHES_SECRET_BONUS;
+      updates[gid] = (updates[gid] ?? 0) + bonus;
+      events.push(
+        createScoreEvent(gid, bonus, "signull_secret_match_bonus", {
+          signullId: entry.id,
+          secretWord: data.secretWord,
+        })
+      );
     });
   }
 
-  return updates;
+  return { updates, events };
 };
 
 /**
@@ -128,26 +203,43 @@ export const calculateSignullResolvedScore = (
  * @param playerId - The player who made the direct guess
  * @param isCorrect - Whether the guess was correct
  * @param data - The current game room data
- * @returns Score updates to apply
+ * @param guessWord - The word that was guessed
+ * @returns Score result with updates and events
  */
 export const calculateDirectGuessScore = (
   playerId: PlayerId,
   isCorrect: boolean,
-  data: FirestoreGameRoom
-): ScoreUpdates => {
+  data: FirestoreGameRoom,
+  guessWord?: string
+): ScoreResult => {
   const updates: ScoreUpdates = {};
+  const events: ScoreEvent[] = [];
   const halfWordRemaining = isHalfWordRemaining(data);
 
   if (halfWordRemaining) {
     if (isCorrect) {
-      updates[playerId] = SCORING.DIRECT_GUESS_CORRECT_BONUS;
+      const delta = SCORING.DIRECT_GUESS_CORRECT_BONUS;
+      updates[playerId] = delta;
+      events.push(
+        createScoreEvent(playerId, delta, "direct_guess_correct", {
+          guessWord,
+          remainingLetters: getRemainingLetters(data),
+        })
+      );
     } else {
-      updates[playerId] = SCORING.DIRECT_GUESS_WRONG_PENALTY;
+      const delta = SCORING.DIRECT_GUESS_WRONG_PENALTY;
+      updates[playerId] = delta;
+      events.push(
+        createScoreEvent(playerId, delta, "direct_guess_wrong", {
+          guessWord,
+          remainingLetters: getRemainingLetters(data),
+        })
+      );
     }
   }
   // No points if less than 50% of word remains
 
-  return updates;
+  return { updates, events };
 };
 
 /**
@@ -156,13 +248,14 @@ export const calculateDirectGuessScore = (
  *
  * @param data - The current game room data
  * @param winner - Who won the game
- * @returns Score updates to apply
+ * @returns Score result with updates and events
  */
 export const calculateGameEndScore = (
   data: FirestoreGameRoom,
   winner: "guessers" | "setter"
-): ScoreUpdates => {
+): ScoreResult => {
   const updates: ScoreUpdates = {};
+  const events: ScoreEvent[] = [];
   const remainingLetters = getRemainingLetters(data);
   const directGuessesLeft = data.directGuessesLeft ?? 0;
 
@@ -175,22 +268,52 @@ export const calculateGameEndScore = (
 
     guesserIds.forEach((gid) => {
       updates[gid] = (updates[gid] ?? 0) + guesserBonus;
+      events.push(
+        createScoreEvent(gid, guesserBonus, "game_end_guessers_win", {
+          remainingLetters,
+          directGuessesLeft,
+        })
+      );
     });
   } else if (winner === "setter") {
     // Setter gets (remaining letters)x10
     const setterBonus =
       remainingLetters * SCORING.GAME_END_PER_REMAINING_LETTER;
     updates[data.setterId] = (updates[data.setterId] ?? 0) + setterBonus;
+    events.push(
+      createScoreEvent(data.setterId, setterBonus, "game_end_setter_win", {
+        remainingLetters,
+      })
+    );
   }
 
-  return updates;
+  return { updates, events };
 };
 
 // ==================== Aggregation Helpers ====================
 
 /**
+ * Merge multiple score results into a single result.
+ * Useful for combining scores from different events.
+ *
+ * @param results - Array of score result objects
+ * @returns Combined score result with merged updates and concatenated events
+ */
+export const mergeScoreResults = (...results: ScoreResult[]): ScoreResult => {
+  const merged: ScoreResult = { updates: {}, events: [] };
+  for (const result of results) {
+    for (const [playerId, delta] of Object.entries(result.updates)) {
+      merged.updates[playerId] = (merged.updates[playerId] ?? 0) + delta;
+    }
+    merged.events.push(...result.events);
+  }
+  return merged;
+};
+
+/**
  * Merge multiple score updates into a single updates object.
  * Useful for combining scores from different events.
+ * @deprecated Use mergeScoreResults instead for full event tracking
  *
  * @param updates - Array of score update objects
  * @returns Combined score updates
