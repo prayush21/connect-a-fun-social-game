@@ -126,6 +126,8 @@ export interface GameState {
   roomId: RoomId;
   phase: GamePhase;
   players: Record<PlayerId, Player>;
+  hostId: PlayerId | null; // Host player who controls game settings (first joiner in display mode)
+  isDisplayMode: boolean; // Whether room was created with a display device
   setterId: PlayerId;
   secretWord: string; // UPPERCASE
   revealedCount: number;
@@ -189,6 +191,8 @@ export interface FirestoreGameRoom {
       score: number; // stored as number; increment via transactions
     }
   >;
+  hostId: PlayerId | null; // Host player who controls game settings
+  isDisplayMode: boolean; // Whether room was created with a display device
   setterId: PlayerId;
   secretWord: string;
   revealedCount: number;

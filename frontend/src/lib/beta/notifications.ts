@@ -271,4 +271,5 @@ export const GameErrorMessages: Record<string, string> = {
   NOT_GUESSER: "Only guessers can do this",
   NO_GUESSES_LEFT: "No guesses left",
   INVALID_WORD_FORMAT: "Only alphabets allowed",
+  ONLY_HOST_CAN_CHANGE_SETTER: "Only the host can change the setter",
 };

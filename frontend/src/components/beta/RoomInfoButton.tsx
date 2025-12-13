@@ -223,13 +223,8 @@ export const RoomInfoButton: React.FC<RoomInfoButtonProps> = ({
                       if (canChangeSetter && onChangeSetter) {
                         onChangeSetter(player.id);
                       } else {
-                        const currentPlayer = players.find(
-                          (p) => p.id === currentPlayerId
-                        );
-                        if (currentPlayer?.role !== "setter") {
-                          setFeedbackMessage("Only setter can change setter");
-                          setTimeout(() => setFeedbackMessage(null), 2000);
-                        }
+                        setFeedbackMessage("Only host can change setter");
+                        setTimeout(() => setFeedbackMessage(null), 2000);
                       }
                     }}
                   >

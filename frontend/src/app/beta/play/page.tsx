@@ -675,7 +675,9 @@ export default function BetaPlayPage() {
               currentPlayerId={userId || undefined}
               connectsRequired={connectsRequired}
               prefixMode={prefixMode}
-              canChangeSetter={isSetter && game?.phase === "setting"}
+              canChangeSetter={
+                game?.hostId === userId && game?.phase === "setting"
+              }
               onChangeSetter={(pid) => {
                 void changeSetter(pid);
               }}

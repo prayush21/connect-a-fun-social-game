@@ -37,6 +37,7 @@ export default function BetaLobbyPage() {
   const players = gameState?.players ?? {};
   const currentPlayerId = sessionId || "";
   const setterUid = gameState?.setterId ?? "";
+  const hostId = gameState?.hostId ?? "";
   const settings = gameState?.settings ?? {
     connectsRequired: 1,
     playMode: "round_robin" as const,
@@ -110,9 +111,12 @@ export default function BetaLobbyPage() {
   // Check if current player is setter
   const isSetter = currentPlayerId === setterUid;
 
+  // Check if current player is host (host controls settings and can change setter)
+  const isHost = currentPlayerId === hostId;
+
   // Handle connects required change
   const handleConnectsChange = async (delta: number) => {
-    if (!isSetter || !gameState) return;
+    if (!isHost || !gameState) return;
     const newValue = Math.max(
       1,
       Math.min(maxConnects, settings.connectsRequired + delta)
@@ -129,7 +133,7 @@ export default function BetaLobbyPage() {
 
   // Handle prefix mode toggle
   const handlePrefixModeToggle = () => {
-    if (!isSetter) return;
+    if (!isHost) return;
     updateGameSettings({
       prefixMode: !settings.prefixMode,
     });
@@ -137,7 +141,7 @@ export default function BetaLobbyPage() {
 
   // Handle remove player
   const handleRemovePlayer = async (playerId: string) => {
-    if (!isSetter) return;
+    if (!isHost) return;
     try {
       await removePlayerFromRoom(playerId);
     } catch (err) {
@@ -147,7 +151,7 @@ export default function BetaLobbyPage() {
 
   // Handle change setter
   const handleChangeSetter = async (newSetterId: string) => {
-    if (!isSetter || !gameState) return;
+    if (!isHost || !gameState) return;
 
     // Don't do anything if selecting the current setter
     if (newSetterId === setterUid) {
@@ -165,7 +169,7 @@ export default function BetaLobbyPage() {
 
   // Handle reset scores
   const handleResetScores = async () => {
-    if (!isSetter) return;
+    if (!isHost) return;
     try {
       await resetScores();
     } catch (err) {
@@ -226,7 +230,7 @@ export default function BetaLobbyPage() {
             prefixMode={settings.prefixMode}
             onTogglePrefixMode={handlePrefixModeToggle}
             setterName={players[setterUid]?.name || "Unknown"}
-            isSetter={isSetter}
+            isSetter={isHost}
             onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}
             onResetScores={handleResetScores}
           />
@@ -252,10 +256,10 @@ export default function BetaLobbyPage() {
         <PlayerList
           players={playersList}
           currentUserId={currentPlayerId}
-          hostId={setterUid}
+          hostId={hostId}
           setterId={setterUid}
           onRemovePlayer={handleRemovePlayer}
-          isHost={isSetter}
+          isHost={isHost}
         />
 
         {/* How to Play Button - visible to all players */}
@@ -284,7 +288,7 @@ export default function BetaLobbyPage() {
         </div>
       </div>
 
-      {isSetter && (
+      {isHost && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-surface via-surface to-transparent px-4 pb-6 pt-12 md:px-6">
           <div className="mx-auto max-w-md">
             <StartGameButton

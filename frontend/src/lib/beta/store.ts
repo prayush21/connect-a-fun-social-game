@@ -65,6 +65,7 @@ interface BetaStoreState {
   error: GameError | null;
   unsubscribe: (() => void) | null;
   initialized: boolean; // first snapshot received
+  isDisplayMode: boolean; // Whether this device is a display-only device
 
   // Auth Actions
   setUsername: (username: string) => void;
@@ -74,8 +75,13 @@ interface BetaStoreState {
   // Game Actions
   initRoom: (
     roomId: RoomId,
-    opts?: { createIfMissing?: boolean; settings?: Partial<GameSettings> }
+    opts?: {
+      createIfMissing?: boolean;
+      settings?: Partial<GameSettings>;
+      isDisplayMode?: boolean;
+    }
   ) => Promise<void>;
+  initRoomAsDisplay: (roomId: RoomId) => Promise<void>;
   updateGameSettings: (settings: Partial<GameSettings>) => Promise<void>;
   changeSetter: (newSetterId: PlayerId) => Promise<void>;
   removePlayerFromRoom: (playerId: PlayerId) => Promise<void>;
@@ -136,6 +142,10 @@ function mapError(e: unknown): GameError {
         code: "NO_GUESSES_LEFT",
         message: "No direct guesses left",
       },
+      ONLY_HOST_CAN_CHANGE_SETTER: {
+        code: "ONLY_HOST_CAN_CHANGE_SETTER",
+        message: "Only the host can change the setter",
+      },
     };
     const key = Object.keys(codeMap).find((k) => msg.includes(k));
     if (key) return codeMap[key];
@@ -155,6 +165,7 @@ export const useBetaStore = create<BetaStoreState>()(
       error: null,
       unsubscribe: null,
       initialized: false,
+      isDisplayMode: false,
 
       setUsername: (username) => set({ username }),
       generateNewUsername: () => set({ username: generateRandomNickname() }),
@@ -192,12 +203,16 @@ export const useBetaStore = create<BetaStoreState>()(
           unsubscribe: null,
           initialized: false,
           isLoading: false,
+          isDisplayMode: false,
         });
       },
 
       initRoom: async (roomId, opts) => {
         const { userId, username } = get();
-        if (!userId || !username) {
+        const isDisplayMode = opts?.isDisplayMode ?? false;
+
+        // Display mode doesn't require username
+        if (!userId || (!isDisplayMode && !username)) {
           set({
             error: {
               code: "AUTH_REQUIRED",
@@ -208,28 +223,74 @@ export const useBetaStore = create<BetaStoreState>()(
         }
 
         if (get().unsubscribe) get().teardown();
-        set({ isLoading: true, error: null, roomId });
+        set({ isLoading: true, error: null, roomId, isDisplayMode });
         const createIfMissing = opts?.createIfMissing ?? false;
         try {
           if (createIfMissing) {
-            await fxCreateRoom(roomId, userId, username, opts?.settings);
-          } else {
-            // Attempt join; if fails with ROOM_NOT_FOUND and createIfMissing not set → error
+            await fxCreateRoom(
+              roomId,
+              userId,
+              username || "",
+              opts?.settings,
+              isDisplayMode
+            );
+          } else if (!isDisplayMode) {
+            // Only join as player if not in display mode
             try {
-              await fxJoinRoom(roomId, userId, username);
+              await fxJoinRoom(roomId, userId, username || "");
             } catch (e) {
               const mapped = mapError(e);
               if (mapped.code === "ROOM_NOT_FOUND") throw e;
             }
           }
+          // In display mode without createIfMissing, we just subscribe (handled below)
         } catch (e) {
-          set({ error: mapError(e), isLoading: false });
+          set({ error: mapError(e), isLoading: false, isDisplayMode: false });
           return;
         }
 
         const unsub = subscribeToRoom(roomId, (state, subError) => {
           if (subError) {
             set({ error: subError });
+            return;
+          }
+          set((prev) => ({
+            game: state,
+            initialized: true,
+            isLoading:
+              prev.isLoading && !prev.initialized ? false : prev.isLoading,
+          }));
+        });
+        set({ unsubscribe: unsub });
+      },
+
+      initRoomAsDisplay: async (roomId) => {
+        // Convenience wrapper for subscribing as a display device to an existing room
+        const { userId } = get();
+        if (!userId) {
+          set({
+            error: {
+              code: "AUTH_REQUIRED",
+              message: "User not authenticated",
+            },
+          });
+          return;
+        }
+
+        if (get().unsubscribe) get().teardown();
+        set({ isLoading: true, error: null, roomId, isDisplayMode: true });
+
+        const unsub = subscribeToRoom(roomId, (state, subError) => {
+          if (subError) {
+            set({ error: subError, isDisplayMode: false });
+            return;
+          }
+          if (!state) {
+            set({
+              error: { code: "ROOM_NOT_FOUND", message: "Room not found" },
+              isLoading: false,
+              isDisplayMode: false,
+            });
             return;
           }
           set((prev) => ({
@@ -336,10 +397,10 @@ export const useBetaStore = create<BetaStoreState>()(
         }
       },
       changeSetter: async (newSetterId) => {
-        const { roomId } = get();
-        if (!roomId) return;
+        const { roomId, userId } = get();
+        if (!roomId || !userId) return;
         try {
-          await fxChangeSetter(roomId, newSetterId);
+          await fxChangeSetter(roomId, newSetterId, userId);
         } catch (e) {
           set({ error: mapError(e) });
         }
