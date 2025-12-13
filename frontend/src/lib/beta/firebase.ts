@@ -453,19 +453,11 @@ export const evaluateResolution = (
       resolvedAt: serverTimestamp(),
     };
   }
-  if (entry.isFinal && correctCount > 0) {
-    return {
-      status: "resolved",
-      gameEnded: true,
-      winner: "guessers",
-      resolvedAt: serverTimestamp(),
-    };
-  }
   if (correctCount >= connectsRequired) {
     return {
       status: "resolved",
-      gameEnded: false,
-      winner: data.winner,
+      gameEnded: entry.isFinal, // Lightning signull ends game
+      winner: entry.isFinal ? "guessers" : data.winner,
       resolvedAt: serverTimestamp(),
     };
   }
