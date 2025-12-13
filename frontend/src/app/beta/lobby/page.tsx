@@ -11,6 +11,8 @@ import {
   StartGameButton,
 } from "@/components/beta/lobby";
 import { copyToClipboard } from "@/lib/utils";
+import { useEnableSoundsOnInteraction } from "@/lib/beta/useSound";
+import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
 
 export default function BetaLobbyPage() {
   const router = useRouter();
@@ -47,6 +49,10 @@ export default function BetaLobbyPage() {
   const [copied, setCopied] = useState(false);
   const [showSetterDropdown, setShowSetterDropdown] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+
+  // Enable sounds on user interaction and play sounds for player events
+  useEnableSoundsOnInteraction();
+  useSoundNotifications();
 
   // Redirect logic
   useEffect(() => {

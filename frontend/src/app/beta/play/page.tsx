@@ -24,6 +24,7 @@ import {
 } from "@/components/beta";
 import { MemoriesModal } from "@/components/beta/MemoriesModal";
 import { useGameNotifications } from "@/lib/beta/useGameNotifications";
+import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
 import { AnimatePresence, motion } from "framer-motion";
 import { useBetaStore } from "@/lib/beta/store";
 import {
@@ -241,6 +242,8 @@ export default function BetaPlayPage() {
 
   // Centralized notification system - watches game state for events from other players
   useGameNotifications();
+  // Sound effects for game events
+  useSoundNotifications();
   const notify = useNotify();
 
   // Local UI state
