@@ -106,6 +106,8 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
       },
       {} as GameState["players"]
     ),
+    hostId: data.hostId ?? null,
+    isDisplayMode: data.isDisplayMode ?? false,
     setterId: data.setterId,
     secretWord: data.secretWord,
     revealedCount: data.revealedCount ?? 0,
@@ -159,7 +161,8 @@ export const createRoom = async (
   roomId: RoomId,
   creatorId: PlayerId,
   username: string,
-  settings?: Partial<GameSettings>
+  settings?: Partial<GameSettings>,
+  isDisplayMode: boolean = false
 ): Promise<void> => {
   try {
     const docRef = doc(getRoomsCollection(), roomId);
@@ -171,20 +174,28 @@ export const createRoom = async (
       wordValidation: settings?.wordValidation || "strict",
       prefixMode: settings?.prefixMode || false,
     };
+
+    // Build players object conditionally - empty if display mode
+    const players: FirestoreGameRoom["players"] = isDisplayMode
+      ? {}
+      : {
+          [creatorId]: {
+            name: username,
+            role: "setter",
+            isOnline: true,
+            lastActive: serverTimestamp() as Timestamp,
+            score: 0,
+          },
+        };
+
     const initial: FirestoreGameRoom = {
       schemaVersion: 2,
       roomId,
       phase: "lobby",
-      players: {
-        [creatorId]: {
-          name: username,
-          role: "setter",
-          isOnline: true,
-          lastActive: serverTimestamp() as Timestamp,
-          score: 0,
-        },
-      },
-      setterId: creatorId,
+      players,
+      hostId: isDisplayMode ? null : creatorId,
+      isDisplayMode,
+      setterId: isDisplayMode ? "" : creatorId,
       secretWord: "",
       revealedCount: 0,
       signullState: {
@@ -219,16 +230,29 @@ export const joinRoom = async (
       if (Object.keys(data.players).length >= data.settings.maxPlayers) {
         throw new Error("ROOM_FULL");
       }
-      trx.update(docRef, {
+
+      // Check if this is the first player (becomes host)
+      const isFirstPlayer = Object.keys(data.players).length === 0;
+      const shouldBecomeHost = !data.hostId || isFirstPlayer;
+
+      const updates: Record<string, unknown> = {
         [`players.${playerId}`]: {
           name: username,
-          role: "guesser",
+          role: shouldBecomeHost ? "setter" : "guesser",
           isOnline: true,
           lastActive: serverTimestamp(),
           score: 0,
         },
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      // Assign host and setter if first player
+      if (shouldBecomeHost) {
+        updates.hostId = playerId;
+        updates.setterId = playerId;
+      }
+
+      trx.update(docRef, updates);
     });
   } catch (error) {
     handleFirebaseError(error);
@@ -247,6 +271,7 @@ export const leaveRoom = async (
       const data = snap.data() as FirestoreGameRoom;
       if (!data.players[playerId]) return;
       const isSetter = data.setterId === playerId;
+      const isHost = data.hostId === playerId;
       const remainingIds = Object.keys(data.players).filter(
         (id) => id !== playerId
       );
@@ -254,8 +279,17 @@ export const leaveRoom = async (
         [`players.${playerId}`]: deleteField(),
         updatedAt: serverTimestamp(),
       };
+
+      // Transfer host to next player if leaving player is host
+      if (isHost && remainingIds.length > 0) {
+        updates.hostId = remainingIds[0];
+      } else if (isHost && remainingIds.length === 0) {
+        updates.hostId = null;
+      }
+
+      // Transfer setter role if leaving player is setter
       if (isSetter && remainingIds.length > 0) {
-        updates["setterId"] = remainingIds[0];
+        updates.setterId = remainingIds[0];
         updates[`players.${remainingIds[0]}.role`] = "setter";
       }
       trx.update(docRef, updates);
@@ -273,12 +307,12 @@ export const setSecretWord = async (
   try {
     const docRef = doc(getRoomsCollection(), roomId);
     const upper = word.trim().toUpperCase();
-    
+
     // Validate that word contains only alphabets
     if (!/^[A-Z]+$/.test(upper)) {
       throw new Error("INVALID_WORD_FORMAT");
     }
-    
+
     await runTransaction(getDb(), async (trx) => {
       const snap = await trx.get(docRef);
       if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
@@ -797,7 +831,8 @@ export const updateGameSettings = async (
 
 export const changeSetter = async (
   roomId: RoomId,
-  newSetterId: PlayerId
+  newSetterId: PlayerId,
+  requesterId: PlayerId
 ): Promise<void> => {
   try {
     const docRef = doc(getRoomsCollection(), roomId);
@@ -805,6 +840,11 @@ export const changeSetter = async (
       const snap = await trx.get(docRef);
       if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
       const data = snap.data() as FirestoreGameRoom;
+
+      // Only host can change setter
+      if (data.hostId !== requesterId) {
+        throw new Error("ONLY_HOST_CAN_CHANGE_SETTER");
+      }
 
       if (!data.players[newSetterId]) throw new Error("PLAYER_NOT_FOUND");
 

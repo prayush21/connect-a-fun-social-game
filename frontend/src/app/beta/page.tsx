@@ -10,6 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X } from "lucide-react";
 import Image from "next/image";
+import { DisplayModeModal } from "@/components/beta/DisplayModeModal";
+import { useIsMobile } from "@/lib/hooks";
 
 type NicknameFormData = z.infer<typeof nicknameSchema>;
 type JoinGameFormData = z.infer<typeof joinGameSchema>;
@@ -28,9 +30,12 @@ function BetaHomeContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showDisplayModeModal, setShowDisplayModeModal] = useState(false);
   const [pendingRoomCode, setPendingRoomCode] = useState<string | null>(null);
   const [modalNickname, setModalNickname] = useState("");
   const [hasProcessedJoinLink, setHasProcessedJoinLink] = useState(false);
+
+  const isMobile = useIsMobile();
 
   // Ensure auth is initialized
   useEffect(() => {
@@ -184,6 +189,17 @@ function BetaHomeContent() {
 
     if (!sessionId) return;
 
+    // On non-mobile devices (iPad+), show the display mode modal
+    if (!isMobile) {
+      setShowDisplayModeModal(true);
+      return;
+    }
+
+    // On mobile, create game directly without display mode
+    await createGame(false);
+  };
+
+  const createGame = async (isDisplayMode: boolean) => {
     setIsCreating(true);
     setError(null);
 
@@ -191,14 +207,21 @@ function BetaHomeContent() {
       const roomCode = generateRoomCode();
       await useBetaStore
         .getState()
-        .initRoom(roomCode, { createIfMissing: true });
+        .initRoom(roomCode, { createIfMissing: true, isDisplayMode });
 
       const error = useBetaStore.getState().error;
       if (error) {
         throw new Error(error.message);
       }
 
-      router.push("/beta/lobby");
+      setShowDisplayModeModal(false);
+
+      // Navigate to appropriate page based on mode
+      if (isDisplayMode) {
+        router.push("/beta/display");
+      } else {
+        router.push("/beta/lobby");
+      }
     } catch (err) {
       console.error("Failed to create game:", err);
       setError({
@@ -210,19 +233,23 @@ function BetaHomeContent() {
     }
   };
 
+  const handleDisplayModeSelect = async (useDisplay: boolean) => {
+    await createGame(useDisplay);
+  };
+
   return (
-    <main className="bg-surface min-h-screen px-4 py-8">
+    <main className="min-h-screen bg-surface px-4 py-8">
       <div className="mx-auto max-w-md space-y-8">
         {/* Beta Badge */}
         <div className="flex justify-center">
-          <span className="text-primary rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          <span className="rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-semibold text-primary shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             BETA VERSION
           </span>
         </div>
 
         {/* Header */}
         <div className="space-y-2 text-center">
-          <h1 className="text-primary flex items-center justify-center gap-2 text-5xl font-bold">
+          <h1 className="flex items-center justify-center gap-2 text-5xl font-bold text-primary">
             Signull
             <Image
               src="/lightning.svg"
@@ -278,7 +305,7 @@ function BetaHomeContent() {
             <button
               onClick={handleCreateNewGame}
               disabled={isCreating}
-              className="bg-primary w-full rounded-lg border-2 border-black px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg border-2 border-black bg-primary px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating ? "Creating..." : "Create a New Game"}
             </button>
@@ -314,7 +341,7 @@ function BetaHomeContent() {
                 <button
                   type="submit"
                   disabled={isJoining}
-                  className="bg-primary ml-2 rounded-lg border-2 border-black px-6 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ml-2 rounded-lg border-2 border-black bg-primary px-6 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ minWidth: "80px" }}
                 >
                   {isJoining ? "..." : "Join"}
@@ -331,12 +358,12 @@ function BetaHomeContent() {
 
         {/* How to Play Section */}
         <div className="space-y-4 rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <h2 className="text-primary text-center text-xl font-semibold">
+          <h2 className="text-center text-xl font-semibold text-primary">
             How to Play?
           </h2>
           <ol className="space-y-4 text-sm text-neutral-600">
             <li className="flex gap-3">
-              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
                 1
               </span>
               <span>
@@ -344,7 +371,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
                 2
               </span>
               <span>
@@ -354,7 +381,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
                 3
               </span>
               <span>
@@ -363,7 +390,7 @@ function BetaHomeContent() {
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
                 4
               </span>
               <span>
@@ -381,7 +408,7 @@ function BetaHomeContent() {
           <div className="w-full max-w-md rounded-2xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             {/* Modal Header */}
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-primary text-2xl font-bold">Join Game</h2>
+              <h2 className="text-2xl font-bold text-primary">Join Game</h2>
               <button
                 onClick={handleModalClose}
                 className="rounded-lg border-2 border-black p-1 text-neutral-600 transition-all hover:bg-neutral-100 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
@@ -393,7 +420,7 @@ function BetaHomeContent() {
             {/* Room Code Display */}
             <div className="mb-6 rounded-lg border-2 border-black bg-neutral-50 p-4 text-center">
               <p className="mb-1 text-sm text-neutral-600">Room Code</p>
-              <p className="text-primary text-2xl font-bold tracking-wider">
+              <p className="text-2xl font-bold tracking-wider text-primary">
                 {pendingRoomCode}
               </p>
             </div>
@@ -436,14 +463,14 @@ function BetaHomeContent() {
               <button
                 onClick={handleModalClose}
                 disabled={isJoining}
-                className="text-primary flex-1 rounded-lg border-2 border-black bg-white px-4 py-3 font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-lg border-2 border-black bg-white px-4 py-3 font-semibold text-primary shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleModalJoin}
                 disabled={isJoining || !modalNickname.trim()}
-                className="bg-primary flex-1 rounded-lg border-2 border-black px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-lg border-2 border-black bg-primary px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isJoining ? "Joining..." : "Join Game"}
               </button>
@@ -451,6 +478,14 @@ function BetaHomeContent() {
           </div>
         </div>
       )}
+
+      {/* Display Mode Modal */}
+      <DisplayModeModal
+        isOpen={showDisplayModeModal}
+        onClose={() => setShowDisplayModeModal(false)}
+        onSelectDisplayMode={handleDisplayModeSelect}
+        isLoading={isCreating}
+      />
     </main>
   );
 }
