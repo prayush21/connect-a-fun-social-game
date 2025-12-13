@@ -79,7 +79,7 @@ export function AudioSettings({
     return (
       <button
         onClick={handleToggle}
-        className={`flex items-center justify-center rounded-full border-2 border-black p-2 transition-all hover:bg-neutral-100 active:scale-95 ${
+        className={`flex items-center justify-center rounded-full p-2 transition-all hover:bg-neutral-100 active:scale-95 ${
           enabled ? "bg-white" : "bg-neutral-200"
         } ${className}`}
         title={enabled ? "Sound On" : "Sound Off"}
@@ -115,7 +115,7 @@ export function AudioSettings({
         {/* Toggle Switch */}
         <button
           onClick={handleToggle}
-          className={`relative h-7 w-12 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${
+          className={`relative h-7 w-12 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${
             enabled ? "bg-primary" : "bg-neutral-200"
           }`}
           aria-label={enabled ? "Turn sound off" : "Turn sound on"}
@@ -159,7 +159,7 @@ export function AudioSettings({
           <div className="flex gap-2">
             <button
               onClick={() => handleModeChange("all")}
-              className={`flex-1 rounded-lg border-2 border-black px-3 py-1.5 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
                 mode === "all"
                   ? "bg-black text-white"
                   : "bg-white hover:bg-neutral-100"
@@ -169,7 +169,7 @@ export function AudioSettings({
             </button>
             <button
               onClick={() => handleModeChange("important")}
-              className={`flex-1 rounded-lg border-2 border-black px-3 py-1.5 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
                 mode === "important"
                   ? "bg-black text-white"
                   : "bg-white hover:bg-neutral-100"

@@ -21,8 +21,10 @@ import {
   NotificationBanner,
   useNotify,
   SignullHistoryInline,
+  AudioToggleButton,
 } from "@/components/beta";
 import { MemoriesModal } from "@/components/beta/MemoriesModal";
+import { AudioSettingsModal } from "@/components/beta/AudioSettingsModal";
 import { useGameNotifications } from "@/lib/beta/useGameNotifications";
 import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
 import { AnimatePresence, motion } from "framer-motion";
@@ -254,6 +256,7 @@ export default function BetaPlayPage() {
   const [signullWord, setSignullWord] = useState("");
   const [isWinningCardFlipped, setIsWinningCardFlipped] = useState(false);
   const [isMemoriesModalOpen, setIsMemoriesModalOpen] = useState(false);
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);

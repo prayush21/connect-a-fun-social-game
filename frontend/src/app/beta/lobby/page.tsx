@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { X, Volume2 } from "lucide-react";
 import { useBetaStore } from "@/lib/beta/store";
 import {
   RoomCodeCard,
@@ -10,6 +10,7 @@ import {
   PlayerList,
   StartGameButton,
 } from "@/components/beta/lobby";
+import { AudioSettingsModal } from "@/components/beta";
 import { copyToClipboard } from "@/lib/utils";
 import { useEnableSoundsOnInteraction } from "@/lib/beta/useSound";
 import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
@@ -49,6 +50,7 @@ export default function BetaLobbyPage() {
   const [copied, setCopied] = useState(false);
   const [showSetterDropdown, setShowSetterDropdown] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
 
   // Enable sounds on user interaction and play sounds for player events
   useEnableSoundsOnInteraction();
@@ -266,6 +268,14 @@ export default function BetaLobbyPage() {
           </button>
           <span className="text-neutral-300">|</span>
           <button
+            onClick={() => setShowAudioSettings(true)}
+            className="flex items-center gap-1.5 text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
+          >
+            <Volume2 className="h-4 w-4" />
+            Audio
+          </button>
+          <span className="text-neutral-300">|</span>
+          <button
             onClick={handleLeaveRoom}
             className="text-sm text-red-500 underline transition-colors hover:text-red-700"
           >
@@ -367,6 +377,12 @@ export default function BetaLobbyPage() {
           </div>
         </div>
       )}
+
+      {/* Audio Settings Modal */}
+      <AudioSettingsModal
+        isOpen={showAudioSettings}
+        onClose={() => setShowAudioSettings(false)}
+      />
     </div>
   );
 }

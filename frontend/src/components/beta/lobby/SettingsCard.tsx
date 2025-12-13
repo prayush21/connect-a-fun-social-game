@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
 import { useShowPlayerScores } from "@/lib/posthog";
-import { AudioSettings } from "@/components/beta/AudioSettings";
 
 interface SettingsCardProps {
   connectsRequired: number;
@@ -113,11 +112,6 @@ export function SettingsCard({
           {setterName}
           {isSetter && <ChevronDown className="h-5 w-5" />}
         </button>
-      </div>
-
-      {/* Audio Settings - Personal preference for each player */}
-      <div className="border-t border-neutral-100 pt-4">
-        <AudioSettings />
       </div>
     </BaseCard>
   );
