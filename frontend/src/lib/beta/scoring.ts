@@ -4,19 +4,13 @@
  * Scoring Rules:
  *
  * Signull Scenarios:
- * - Player who makes a correct guess to signull gets 5 points
- * - Player who intercepts a signull gets 5 points
- * - Player whose signull gets resolved gets 5 points + 2x the number of correct connects
- * - If the signull word is same as secret word, upon resolving, all guessers get +5 points
- *
- * Direct Guess Scenario:
- * - Player who makes Direct Guess:
- *   +5 points if >=50% of word length left AND correct
- *   -5 points if >=50% of word length left AND wrong
- *
- * Game End Scenario:
- * - If guessers win: all guessers get (remaining letters)x10 + (number of direct guesses left)x10
- * - If setters win: setter gets (remaining letters)x10
+ * - Setter who intercepts a signull gets 5 points (immediately)
+ * - When a signull resolves:
+ *   - Player whose signull gets resolved gets 10 points
+ *   - Guessers with correct connect to resolved signull get 5 points each
+ * - Lightning Signull (signull word = secret word):
+ *   - Guessers who correctly connected get +5 points for each remaining letter
+ *   - Setter gets +5 points for each revealed letter (till the lightning signull)
  */
 
 import type {
@@ -91,7 +85,8 @@ export const isHalfWordRemaining = (data: FirestoreGameRoom): boolean => {
 
 /**
  * Calculate score updates for a correct guess on a signull.
- * Called when a player (guesser) correctly guesses the signull word.
+ * @deprecated No longer used - guessers get points only when signull resolves.
+ * Kept for backward compatibility or potential future use.
  *
  * @param playerId - The player who made the correct guess
  * @param signullId - The signull that was guessed correctly
@@ -146,51 +141,86 @@ export const calculateSignullResolvedScore = (
   const updates: ScoreUpdates = {};
   const events: ScoreEvent[] = [];
   const correctConnects = entry.connects.filter((c) => c.isCorrect);
-  const correctConnectCount = correctConnects.length;
 
-  // Award points to the signull creator
-  // Base points + 2x correct connects
-  const basePoints = SCORING.SIGNULL_RESOLVED_BASE;
-  const connectsBonus =
-    correctConnectCount * SCORING.SIGNULL_RESOLVED_PER_CONNECT;
-
-  updates[entry.playerId] = basePoints + connectsBonus;
-
-  // Create separate events for base and connects bonus
+  // Award points to the signull creator: +10
+  const resolvedPoints = SCORING.SIGNULL_RESOLVED;
+  updates[entry.playerId] = resolvedPoints;
   events.push(
-    createScoreEvent(entry.playerId, basePoints, "signull_resolved", {
+    createScoreEvent(entry.playerId, resolvedPoints, "signull_resolved", {
       signullId: entry.id,
       word: entry.word,
     })
   );
 
-  if (connectsBonus > 0) {
-    events.push(
-      createScoreEvent(
-        entry.playerId,
-        connectsBonus,
-        "signull_resolved_connects",
-        {
-          signullId: entry.id,
-          correctConnectCount,
-        }
-      )
-    );
-  }
-
-  // If signull word matches secret word, all guessers get bonus
-  if (entry.isFinal) {
-    const guesserIds = getGuesserIds(data);
-    guesserIds.forEach((gid) => {
-      const bonus = SCORING.SIGNULL_MATCHES_SECRET_BONUS;
-      updates[gid] = (updates[gid] ?? 0) + bonus;
+  // Award +5 to each guesser with correct connect to resolved signull
+  correctConnects.forEach((connect) => {
+    // Only award to guessers (not the setter who might have connected)
+    const player = data.players[connect.playerId];
+    if (player && player.role === "guesser") {
+      const connectBonus = SCORING.CONNECT_TO_RESOLVED_SIGNULL;
+      updates[connect.playerId] =
+        (updates[connect.playerId] ?? 0) + connectBonus;
       events.push(
-        createScoreEvent(gid, bonus, "signull_secret_match_bonus", {
-          signullId: entry.id,
-          secretWord: data.secretWord,
-        })
+        createScoreEvent(
+          connect.playerId,
+          connectBonus,
+          "connect_to_resolved_signull",
+          {
+            signullId: entry.id,
+            word: entry.word,
+          }
+        )
       );
+    }
+  });
+
+  // If signull word matches secret word (Lightning Signull):
+  // - Guessers who correctly connected get +5 for each remaining letter
+  // - Setter gets +5 for each revealed letter
+  if (entry.isFinal) {
+    const remainingLetters = getRemainingLetters(data);
+    const revealedCount = data.revealedCount ?? 0;
+
+    // Guessers with correct connects get points for remaining letters
+    const guesserBonus =
+      remainingLetters * SCORING.LIGHTNING_SIGNULL_PER_REMAINING_LETTER;
+    correctConnects.forEach((connect) => {
+      const player = data.players[connect.playerId];
+      if (player && player.role === "guesser") {
+        updates[connect.playerId] =
+          (updates[connect.playerId] ?? 0) + guesserBonus;
+        events.push(
+          createScoreEvent(
+            connect.playerId,
+            guesserBonus,
+            "lightning_signull_bonus",
+            {
+              signullId: entry.id,
+              secretWord: data.secretWord,
+              remainingLetters,
+            }
+          )
+        );
+      }
     });
+
+    // Setter gets points for revealed letters
+    const setterBonus = revealedCount * SCORING.SETTER_REVEALED_LETTERS_BONUS;
+    if (setterBonus > 0) {
+      updates[data.setterId] = (updates[data.setterId] ?? 0) + setterBonus;
+      events.push(
+        createScoreEvent(
+          data.setterId,
+          setterBonus,
+          "setter_revealed_letters_bonus",
+          {
+            signullId: entry.id,
+            secretWord: data.secretWord,
+            revealedCount,
+          }
+        )
+      );
+    }
   }
 
   return { updates, events };
@@ -198,13 +228,13 @@ export const calculateSignullResolvedScore = (
 
 /**
  * Calculate score updates for a direct guess.
- * Called when a player makes a direct guess at the secret word.
+ * Note: Direct guess bonuses/penalties have been removed.
  *
  * @param playerId - The player who made the direct guess
  * @param isCorrect - Whether the guess was correct
  * @param data - The current game room data
  * @param guessWord - The word that was guessed
- * @returns Score result with updates and events
+ * @returns Score result with updates and events (always empty)
  */
 export const calculateDirectGuessScore = (
   playerId: PlayerId,
@@ -212,82 +242,24 @@ export const calculateDirectGuessScore = (
   data: FirestoreGameRoom,
   guessWord?: string
 ): ScoreResult => {
-  const updates: ScoreUpdates = {};
-  const events: ScoreEvent[] = [];
-  const halfWordRemaining = isHalfWordRemaining(data);
-
-  if (halfWordRemaining) {
-    if (isCorrect) {
-      const delta = SCORING.DIRECT_GUESS_CORRECT_BONUS;
-      updates[playerId] = delta;
-      events.push(
-        createScoreEvent(playerId, delta, "direct_guess_correct", {
-          guessWord,
-          remainingLetters: getRemainingLetters(data),
-        })
-      );
-    } else {
-      const delta = SCORING.DIRECT_GUESS_WRONG_PENALTY;
-      updates[playerId] = delta;
-      events.push(
-        createScoreEvent(playerId, delta, "direct_guess_wrong", {
-          guessWord,
-          remainingLetters: getRemainingLetters(data),
-        })
-      );
-    }
-  }
-  // No points if less than 50% of word remains
-
-  return { updates, events };
+  // No scoring for direct guesses
+  return { updates: {}, events: [] };
 };
 
 /**
  * Calculate score updates when the game ends.
- * Called when the game phase transitions to "ended".
+ * Note: Game end bonuses have been removed.
  *
  * @param data - The current game room data
  * @param winner - Who won the game
- * @returns Score result with updates and events
+ * @returns Score result with updates and events (always empty)
  */
 export const calculateGameEndScore = (
   data: FirestoreGameRoom,
   winner: "guessers" | "setter"
 ): ScoreResult => {
-  const updates: ScoreUpdates = {};
-  const events: ScoreEvent[] = [];
-  const remainingLetters = getRemainingLetters(data);
-  const directGuessesLeft = data.directGuessesLeft ?? 0;
-
-  if (winner === "guessers") {
-    // All guessers get (remaining letters)x10 + (direct guesses left)x10
-    const guesserIds = getGuesserIds(data);
-    const guesserBonus =
-      remainingLetters * SCORING.GAME_END_PER_REMAINING_LETTER +
-      directGuessesLeft * SCORING.GAME_END_PER_DIRECT_GUESS_LEFT;
-
-    guesserIds.forEach((gid) => {
-      updates[gid] = (updates[gid] ?? 0) + guesserBonus;
-      events.push(
-        createScoreEvent(gid, guesserBonus, "game_end_guessers_win", {
-          remainingLetters,
-          directGuessesLeft,
-        })
-      );
-    });
-  } else if (winner === "setter") {
-    // Setter gets (remaining letters)x10
-    const setterBonus =
-      remainingLetters * SCORING.GAME_END_PER_REMAINING_LETTER;
-    updates[data.setterId] = (updates[data.setterId] ?? 0) + setterBonus;
-    events.push(
-      createScoreEvent(data.setterId, setterBonus, "game_end_setter_win", {
-        remainingLetters,
-      })
-    );
-  }
-
-  return { updates, events };
+  // No scoring for game end
+  return { updates: {}, events: [] };
 };
 
 // ==================== Aggregation Helpers ====================

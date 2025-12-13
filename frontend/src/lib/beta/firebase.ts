@@ -546,21 +546,14 @@ export const submitConnect = async (
       // ==================== Scoring Logic ====================
       let scoreResult: ScoreResult = { updates: {}, events: [] };
 
-      // Award points for correct guess on signull
-      if (isCorrect) {
-        if (player.role === "setter") {
-          // Setter intercepted the signull
-          scoreResult = mergeScoreResults(
-            scoreResult,
-            calculateInterceptScore(playerId, targetId)
-          );
-        } else {
-          // Guesser made a correct guess
-          scoreResult = mergeScoreResults(
-            scoreResult,
-            calculateCorrectSignullGuessScore(playerId, targetId)
-          );
-        }
+      // Award points for setter intercept only
+      // Guessers don't get immediate points - they'll get +5 when signull resolves
+      if (isCorrect && player.role === "setter") {
+        // Setter intercepted the signull
+        scoreResult = mergeScoreResults(
+          scoreResult,
+          calculateInterceptScore(playerId, targetId)
+        );
       }
 
       // Evaluate resolution

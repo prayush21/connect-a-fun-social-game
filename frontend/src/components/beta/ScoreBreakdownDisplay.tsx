@@ -22,11 +22,11 @@ import { SCORING } from "@/lib/beta/types";
  */
 export const ANIMATION_TIMING = {
   /** Time to display each signull group */
-  SIGNULL_DURATION_MS: 3000,
+  SIGNULL_DURATION_MS: 10000,
   /** Time to display each direct guess event */
   DIRECT_GUESS_DURATION_MS: 2500,
   /** Time to display game end bonuses */
-  GAME_END_DURATION_MS: 3500,
+  GAME_END_DURATION_MS: 10000,
   /** Initial delay before starting the animation */
   INITIAL_DELAY_MS: 1000,
   /** Delay between phases (signulls -> direct guesses -> game end) */
@@ -84,18 +84,12 @@ const getReasonLabel = (reason: ScoreReason): string => {
       return "Intercepted!";
     case "signull_resolved":
       return "Signull Resolved";
-    case "signull_resolved_connects":
-      return "Connect Bonus";
-    case "signull_secret_match_bonus":
-      return "Secret Word Match!";
-    case "direct_guess_correct":
-      return "Correct Guess Bonus";
-    case "direct_guess_wrong":
-      return "Wrong Guess Penalty";
-    case "game_end_guessers_win":
-      return "Victory Bonus";
-    case "game_end_setter_win":
-      return "Victory Bonus";
+    case "connect_to_resolved_signull":
+      return "Connected to Resolved";
+    case "lightning_signull_bonus":
+      return "Lightning Signull!";
+    case "setter_revealed_letters_bonus":
+      return "Revealed Letters Bonus";
     default:
       return "Points";
   }
@@ -109,18 +103,12 @@ const getReasonIcon = (reason: ScoreReason): string => {
       return "🛡️";
     case "signull_resolved":
       return "🎯";
-    case "signull_resolved_connects":
+    case "connect_to_resolved_signull":
       return "🔗";
-    case "signull_secret_match_bonus":
+    case "lightning_signull_bonus":
+      return "⚡";
+    case "setter_revealed_letters_bonus":
       return "⭐";
-    case "direct_guess_correct":
-      return "🎉";
-    case "direct_guess_wrong":
-      return "❌";
-    case "game_end_guessers_win":
-      return "🏆";
-    case "game_end_setter_win":
-      return "🏆";
     default:
       return "•";
   }
@@ -410,8 +398,6 @@ export function ScoreBreakdownDisplay({
 
     // Group events by signull
     const signullEvents = new Map<string, ScoreEvent[]>();
-    const directGuessEvents: ScoreEvent[] = [];
-    const gameEndEvents: ScoreEvent[] = [];
 
     scoreEvents.forEach((event) => {
       const signullId = event.details?.signullId as string | undefined;
@@ -420,16 +406,6 @@ export function ScoreBreakdownDisplay({
         const existing = signullEvents.get(signullId) || [];
         existing.push(event);
         signullEvents.set(signullId, existing);
-      } else if (
-        event.reason === "direct_guess_correct" ||
-        event.reason === "direct_guess_wrong"
-      ) {
-        directGuessEvents.push(event);
-      } else if (
-        event.reason === "game_end_guessers_win" ||
-        event.reason === "game_end_setter_win"
-      ) {
-        gameEndEvents.push(event);
       }
     });
 
@@ -455,54 +431,19 @@ export function ScoreBreakdownDisplay({
       });
     });
 
-    // Add direct guess items
-    directGuessEvents.forEach((event) => {
-      items.push({
-        type: "direct-guess",
-        playerId: event.playerId,
-        playerName: players[event.playerId]?.name || "Unknown",
-        guess: (event.details?.guessWord as string) || "???",
-        isCorrect: event.reason === "direct_guess_correct",
-        events: [event],
-      });
-    });
-
-    // Add game end item if there are game end events
-    if (gameEndEvents.length > 0) {
-      items.push({
-        type: "game-end",
-        winner,
-        events: gameEndEvents,
-      });
-    }
-
     return items;
   }, [scoreEvents, signullState, players, winner]);
 
-  // Get current items for each phase
+  // Get current items - only signulls now
   const signullItems = breakdownItems.filter((i) => i.type === "signull");
-  const directGuessItems = breakdownItems.filter(
-    (i) => i.type === "direct-guess"
-  );
-  const gameEndItem = breakdownItems.find((i) => i.type === "game-end");
 
   // Current display item
   const currentItem = useMemo(() => {
     if (currentPhase === "signulls") {
       return signullItems[currentItemIndex];
-    } else if (currentPhase === "direct-guesses") {
-      return directGuessItems[currentItemIndex];
-    } else if (currentPhase === "game-end") {
-      return gameEndItem;
     }
     return undefined;
-  }, [
-    currentPhase,
-    currentItemIndex,
-    signullItems,
-    directGuessItems,
-    gameEndItem,
-  ]);
+  }, [currentPhase, currentItemIndex, signullItems]);
 
   // Update scores when item changes
   useEffect(() => {
@@ -525,59 +466,20 @@ export function ScoreBreakdownDisplay({
 
   // Auto-advance logic
   useEffect(() => {
-    const getDuration = () => {
-      if (currentPhase === "signulls")
-        return ANIMATION_TIMING.SIGNULL_DURATION_MS;
-      if (currentPhase === "direct-guesses")
-        return ANIMATION_TIMING.DIRECT_GUESS_DURATION_MS;
-      if (currentPhase === "game-end")
-        return ANIMATION_TIMING.GAME_END_DURATION_MS;
-      return 2000;
-    };
-
     const timer = setTimeout(() => {
       if (currentPhase === "signulls") {
         if (currentItemIndex < signullItems.length - 1) {
           setCurrentItemIndex((i) => i + 1);
         } else {
-          // Move to next phase
-          if (directGuessItems.length > 0) {
-            setCurrentPhase("direct-guesses");
-            setCurrentItemIndex(0);
-          } else if (gameEndItem) {
-            setCurrentPhase("game-end");
-          } else {
-            setCurrentPhase("complete");
-            onComplete();
-          }
+          // All signulls shown, complete
+          setCurrentPhase("complete");
+          onComplete();
         }
-      } else if (currentPhase === "direct-guesses") {
-        if (currentItemIndex < directGuessItems.length - 1) {
-          setCurrentItemIndex((i) => i + 1);
-        } else {
-          // Move to game end
-          if (gameEndItem) {
-            setCurrentPhase("game-end");
-          } else {
-            setCurrentPhase("complete");
-            onComplete();
-          }
-        }
-      } else if (currentPhase === "game-end") {
-        setCurrentPhase("complete");
-        onComplete();
       }
-    }, getDuration());
+    }, ANIMATION_TIMING.SIGNULL_DURATION_MS);
 
     return () => clearTimeout(timer);
-  }, [
-    currentPhase,
-    currentItemIndex,
-    signullItems.length,
-    directGuessItems.length,
-    gameEndItem,
-    onComplete,
-  ]);
+  }, [currentPhase, currentItemIndex, signullItems.length, onComplete]);
 
   // Handle empty events - skip to complete
   useEffect(() => {
@@ -588,16 +490,8 @@ export function ScoreBreakdownDisplay({
   }, [breakdownItems.length, onComplete]);
 
   // Progress calculation
-  const totalItems =
-    signullItems.length + directGuessItems.length + (gameEndItem ? 1 : 0);
-  const currentProgress =
-    currentPhase === "signulls"
-      ? currentItemIndex + 1
-      : currentPhase === "direct-guesses"
-        ? signullItems.length + currentItemIndex + 1
-        : currentPhase === "game-end"
-          ? signullItems.length + directGuessItems.length + 1
-          : totalItems;
+  const totalItems = signullItems.length;
+  const currentProgress = currentItemIndex + 1;
 
   if (currentPhase === "complete" || !currentItem) {
     return null;
@@ -643,19 +537,6 @@ export function ScoreBreakdownDisplay({
                     <SignullBreakdownView
                       item={currentItem}
                       players={players}
-                    />
-                  )}
-                  {currentItem.type === "direct-guess" && (
-                    <DirectGuessBreakdownView
-                      item={currentItem}
-                      players={players}
-                    />
-                  )}
-                  {currentItem.type === "game-end" && (
-                    <GameEndBreakdownView
-                      item={currentItem}
-                      players={players}
-                      secretWord={secretWord}
                     />
                   )}
                 </motion.div>
