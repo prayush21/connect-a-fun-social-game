@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Target, ChevronRight, Zap, Users, Play, Pause } from "lucide-react";
+import {
+  Trophy,
+  Target,
+  ChevronRight,
+  Zap,
+  Users,
+  Play,
+  Pause,
+} from "lucide-react";
 import type {
   ScoreEvent,
   Player,
@@ -469,7 +477,7 @@ export function ScoreBreakdownDisplay({
   // Auto-advance logic
   useEffect(() => {
     if (isPaused) return;
-    
+
     const timer = setTimeout(() => {
       if (currentPhase === "signulls") {
         if (currentItemIndex < signullItems.length - 1) {
@@ -483,7 +491,14 @@ export function ScoreBreakdownDisplay({
     }, animationSpeed);
 
     return () => clearTimeout(timer);
-  }, [currentPhase, currentItemIndex, signullItems.length, onComplete, isPaused, animationSpeed]);
+  }, [
+    currentPhase,
+    currentItemIndex,
+    signullItems.length,
+    onComplete,
+    isPaused,
+    animationSpeed,
+  ]);
 
   // Handle empty events - skip to complete
   useEffect(() => {
@@ -510,18 +525,6 @@ export function ScoreBreakdownDisplay({
             <Zap className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold text-primary">Score Breakdown</h1>
           </div>
-          <div className="flex items-center gap-2 text-neutral-500">
-            <span>
-              {currentProgress} / {totalItems}
-            </span>
-            <div className="h-2 w-24 overflow-hidden rounded-full bg-neutral-200">
-              <motion.div
-                className="h-full bg-primary"
-                initial={{ width: 0 }}
-                animate={{ width: `${(currentProgress / totalItems) * 100}%` }}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Main Content Grid */}
@@ -546,9 +549,30 @@ export function ScoreBreakdownDisplay({
                 </motion.div>
               </AnimatePresence>
             </div>
-            
-            {/* Playback Controls */}
+
+            {/* Progress Indicator */}
             <div className="mt-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-sm font-medium text-neutral-500">
+                Progress: {currentItemIndex + 1} / {signullItems.length}
+              </span>
+              <div className="flex-1">
+                <div className="h-3 overflow-hidden rounded-full bg-neutral-200">
+                  <motion.div
+                    className="h-full bg-primary"
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: `${((currentItemIndex + 1) / signullItems.length) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Running Scoreboard */}
+          <div className="lg:col-span-1">
+            {/* Playback Controls */}
+            <div className="mb-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               {/* Pause/Play Button */}
               <button
                 onClick={() => setIsPaused(!isPaused)}
@@ -564,7 +588,9 @@ export function ScoreBreakdownDisplay({
 
               {/* Speed Slider */}
               <div className="flex flex-1 items-center gap-3">
-                <span className="text-sm font-medium text-neutral-600">Speed:</span>
+                <span className="text-sm font-medium text-neutral-600">
+                  Speed:
+                </span>
                 <input
                   type="range"
                   min="2000"
@@ -579,16 +605,8 @@ export function ScoreBreakdownDisplay({
                   {(animationSpeed / 1000).toFixed(1)}s
                 </span>
               </div>
-
-              {/* Progress Indicator */}
-              <span className="text-sm font-medium text-neutral-500">
-                {currentItemIndex + 1} / {signullItems.length}
-              </span>
             </div>
-          </div>
 
-          {/* Right: Running Scoreboard */}
-          <div className="lg:col-span-1">
             <div className="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <div className="mb-3 flex items-center gap-2">
                 <Users className="h-5 w-5 text-neutral-500" />
