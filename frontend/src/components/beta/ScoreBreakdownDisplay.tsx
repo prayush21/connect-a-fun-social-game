@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Target, ChevronRight, Zap, Users } from "lucide-react";
+import { Trophy, Target, ChevronRight, Zap, Users, Play, Pause } from "lucide-react";
 import type {
   ScoreEvent,
   Player,
@@ -376,6 +376,8 @@ export function ScoreBreakdownDisplay({
 }: ScoreBreakdownDisplayProps) {
   const [currentPhase, setCurrentPhase] = useState<BreakdownPhase>("signulls");
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [animationSpeed, setAnimationSpeed] = useState(10000); // milliseconds
   const [currentScores, setCurrentScores] = useState<Record<PlayerId, number>>(
     () => {
       // Start with base scores (before this round's events)
@@ -466,6 +468,8 @@ export function ScoreBreakdownDisplay({
 
   // Auto-advance logic
   useEffect(() => {
+    if (isPaused) return;
+    
     const timer = setTimeout(() => {
       if (currentPhase === "signulls") {
         if (currentItemIndex < signullItems.length - 1) {
@@ -476,10 +480,10 @@ export function ScoreBreakdownDisplay({
           onComplete();
         }
       }
-    }, ANIMATION_TIMING.SIGNULL_DURATION_MS);
+    }, animationSpeed);
 
     return () => clearTimeout(timer);
-  }, [currentPhase, currentItemIndex, signullItems.length, onComplete]);
+  }, [currentPhase, currentItemIndex, signullItems.length, onComplete, isPaused, animationSpeed]);
 
   // Handle empty events - skip to complete
   useEffect(() => {
@@ -541,6 +545,45 @@ export function ScoreBreakdownDisplay({
                   )}
                 </motion.div>
               </AnimatePresence>
+            </div>
+            
+            {/* Playback Controls */}
+            <div className="mt-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              {/* Pause/Play Button */}
+              <button
+                onClick={() => setIsPaused(!isPaused)}
+                className="flex items-center justify-center rounded-lg border-2 border-black bg-primary p-2 transition-transform hover:scale-105 active:scale-95"
+                aria-label={isPaused ? "Play" : "Pause"}
+              >
+                {isPaused ? (
+                  <Play className="h-5 w-5 fill-white text-white" />
+                ) : (
+                  <Pause className="h-5 w-5 text-white" />
+                )}
+              </button>
+
+              {/* Speed Slider */}
+              <div className="flex flex-1 items-center gap-3">
+                <span className="text-sm font-medium text-neutral-600">Speed:</span>
+                <input
+                  type="range"
+                  min="2000"
+                  max="5000"
+                  step="500"
+                  value={animationSpeed}
+                  onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                  className="flex-1 accent-primary"
+                  aria-label="Animation speed"
+                />
+                <span className="text-sm font-medium text-neutral-600">
+                  {(animationSpeed / 1000).toFixed(1)}s
+                </span>
+              </div>
+
+              {/* Progress Indicator */}
+              <span className="text-sm font-medium text-neutral-500">
+                {currentItemIndex + 1} / {signullItems.length}
+              </span>
             </div>
           </div>
 
