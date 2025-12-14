@@ -42,7 +42,8 @@ export type ScoreReason =
   | "signull_resolved" // Player's signull was resolved
   | "connect_to_resolved_signull" // Points for correct connect to resolved signull
   | "lightning_signull_bonus" // Bonus for remaining letters when signull word matches secret word
-  | "setter_revealed_letters_bonus"; // Setter bonus for revealed letters on lightning signull
+  | "setter_revealed_letters_bonus" // Setter bonus for revealed letters on lightning signull
+  | "failed_lightning_signull_bonus"; // Bonus for creator and correct connectors when lightning signull fails
 
 /**
  * Represents score updates to be applied in a transaction

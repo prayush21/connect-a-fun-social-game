@@ -9,8 +9,14 @@
  *   - Player whose signull gets resolved gets 10 points
  *   - Guessers with correct connect to resolved signull get 5 points each
  * - Lightning Signull (signull word = secret word):
- *   - Guessers who correctly connected get +5 points for each remaining letter
- *   - Setter gets +5 points for each revealed letter (till the lightning signull)
+ *   - When resolved:
+ *     - Creator of the lightning signull gets +5 points for each remaining letter
+ *     - Guessers who correctly connected get +5 points for each remaining letter
+ *     - Setter gets +5 points for each revealed letter (till the lightning signull)
+ *   - When failed (all eligible guessers attempted but not enough correct connects):
+ *     - Creator gets +5 points for each remaining letter
+ *     - Guessers with correct connects get +5 points for each remaining letter
+ *     - No points for incorrect connects
  */
 
 import type {
@@ -175,24 +181,44 @@ export const calculateSignullResolvedScore = (
   });
 
   // If signull word matches secret word (Lightning Signull):
+  // - Creator of the signull gets +5 for each remaining letter
   // - Guessers who correctly connected get +5 for each remaining letter
   // - Setter gets +5 for each revealed letter
   if (entry.isFinal) {
     const remainingLetters = getRemainingLetters(data);
     const revealedCount = data.revealedCount ?? 0;
 
-    // Guessers with correct connects get points for remaining letters
-    const guesserBonus =
+    // Lightning signull bonus for remaining letters
+    const lightningBonus =
       remainingLetters * SCORING.LIGHTNING_SIGNULL_PER_REMAINING_LETTER;
+
+    // Creator of the lightning signull gets the bonus
+    if (lightningBonus > 0) {
+      updates[entry.playerId] = (updates[entry.playerId] ?? 0) + lightningBonus;
+      events.push(
+        createScoreEvent(
+          entry.playerId,
+          lightningBonus,
+          "lightning_signull_bonus",
+          {
+            signullId: entry.id,
+            secretWord: data.secretWord,
+            remainingLetters,
+          }
+        )
+      );
+    }
+
+    // Guessers with correct connects also get points for remaining letters
     correctConnects.forEach((connect) => {
       const player = data.players[connect.playerId];
       if (player && player.role === "guesser") {
         updates[connect.playerId] =
-          (updates[connect.playerId] ?? 0) + guesserBonus;
+          (updates[connect.playerId] ?? 0) + lightningBonus;
         events.push(
           createScoreEvent(
             connect.playerId,
-            guesserBonus,
+            lightningBonus,
             "lightning_signull_bonus",
             {
               signullId: entry.id,
@@ -222,6 +248,73 @@ export const calculateSignullResolvedScore = (
       );
     }
   }
+
+  return { updates, events };
+};
+
+/**
+ * Calculate score updates when a lightning signull fails.
+ * Called when a lightning signull fails to reach the required number of correct connects.
+ * Awards bonus points to the creator and guessers who correctly connected.
+ *
+ * @param entry - The failed lightning signull entry
+ * @param data - The current game room data
+ * @returns Score result with updates and events
+ */
+export const calculateFailedLightningSignullScore = (
+  entry: FirestoreSignullEntry,
+  data: FirestoreGameRoom
+): ScoreResult => {
+  const updates: ScoreUpdates = {};
+  const events: ScoreEvent[] = [];
+  const correctConnects = entry.connects.filter((c) => c.isCorrect);
+
+  // Only apply if this is a lightning signull
+  if (!entry.isFinal) {
+    return { updates, events };
+  }
+
+  const remainingLetters = getRemainingLetters(data);
+  const lightningBonus =
+    remainingLetters * SCORING.LIGHTNING_SIGNULL_PER_REMAINING_LETTER;
+
+  // Creator of the failed lightning signull gets the bonus
+  if (lightningBonus > 0) {
+    updates[entry.playerId] = lightningBonus;
+    events.push(
+      createScoreEvent(
+        entry.playerId,
+        lightningBonus,
+        "failed_lightning_signull_bonus",
+        {
+          signullId: entry.id,
+          secretWord: data.secretWord,
+          remainingLetters,
+        }
+      )
+    );
+  }
+
+  // Guessers with correct connects also get the bonus
+  correctConnects.forEach((connect) => {
+    const player = data.players[connect.playerId];
+    if (player && player.role === "guesser") {
+      updates[connect.playerId] =
+        (updates[connect.playerId] ?? 0) + lightningBonus;
+      events.push(
+        createScoreEvent(
+          connect.playerId,
+          lightningBonus,
+          "failed_lightning_signull_bonus",
+          {
+            signullId: entry.id,
+            secretWord: data.secretWord,
+            remainingLetters,
+          }
+        )
+      );
+    }
+  });
 
   return { updates, events };
 };

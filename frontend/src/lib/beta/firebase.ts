@@ -30,6 +30,7 @@ import {
   calculateCorrectSignullGuessScore,
   calculateInterceptScore,
   calculateSignullResolvedScore,
+  calculateFailedLightningSignullScore,
   calculateDirectGuessScore,
   calculateGameEndScore,
   mergeScoreResults,
@@ -589,6 +590,13 @@ export const submitConnect = async (
               pendingEntry.resolvedAt = serverTimestamp();
             }
           });
+        } else if (resolution.status === "failed") {
+          // Award points for failed lightning signull
+          // (creator and correct connectors get bonus points)
+          scoreResult = mergeScoreResults(
+            scoreResult,
+            calculateFailedLightningSignullScore(entry, data)
+          );
         }
       }
       // Advance activeIndex for round_robin if resolved/failed/blocked
