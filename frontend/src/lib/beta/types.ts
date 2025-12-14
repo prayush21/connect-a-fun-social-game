@@ -14,19 +14,12 @@ export type GameWinner = null | "guessers" | "setter";
  */
 export const SCORING = {
   // Signull scenarios
-  CORRECT_GUESS_ON_SIGNULL: 5, // Player who makes a correct guess to signull
-  INTERCEPT_SIGNULL: 5, // Setter who intercepts a signull
-  SIGNULL_RESOLVED_BASE: 5, // Player whose signull gets resolved (base points)
-  SIGNULL_RESOLVED_PER_CONNECT: 2, // Additional points per correct connect on resolved signull
-  SIGNULL_MATCHES_SECRET_BONUS: 5, // Bonus for all guessers when signull word equals secret word
-
-  // Direct guess scenarios
-  DIRECT_GUESS_CORRECT_BONUS: 5, // +5 if >=50% of word length remains
-  DIRECT_GUESS_WRONG_PENALTY: -5, // -5 if wrong guess when >=50% of word remains
-
-  // Game end scenarios
-  GAME_END_PER_REMAINING_LETTER: 10, // Points per remaining unrevealed letter
-  GAME_END_PER_DIRECT_GUESS_LEFT: 10, // Points per remaining direct guess
+  CORRECT_GUESS_ON_SIGNULL: 5, // [DEPRECATED] No longer used for guessers
+  INTERCEPT_SIGNULL: 5, // Setter who intercepts a signull (immediate)
+  SIGNULL_RESOLVED: 10, // Player whose signull gets resolved
+  CONNECT_TO_RESOLVED_SIGNULL: 5, // Points for guessers with correct connect to resolved signull
+  LIGHTNING_SIGNULL_PER_REMAINING_LETTER: 5, // Points per remaining letter when signull word equals secret word
+  SETTER_REVEALED_LETTERS_BONUS: 5, // Points to setter per revealed letter when lightning signull occurs
 } as const;
 
 /**
@@ -47,12 +40,10 @@ export type ScoreReason =
   | "correct_signull_guess" // Player guessed the signull word correctly
   | "intercept_signull" // Setter intercepted a signull
   | "signull_resolved" // Player's signull was resolved
-  | "signull_resolved_connects" // Bonus for correct connects on resolved signull
-  | "signull_secret_match_bonus" // Bonus when signull word matches secret word
-  | "direct_guess_correct" // Correct direct guess with >=50% letters remaining
-  | "direct_guess_wrong" // Wrong direct guess with >=50% letters remaining
-  | "game_end_guessers_win" // End game bonus for guessers
-  | "game_end_setter_win"; // End game bonus for setter
+  | "connect_to_resolved_signull" // Points for correct connect to resolved signull
+  | "lightning_signull_bonus" // Bonus for remaining letters when signull word matches secret word
+  | "setter_revealed_letters_bonus" // Setter bonus for revealed letters on lightning signull
+  | "failed_lightning_signull_bonus"; // Bonus for creator and correct connectors when lightning signull fails
 
 /**
  * Represents score updates to be applied in a transaction
@@ -112,6 +103,7 @@ export interface GameSettings {
   timeLimitSeconds: number; // limit for setting secret word or signull
   wordValidation: "strict" | "relaxed";
   prefixMode: boolean;
+  showScoreBreakdown: boolean; // Whether to show score counting animation at game end
 }
 
 export interface LastDirectGuess {
@@ -136,6 +128,8 @@ export interface GameState {
   lastDirectGuess: LastDirectGuess | null; // tracks who made the last direct guess
   winner: GameWinner;
   settings: GameSettings;
+  scoreEvents: ScoreEvent[]; // Chronological history of all scoring events
+  scoreCountingComplete: boolean; // Whether score counting animation has completed
   createdAt: Date; // snapshot conversion from Firestore Timestamp
   updatedAt: Date;
 }
@@ -177,6 +171,14 @@ export interface FirestoreLastDirectGuess {
   timestamp: FirestoreTimeValue;
 }
 
+export interface FirestoreScoreEvent {
+  playerId: PlayerId;
+  delta: number;
+  reason: ScoreReason;
+  timestamp: FirestoreTimeValue;
+  details?: Record<string, unknown>;
+}
+
 export interface FirestoreGameRoom {
   schemaVersion: 2;
   roomId: RoomId;
@@ -211,7 +213,10 @@ export interface FirestoreGameRoom {
     timeLimitSeconds: number;
     wordValidation: "strict" | "relaxed";
     prefixMode: boolean;
+    showScoreBreakdown: boolean;
   };
+  scoreEvents: FirestoreScoreEvent[];
+  scoreCountingComplete: boolean;
   createdAt: FirestoreTimeValue;
   updatedAt: FirestoreTimeValue;
 }

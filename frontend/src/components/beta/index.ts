@@ -16,3 +16,7 @@ export type { SignullHistoryItem } from "./SignullHistoryToast";
 export { MemoriesModal } from "./MemoriesModal";
 export { AudioSettings, AudioToggleButton } from "./AudioSettings";
 export { AudioSettingsModal } from "./AudioSettingsModal";
+export {
+  ScoreBreakdownDisplay,
+  ANIMATION_TIMING,
+} from "./ScoreBreakdownDisplay";

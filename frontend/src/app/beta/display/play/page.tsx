@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useBetaStore } from "@/lib/beta/store";
 import {
@@ -9,6 +9,8 @@ import {
 } from "@/lib/beta/selectors";
 import { Zap, Target } from "lucide-react";
 import { CircularProgress } from "@/components/beta/CircularProgress";
+import { ScoreBreakdownDisplay } from "@/components/beta";
+import { setScoreCountingComplete } from "@/lib/beta/firebase";
 
 // Read-only letter blocks for display mode
 function DisplayLetterBlocks({
@@ -150,6 +152,10 @@ export default function BetaDisplayPlayPage() {
   const lastDirectGuess = gameState?.lastDirectGuess;
   const winner = gameState?.winner;
   const players = gameState?.players ?? {};
+  const scoreEvents = gameState?.scoreEvents ?? [];
+  const signullState = gameState?.signullState;
+  const showScoreBreakdown = gameState?.settings?.showScoreBreakdown ?? false;
+  const scoreCountingComplete = gameState?.scoreCountingComplete ?? false;
 
   // Get all signull metrics
   const allSignulls = getAllSignullMetrics(gameState);
@@ -161,6 +167,13 @@ export default function BetaDisplayPlayPage() {
       s.status === "resolved" ||
       s.status === "blocked"
   );
+
+  // Handle score counting complete callback
+  const handleScoreCountingComplete = useCallback(async () => {
+    if (roomId) {
+      await setScoreCountingComplete(roomId);
+    }
+  }, [roomId]);
 
   // Redirect logic
   useEffect(() => {
@@ -195,8 +208,28 @@ export default function BetaDisplayPlayPage() {
     );
   }
 
-  // Game ended state
+  // Game ended state - check if we should show score breakdown first
   if (gamePhase === "ended") {
+    // Show score breakdown animation if enabled and not yet complete
+    if (
+      showScoreBreakdown &&
+      !scoreCountingComplete &&
+      signullState &&
+      winner !== undefined
+    ) {
+      return (
+        <ScoreBreakdownDisplay
+          scoreEvents={scoreEvents}
+          players={players}
+          signullState={signullState}
+          winner={winner}
+          secretWord={secretWord}
+          onComplete={handleScoreCountingComplete}
+        />
+      );
+    }
+
+    // Show final scoreboard after score counting is complete
     const playerList = Object.values(players).sort((a, b) => b.score - a.score);
 
     return (

@@ -4,28 +4,58 @@
  * Scoring Rules:
  *
  * Signull Scenarios:
- * - Player who makes a correct guess to signull gets 5 points
- * - Player who intercepts a signull gets 5 points
- * - Player whose signull gets resolved gets 5 points + 2x the number of correct connects
- * - If the signull word is same as secret word, upon resolving, all guessers get +5 points
- *
- * Direct Guess Scenario:
- * - Player who makes Direct Guess:
- *   +5 points if >=50% of word length left AND correct
- *   -5 points if >=50% of word length left AND wrong
- *
- * Game End Scenario:
- * - If guessers win: all guessers get (remaining letters)x10 + (number of direct guesses left)x10
- * - If setters win: setter gets (remaining letters)x10
+ * - Setter who intercepts a signull gets 5 points (immediately)
+ * - When a signull resolves:
+ *   - Player whose signull gets resolved gets 10 points
+ *   - Guessers with correct connect to resolved signull get 5 points each
+ * - Lightning Signull (signull word = secret word):
+ *   - When resolved:
+ *     - Creator of the lightning signull gets +5 points for each remaining letter
+ *     - Guessers who correctly connected get +5 points for each remaining letter
+ *     - Setter gets +5 points for each revealed letter (till the lightning signull)
+ *   - When failed (all eligible guessers attempted but not enough correct connects):
+ *     - Creator gets +5 points for each remaining letter
+ *     - Guessers with correct connects get +5 points for each remaining letter
+ *     - No points for incorrect connects
  */
 
 import type {
   PlayerId,
   ScoreUpdates,
+  ScoreEvent,
+  ScoreReason,
   FirestoreGameRoom,
   FirestoreSignullEntry,
+  SignullId,
 } from "./types";
 import { SCORING } from "./types";
+
+// ==================== Score Result Type ====================
+
+/**
+ * Result of a score calculation, containing both the updates to apply
+ * and the events to record for score breakdown display.
+ */
+export interface ScoreResult {
+  updates: ScoreUpdates;
+  events: ScoreEvent[];
+}
+
+/**
+ * Helper to create a score event
+ */
+const createScoreEvent = (
+  playerId: PlayerId,
+  delta: number,
+  reason: ScoreReason,
+  details?: Record<string, unknown>
+): ScoreEvent => ({
+  playerId,
+  delta,
+  reason,
+  timestamp: new Date(),
+  details,
+});
 
 // ==================== Helper Functions ====================
 
@@ -61,16 +91,23 @@ export const isHalfWordRemaining = (data: FirestoreGameRoom): boolean => {
 
 /**
  * Calculate score updates for a correct guess on a signull.
- * Called when a player (guesser) correctly guesses the signull word.
+ * @deprecated No longer used - guessers get points only when signull resolves.
+ * Kept for backward compatibility or potential future use.
  *
  * @param playerId - The player who made the correct guess
- * @returns Score updates to apply
+ * @param signullId - The signull that was guessed correctly
+ * @returns Score result with updates and events
  */
 export const calculateCorrectSignullGuessScore = (
-  playerId: PlayerId
-): ScoreUpdates => {
+  playerId: PlayerId,
+  signullId?: SignullId
+): ScoreResult => {
+  const delta = SCORING.CORRECT_GUESS_ON_SIGNULL;
   return {
-    [playerId]: SCORING.CORRECT_GUESS_ON_SIGNULL,
+    updates: { [playerId]: delta },
+    events: [
+      createScoreEvent(playerId, delta, "correct_signull_guess", { signullId }),
+    ],
   };
 };
 
@@ -79,11 +116,19 @@ export const calculateCorrectSignullGuessScore = (
  * Called when the setter correctly guesses the signull word (blocking it).
  *
  * @param setterId - The setter who intercepted
- * @returns Score updates to apply
+ * @param signullId - The signull that was intercepted
+ * @returns Score result with updates and events
  */
-export const calculateInterceptScore = (setterId: PlayerId): ScoreUpdates => {
+export const calculateInterceptScore = (
+  setterId: PlayerId,
+  signullId?: SignullId
+): ScoreResult => {
+  const delta = SCORING.INTERCEPT_SIGNULL;
   return {
-    [setterId]: SCORING.INTERCEPT_SIGNULL,
+    updates: { [setterId]: delta },
+    events: [
+      createScoreEvent(setterId, delta, "intercept_signull", { signullId }),
+    ],
   };
 };
 
@@ -93,104 +138,247 @@ export const calculateInterceptScore = (setterId: PlayerId): ScoreUpdates => {
  *
  * @param entry - The signull entry that was resolved
  * @param data - The current game room data
- * @returns Score updates to apply
+ * @returns Score result with updates and events
  */
 export const calculateSignullResolvedScore = (
   entry: FirestoreSignullEntry,
   data: FirestoreGameRoom
-): ScoreUpdates => {
+): ScoreResult => {
   const updates: ScoreUpdates = {};
+  const events: ScoreEvent[] = [];
   const correctConnects = entry.connects.filter((c) => c.isCorrect);
-  const correctConnectCount = correctConnects.length;
 
-  // Award points to the signull creator
-  // Base points + 2x correct connects
-  const creatorPoints =
-    SCORING.SIGNULL_RESOLVED_BASE +
-    correctConnectCount * SCORING.SIGNULL_RESOLVED_PER_CONNECT;
-  updates[entry.playerId] = (updates[entry.playerId] ?? 0) + creatorPoints;
+  // Award points to the signull creator: +10
+  const resolvedPoints = SCORING.SIGNULL_RESOLVED;
+  updates[entry.playerId] = resolvedPoints;
+  events.push(
+    createScoreEvent(entry.playerId, resolvedPoints, "signull_resolved", {
+      signullId: entry.id,
+      word: entry.word,
+    })
+  );
 
-  // If signull word matches secret word, all guessers get bonus
+  // Award +5 to each guesser with correct connect to resolved signull
+  correctConnects.forEach((connect) => {
+    // Only award to guessers (not the setter who might have connected)
+    const player = data.players[connect.playerId];
+    if (player && player.role === "guesser") {
+      const connectBonus = SCORING.CONNECT_TO_RESOLVED_SIGNULL;
+      updates[connect.playerId] =
+        (updates[connect.playerId] ?? 0) + connectBonus;
+      events.push(
+        createScoreEvent(
+          connect.playerId,
+          connectBonus,
+          "connect_to_resolved_signull",
+          {
+            signullId: entry.id,
+            word: entry.word,
+          }
+        )
+      );
+    }
+  });
+
+  // If signull word matches secret word (Lightning Signull):
+  // - Creator of the signull gets +5 for each remaining letter
+  // - Guessers who correctly connected get +5 for each remaining letter
+  // - Setter gets +5 for each revealed letter
   if (entry.isFinal) {
-    const guesserIds = getGuesserIds(data);
-    guesserIds.forEach((gid) => {
-      updates[gid] = (updates[gid] ?? 0) + SCORING.SIGNULL_MATCHES_SECRET_BONUS;
+    const remainingLetters = getRemainingLetters(data);
+    const revealedCount = data.revealedCount ?? 0;
+
+    // Lightning signull bonus for remaining letters
+    const lightningBonus =
+      remainingLetters * SCORING.LIGHTNING_SIGNULL_PER_REMAINING_LETTER;
+
+    // Creator of the lightning signull gets the bonus
+    if (lightningBonus > 0) {
+      updates[entry.playerId] = (updates[entry.playerId] ?? 0) + lightningBonus;
+      events.push(
+        createScoreEvent(
+          entry.playerId,
+          lightningBonus,
+          "lightning_signull_bonus",
+          {
+            signullId: entry.id,
+            secretWord: data.secretWord,
+            remainingLetters,
+          }
+        )
+      );
+    }
+
+    // Guessers with correct connects also get points for remaining letters
+    correctConnects.forEach((connect) => {
+      const player = data.players[connect.playerId];
+      if (player && player.role === "guesser") {
+        updates[connect.playerId] =
+          (updates[connect.playerId] ?? 0) + lightningBonus;
+        events.push(
+          createScoreEvent(
+            connect.playerId,
+            lightningBonus,
+            "lightning_signull_bonus",
+            {
+              signullId: entry.id,
+              secretWord: data.secretWord,
+              remainingLetters,
+            }
+          )
+        );
+      }
     });
+
+    // Setter gets points for revealed letters
+    const setterBonus = revealedCount * SCORING.SETTER_REVEALED_LETTERS_BONUS;
+    if (setterBonus > 0) {
+      updates[data.setterId] = (updates[data.setterId] ?? 0) + setterBonus;
+      events.push(
+        createScoreEvent(
+          data.setterId,
+          setterBonus,
+          "setter_revealed_letters_bonus",
+          {
+            signullId: entry.id,
+            secretWord: data.secretWord,
+            revealedCount,
+          }
+        )
+      );
+    }
   }
 
-  return updates;
+  return { updates, events };
+};
+
+/**
+ * Calculate score updates when a lightning signull fails.
+ * Called when a lightning signull fails to reach the required number of correct connects.
+ * Awards bonus points to the creator and guessers who correctly connected.
+ *
+ * @param entry - The failed lightning signull entry
+ * @param data - The current game room data
+ * @returns Score result with updates and events
+ */
+export const calculateFailedLightningSignullScore = (
+  entry: FirestoreSignullEntry,
+  data: FirestoreGameRoom
+): ScoreResult => {
+  const updates: ScoreUpdates = {};
+  const events: ScoreEvent[] = [];
+  const correctConnects = entry.connects.filter((c) => c.isCorrect);
+
+  // Only apply if this is a lightning signull
+  if (!entry.isFinal) {
+    return { updates, events };
+  }
+
+  const remainingLetters = getRemainingLetters(data);
+  const lightningBonus =
+    remainingLetters * SCORING.LIGHTNING_SIGNULL_PER_REMAINING_LETTER;
+
+  // Creator of the failed lightning signull gets the bonus
+  if (lightningBonus > 0) {
+    updates[entry.playerId] = lightningBonus;
+    events.push(
+      createScoreEvent(
+        entry.playerId,
+        lightningBonus,
+        "failed_lightning_signull_bonus",
+        {
+          signullId: entry.id,
+          secretWord: data.secretWord,
+          remainingLetters,
+        }
+      )
+    );
+  }
+
+  // Guessers with correct connects also get the bonus
+  correctConnects.forEach((connect) => {
+    const player = data.players[connect.playerId];
+    if (player && player.role === "guesser") {
+      updates[connect.playerId] =
+        (updates[connect.playerId] ?? 0) + lightningBonus;
+      events.push(
+        createScoreEvent(
+          connect.playerId,
+          lightningBonus,
+          "failed_lightning_signull_bonus",
+          {
+            signullId: entry.id,
+            secretWord: data.secretWord,
+            remainingLetters,
+          }
+        )
+      );
+    }
+  });
+
+  return { updates, events };
 };
 
 /**
  * Calculate score updates for a direct guess.
- * Called when a player makes a direct guess at the secret word.
+ * Note: Direct guess bonuses/penalties have been removed.
  *
  * @param playerId - The player who made the direct guess
  * @param isCorrect - Whether the guess was correct
  * @param data - The current game room data
- * @returns Score updates to apply
+ * @param guessWord - The word that was guessed
+ * @returns Score result with updates and events (always empty)
  */
 export const calculateDirectGuessScore = (
   playerId: PlayerId,
   isCorrect: boolean,
-  data: FirestoreGameRoom
-): ScoreUpdates => {
-  const updates: ScoreUpdates = {};
-  const halfWordRemaining = isHalfWordRemaining(data);
-
-  if (halfWordRemaining) {
-    if (isCorrect) {
-      updates[playerId] = SCORING.DIRECT_GUESS_CORRECT_BONUS;
-    } else {
-      updates[playerId] = SCORING.DIRECT_GUESS_WRONG_PENALTY;
-    }
-  }
-  // No points if less than 50% of word remains
-
-  return updates;
+  data: FirestoreGameRoom,
+  guessWord?: string
+): ScoreResult => {
+  // No scoring for direct guesses
+  return { updates: {}, events: [] };
 };
 
 /**
  * Calculate score updates when the game ends.
- * Called when the game phase transitions to "ended".
+ * Note: Game end bonuses have been removed.
  *
  * @param data - The current game room data
  * @param winner - Who won the game
- * @returns Score updates to apply
+ * @returns Score result with updates and events (always empty)
  */
 export const calculateGameEndScore = (
   data: FirestoreGameRoom,
   winner: "guessers" | "setter"
-): ScoreUpdates => {
-  const updates: ScoreUpdates = {};
-  const remainingLetters = getRemainingLetters(data);
-  const directGuessesLeft = data.directGuessesLeft ?? 0;
-
-  if (winner === "guessers") {
-    // All guessers get (remaining letters)x10 + (direct guesses left)x10
-    const guesserIds = getGuesserIds(data);
-    const guesserBonus =
-      remainingLetters * SCORING.GAME_END_PER_REMAINING_LETTER +
-      directGuessesLeft * SCORING.GAME_END_PER_DIRECT_GUESS_LEFT;
-
-    guesserIds.forEach((gid) => {
-      updates[gid] = (updates[gid] ?? 0) + guesserBonus;
-    });
-  } else if (winner === "setter") {
-    // Setter gets (remaining letters)x10
-    const setterBonus =
-      remainingLetters * SCORING.GAME_END_PER_REMAINING_LETTER;
-    updates[data.setterId] = (updates[data.setterId] ?? 0) + setterBonus;
-  }
-
-  return updates;
+): ScoreResult => {
+  // No scoring for game end
+  return { updates: {}, events: [] };
 };
 
 // ==================== Aggregation Helpers ====================
 
 /**
+ * Merge multiple score results into a single result.
+ * Useful for combining scores from different events.
+ *
+ * @param results - Array of score result objects
+ * @returns Combined score result with merged updates and concatenated events
+ */
+export const mergeScoreResults = (...results: ScoreResult[]): ScoreResult => {
+  const merged: ScoreResult = { updates: {}, events: [] };
+  for (const result of results) {
+    for (const [playerId, delta] of Object.entries(result.updates)) {
+      merged.updates[playerId] = (merged.updates[playerId] ?? 0) + delta;
+    }
+    merged.events.push(...result.events);
+  }
+  return merged;
+};
+
+/**
  * Merge multiple score updates into a single updates object.
  * Useful for combining scores from different events.
+ * @deprecated Use mergeScoreResults instead for full event tracking
  *
  * @param updates - Array of score update objects
  * @returns Combined score updates
