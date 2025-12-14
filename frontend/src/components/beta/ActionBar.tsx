@@ -66,6 +66,15 @@ export function ActionBar({
     onSubmit();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      // Only submit if the submit button is not disabled
+      if (!disableSubmit) {
+        handleSubmit();
+      }
+    }
+  };
+
   if (isGameEnded) {
     return (
       <div
@@ -137,13 +146,14 @@ export function ActionBar({
           onChange={(e) => onInputChange(e.target.value)}
           onFocus={onInputFocus}
           onBlur={onInputBlur}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disableInput}
           className={`w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none disabled:cursor-not-allowed`}
         />
       </div>
 
-      {/* Submit/Next Button */}
+      {/* Submit Button */}
       <RoundButton
         size="lg"
         onClick={handleSubmit}
