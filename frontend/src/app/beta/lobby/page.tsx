@@ -46,6 +46,7 @@ export default function BetaLobbyPage() {
     maxPlayers: 4,
     wordValidation: "strict" as const,
     prefixMode: false,
+    showScoreBreakdown: true,
   };
 
   const [copied, setCopied] = useState(false);
