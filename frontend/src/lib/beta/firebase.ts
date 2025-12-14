@@ -470,8 +470,8 @@ export const evaluateResolution = (
   if (allGuessersAttempted && correctCount < connectsRequired) {
     return {
       status: "failed",
-      gameEnded: false,
-      winner: data.winner,
+      gameEnded: entry.isFinal, // Failed lightning signull ends game
+      winner: entry.isFinal ? "setter" : data.winner, // Setter wins if lightning signull fails
       resolvedAt: serverTimestamp(),
     };
   }
