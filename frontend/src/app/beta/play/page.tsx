@@ -706,12 +706,12 @@ export default function BetaPlayPage() {
           </div>
 
           {/* SECTION 2: Notification Area - Center aligned in header, stacks vertically */}
-          <div className="pointer-events-none absolute inset-x-0 top-14 z-[110] flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 top-2 z-[110] flex justify-center">
             <NotificationBanner maxVisible={4} />
           </div>
 
           {/* Direct Guess Button / Counter */}
-          {isDirectGuessMode ? (
+          {/* {isDirectGuessMode ? (
             // Show guesses counter during direct guess mode (not blurred)
             <div className="absolute right-4 top-2 z-[60] flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-black bg-white">
               <span className="text-lg font-bold text-black">
@@ -734,7 +734,7 @@ export default function BetaPlayPage() {
                 </svg>
               </RoundButtonIcon>
             </RoundButton>
-          )}
+          )} */}
         </header>
 
         {/* SECTION 3: Letter Blocks Display */}
