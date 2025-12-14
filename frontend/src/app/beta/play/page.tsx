@@ -264,9 +264,13 @@ export default function BetaPlayPage() {
   const [isWinningCardFlipped, setIsWinningCardFlipped] = useState(false);
   const [isMemoriesModalOpen, setIsMemoriesModalOpen] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Track previous cards to detect when new signulls are added
+  const prevCardsRef = useRef<CardData[]>([]);
 
   // Track signull statuses to log scorecard on status changes
   const prevSignullStatusesRef = useRef<Record<string, SignullStatus>>({});
@@ -465,8 +469,41 @@ export default function BetaPlayPage() {
     return mappedCards;
   }, [game, userId, isComposingSignull, revealedCount]);
 
-  // Reset active index when cards change significantly?
-  // For now, keep it simple.
+  // Handle card stack changes - maintain user's position when new cards are added
+  useEffect(() => {
+    const prevCards = prevCardsRef.current;
+    const currentCards = cards;
+
+    // Skip if this is the first render or cards are empty
+    if (prevCards.length === 0 || currentCards.length === 0) {
+      prevCardsRef.current = currentCards;
+      return;
+    }
+
+    // If user is actively typing, try to maintain their current card view
+    if (isInputFocused) {
+      // Check if new signull cards were added at the beginning
+      // Signull cards are at the start of the array, so check if the array grew
+      const prevSignullCount = prevCards.filter(
+        (c) => c.type === "signull" || c.type === "send-signull"
+      ).length;
+      const currentSignullCount = currentCards.filter(
+        (c) => c.type === "signull" || c.type === "send-signull"
+      ).length;
+
+      const newSignullsAdded = currentSignullCount - prevSignullCount;
+
+      // If new signulls were added, adjust position to maintain current card view
+      // This applies even when user is at index 0 - the card they're viewing shifts right
+      if (newSignullsAdded > 0) {
+        setActiveIndex((prev) =>
+          Math.min(prev + newSignullsAdded, currentCards.length - 1)
+        );
+      }
+    }
+
+    prevCardsRef.current = currentCards;
+  }, [cards, isInputFocused, activeIndex]);
 
   // Refs for scroll control
   const headerRef = useRef<HTMLDivElement>(null);
@@ -474,6 +511,7 @@ export default function BetaPlayPage() {
 
   // Handle input focus - scroll to hide just the header
   const handleInputFocus = () => {
+    setIsInputFocused(true);
     // Small delay to allow keyboard to start showing
     setTimeout(() => {
       if (letterBlocksRef.current) {
@@ -484,6 +522,11 @@ export default function BetaPlayPage() {
         });
       }
     }, 100);
+  };
+
+  // Handle input blur
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
   };
 
   // Notification helper - uses centralized notification system
@@ -522,7 +565,10 @@ export default function BetaPlayPage() {
     setSignullClue("");
     setSignullWord("");
     setInputValue("");
-    setActiveIndex(0); // Jump to the new card (which will be at index 0)
+    // Only jump to the new card if user is not actively typing
+    if (!isInputFocused) {
+      setActiveIndex(0); // Jump to the new card (which will be at index 0)
+    }
     showNotification("Compose your Signull", "signull");
   };
 
@@ -929,6 +975,7 @@ export default function BetaPlayPage() {
               }
             }}
             onInputFocus={handleInputFocus}
+            onInputBlur={handleInputBlur}
             onSignullClick={handleSignullClick}
             onSubmit={
               isComposingSignull

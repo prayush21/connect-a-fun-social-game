@@ -10,6 +10,8 @@ interface ActionBarProps {
   onInputChange: (value: string) => void;
   /** Callback when input is focused */
   onInputFocus?: () => void;
+  /** Callback when input loses focus */
+  onInputBlur?: () => void;
   /** Callback when Signull button is clicked */
   onSignullClick: () => void;
   /** Callback when Submit/Next button is clicked */
@@ -38,6 +40,7 @@ export function ActionBar({
   inputValue,
   onInputChange,
   onInputFocus,
+  onInputBlur,
   onSignullClick,
   onSubmit,
   placeholder = "Enter text",
@@ -133,6 +136,7 @@ export function ActionBar({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onFocus={onInputFocus}
+          onBlur={onInputBlur}
           placeholder={placeholder}
           disabled={disableInput}
           className="w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none disabled:cursor-not-allowed"
