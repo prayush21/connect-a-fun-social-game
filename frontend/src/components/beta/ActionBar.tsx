@@ -111,7 +111,7 @@ export function ActionBar({
         title="Send Signull"
         disabled={disableSignull}
         className={`disabled:cursor-not-allowed disabled:opacity-50 ${
-          isSignullPressed ? "translate-y-[2px] bg-yellow-50 shadow-none" : ""
+          isSignullPressed ? "translate-y-[2px] bg-yellow-100 shadow-none" : ""
         }`}
       >
         <RoundButtonIcon size="lg">
@@ -139,7 +139,7 @@ export function ActionBar({
           onBlur={onInputBlur}
           placeholder={placeholder}
           disabled={disableInput}
-          className="w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none disabled:cursor-not-allowed"
+          className={`w-full bg-transparent text-center text-base font-medium tracking-widest text-black placeholder-neutral-400 focus:outline-none disabled:cursor-not-allowed`}
         />
       </div>
 
