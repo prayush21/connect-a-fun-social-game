@@ -37,7 +37,7 @@ export function DisplayModeModal({
           </h2>
           <p className="mt-2 text-sm text-neutral-600">
             A display shows the game board on a shared screen (TV/laptop) while
-            players join from their phones.
+            players join from other devices.
           </p>
         </div>
 
@@ -54,9 +54,6 @@ export function DisplayModeModal({
             </div>
             <div>
               <div className="font-semibold">Yes, use as display</div>
-              <div className="text-sm opacity-90">
-                Show game board here, players join via QR code
-              </div>
             </div>
           </button>
 
@@ -71,9 +68,6 @@ export function DisplayModeModal({
             </div>
             <div>
               <div className="font-semibold">No, I&apos;ll play from here</div>
-              <div className="text-sm text-neutral-600">
-                Join the game as a regular player
-              </div>
             </div>
           </button>
         </div>

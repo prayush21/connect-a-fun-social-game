@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { Volume2, VolumeX, Volume1 } from "lucide-react";
+import { Volume2, VolumeX, Volume1, Check } from "lucide-react";
 import { useSoundStore } from "@/lib/beta/sound-store";
 import { useSound } from "@/lib/beta/useSound";
 import type { SoundPreferences } from "@/lib/beta/sound-types";
@@ -115,16 +115,18 @@ export function AudioSettings({
         {/* Toggle Switch */}
         <button
           onClick={handleToggle}
-          className={`relative h-7 w-12 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${
+          className={`relative h-8 w-14 flex-shrink-0 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${
             enabled ? "bg-primary" : "bg-neutral-200"
           }`}
           aria-label={enabled ? "Turn sound off" : "Turn sound on"}
         >
           <div
-            className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-              enabled ? "translate-x-5" : "translate-x-0"
+            className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+              enabled ? "translate-x-6" : "translate-x-0"
             }`}
-          />
+          >
+            {enabled && <Check className="m-1 h-3 w-3 text-primary" />}
+          </div>
         </button>
       </div>
 
@@ -159,20 +161,20 @@ export function AudioSettings({
           <div className="flex gap-2">
             <button
               onClick={() => handleModeChange("all")}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-lg border-2 border-black px-3 py-2 text-sm font-medium transition-all ${
                 mode === "all"
-                  ? "bg-black text-white"
-                  : "bg-white hover:bg-neutral-100"
+                  ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  : "bg-white hover:bg-neutral-50"
               }`}
             >
               All
             </button>
             <button
               onClick={() => handleModeChange("important")}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-lg border-2 border-black px-3 py-2 text-sm font-medium transition-all ${
                 mode === "important"
-                  ? "bg-black text-white"
-                  : "bg-white hover:bg-neutral-100"
+                  ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  : "bg-white hover:bg-neutral-50"
               }`}
             >
               Important
@@ -184,16 +186,6 @@ export function AudioSettings({
               : "Only play important sounds (game events, letters revealed)"}
           </p>
         </div>
-      )}
-
-      {/* Test Sound Button */}
-      {enabled && (
-        <button
-          onClick={handleTestSound}
-          className="w-full rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
-        >
-          🔊 Test Sound
-        </button>
       )}
     </div>
   );

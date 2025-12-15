@@ -272,6 +272,15 @@ export default function BetaPlayPage() {
   // Track previous cards to detect when new signulls are added
   const prevCardsRef = useRef<CardData[]>([]);
 
+  // Track the index before opening signull composer (for canceling)
+  const indexBeforeSignullRef = useRef<number>(0);
+
+  // Track if we just opened the signull composer (to prevent auto-adjustment)
+  const justOpenedSignullRef = useRef<boolean>(false);
+
+  // Track if we just submitted a signull (to prevent auto-adjustment and stay on latest)
+  const justSubmittedSignullRef = useRef<boolean>(false);
+
   // Track signull statuses to log scorecard on status changes
   const prevSignullStatusesRef = useRef<Record<string, SignullStatus>>({});
 
@@ -481,7 +490,12 @@ export default function BetaPlayPage() {
     }
 
     // If user is actively typing, try to maintain their current card view
-    if (isInputFocused) {
+    // UNLESS they just opened the signull composer or just submitted a signull
+    if (
+      isInputFocused &&
+      !justOpenedSignullRef.current &&
+      !justSubmittedSignullRef.current
+    ) {
       // Check if new signull cards were added at the beginning
       // Signull cards are at the start of the array, so check if the array grew
       const prevSignullCount = prevCards.filter(
@@ -501,6 +515,10 @@ export default function BetaPlayPage() {
         );
       }
     }
+
+    // Reset the flags after handling
+    justOpenedSignullRef.current = false;
+    justSubmittedSignullRef.current = false;
 
     prevCardsRef.current = currentCards;
   }, [cards, isInputFocused, activeIndex]);
@@ -558,17 +576,23 @@ export default function BetaPlayPage() {
     if (isComposingSignull) {
       showNotification("Back to reading signulls");
       setIsComposingSignull(false);
+      // Go back to the card we were on before opening the composer
+      setActiveIndex(indexBeforeSignullRef.current);
       return;
     }
+
+    // Store current index before opening composer (for cancel)
+    indexBeforeSignullRef.current = activeIndex;
 
     setIsComposingSignull(true);
     setSignullClue("");
     setSignullWord("");
     setInputValue("");
-    // Only jump to the new card if user is not actively typing
-    if (!isInputFocused) {
-      setActiveIndex(0); // Jump to the new card (which will be at index 0)
-    }
+
+    // Always jump to the new send-signull card (index 0)
+    setActiveIndex(0);
+    justOpenedSignullRef.current = true;
+
     showNotification("Compose your Signull", "signull");
   };
 
@@ -600,6 +624,9 @@ export default function BetaPlayPage() {
       setSignullClue("");
       setSignullWord("");
       setInputValue("");
+      // Stay on the latest card (the signull we just sent, which will be at index 0)
+      setActiveIndex(0);
+      justSubmittedSignullRef.current = true;
       showNotification(`Signull sent: ${signullWord.trim()}`, "success");
     } catch (error) {
       showNotification("Failed to send Signull", "error");
@@ -630,10 +657,7 @@ export default function BetaPlayPage() {
 
     // Check if setter is trying to connect when signull word matches secret word
     if (isSetter && currentCard.metrics.word === word) {
-      showNotification(
-        "Cannot connect to a signull that matches the secret word",
-        "error"
-      );
+      showNotification("Signull matches the secret word", "error");
       return;
     }
 
@@ -986,10 +1010,10 @@ export default function BetaPlayPage() {
             }
             placeholder={
               isComposingSignull
-                ? "Enter reference word"
+                ? "Type word here"
                 : cards[activeIndex]?.type === "enter-secret"
                   ? "Enter Secret Word"
-                  : "Enter your response word"
+                  : "Type response"
             }
             disableInput={isInputDisabled}
             disableSignull={isSetter || game?.phase === "setting"}

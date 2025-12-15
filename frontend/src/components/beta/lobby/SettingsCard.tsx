@@ -75,7 +75,7 @@ export function SettingsCard({
             {/* Custom Toggle */}
             <button
               onClick={onTogglePrefixMode}
-              className={`relative h-8 w-14 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${prefixMode ? "bg-primary" : "bg-neutral-200"}`}
+              className={`relative h-8 w-14 flex-shrink-0 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${prefixMode ? "bg-primary" : "bg-neutral-200"}`}
             >
               <div
                 className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${prefixMode ? "translate-x-6" : "translate-x-0"}`}
@@ -83,7 +83,7 @@ export function SettingsCard({
                 {prefixMode && <Check className="m-1 h-3 w-3 text-primary" />}
               </div>
             </button>
-            <span className="min-w-[20px] font-medium">
+            <span className="w-[32px] font-medium">
               {prefixMode ? "On" : "Off"}
             </span>
           </div>
@@ -99,7 +99,7 @@ export function SettingsCard({
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleScoreBreakdown}
-            className={`relative h-8 w-14 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${showScoreBreakdown ? "bg-primary" : "bg-neutral-200"}`}
+            className={`relative h-8 w-14 flex-shrink-0 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none ${showScoreBreakdown ? "bg-primary" : "bg-neutral-200"}`}
           >
             <div
               className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-transform ${showScoreBreakdown ? "translate-x-6" : "translate-x-0"}`}
@@ -109,7 +109,7 @@ export function SettingsCard({
               )}
             </div>
           </button>
-          <span className="min-w-[20px] font-medium">
+          <span className="w-[32px] font-medium">
             {showScoreBreakdown ? "On" : "Off"}
           </span>
         </div>

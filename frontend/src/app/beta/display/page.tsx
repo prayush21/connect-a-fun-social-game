@@ -6,6 +6,7 @@ import { useBetaStore } from "@/lib/beta/store";
 import { copyToClipboard } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, Check, Users, Settings, Zap } from "lucide-react";
+import Image from "next/image";
 
 export default function BetaDisplayPage() {
   const router = useRouter();
@@ -86,8 +87,14 @@ export default function BetaDisplayPage() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Zap className="h-8 w-8 text-primary" />
+          <div className="flex items-center gap-1">
+            <Image
+              src="/lightning.svg"
+              alt="Lightning"
+              width={20}
+              height={20}
+              className="inline-block"
+            />
             <h1 className="text-3xl font-bold text-primary">Signull</h1>
             <span className="rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               DISPLAY MODE
@@ -224,9 +231,7 @@ export default function BetaDisplayPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="rounded-lg bg-neutral-50 p-3">
                   <div className="text-neutral-500">Play Mode</div>
-                  <div className="font-semibold capitalize">
-                    {settings?.playMode?.replace("_", " ") || "Round Robin"}
-                  </div>
+                  <div className="font-semibold capitalize">Classic</div>
                 </div>
                 <div className="rounded-lg bg-neutral-50 p-3">
                   <div className="text-neutral-500">Connects Required</div>
