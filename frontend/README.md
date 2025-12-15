@@ -1,4 +1,39 @@
-This `frontend/` app is an isolated Next.js 14 + TypeScript + Tailwind setup for the Connect game UI. It does not impact the root project deployment.
+# Code Structure & Routing Overview
+
+This `frontend/` app is an isolated Next.js 14 + TypeScript + Tailwind setup for the Connect aka Signull game UI & FirestoreDB. It does not impact the root project deployment.
+
+## Routing Philosophy
+
+- **Normal routes** (e.g., `/`, `/lobby`, `/play` under `/(game)/`) represent the **prototype v2** of the application. These are stable, production-ready features and UI.
+- **`/beta` routes** (e.g., `/beta`, `/beta/lobby`, `/beta/play`) are the **latest project developments**. These routes are used for testing new features, UI/UX experiments, and ongoing improvements before they are merged into the main prototype.
+
+## Project Structure
+
+The main folders and their purposes are:
+
+- `src/app/` — Next.js app directory. Contains route definitions and page layouts.
+  - `/(game)/` — Main game routes (prototype v2).
+  - `beta/` — Latest development routes and features.
+  - `components/` — Reusable UI components, organized by feature (e.g., `game/`, `lobby/`, `ui/`, `beta/`).
+  - `lib/` — Shared utilities, game logic, types, and hooks.
+  - `public/` — Static assets (images, sounds, favicon, etc.).
+  - `test/` — Test setup files.
+
+### Key Files & Folders
+
+- `src/app/globals.css` — Global styles.
+- `src/app/layout.tsx` — Root layout for the app.
+- `src/app/page.tsx` — Main landing page.
+- `src/components/` — UI components, further split by domain (e.g., `game/`, `lobby/`, `ui/`, `beta/`).
+- `src/lib/` — Core logic, types, and utilities.
+
+### Development Notes
+
+- The `/beta` directory is the primary place for new features and rapid iteration. Once features are stable, they are migrated to the main game routes.
+- The codebase uses TypeScript for type safety and Tailwind CSS for styling.
+- Testing is set up with Vitest (see `vitest.config.ts`).
+
+---
 
 ## Getting Started
 
@@ -24,15 +59,6 @@ Routes:
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
 
