@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useBetaStore } from "@/lib/beta/store";
 import { copyToClipboard } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Check, Users, Settings, Zap } from "lucide-react";
+import { Copy, Check, Users, Settings } from "lucide-react";
 import Image from "next/image";
 
 export default function BetaDisplayPage() {

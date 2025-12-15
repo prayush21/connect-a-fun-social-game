@@ -2,15 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Trophy,
-  Target,
-  ChevronRight,
-  Zap,
-  Users,
-  Play,
-  Pause,
-} from "lucide-react";
+import { Trophy, Users, Play, Pause, TrophyIcon } from "lucide-react";
 import type {
   ScoreEvent,
   Player,
@@ -522,7 +514,7 @@ export function ScoreBreakdownDisplay({
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Zap className="h-8 w-8 text-primary" />
+            <TrophyIcon className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold text-primary">Score Breakdown</h1>
           </div>
         </div>

@@ -7,10 +7,11 @@ import {
   getAllSignullMetrics,
   type SignullMetrics,
 } from "@/lib/beta/selectors";
-import { Zap, Target } from "lucide-react";
+import { Users } from "lucide-react";
 import { CircularProgress } from "@/components/beta/CircularProgress";
 import { ScoreBreakdownDisplay } from "@/components/beta";
 import { setScoreCountingComplete } from "@/lib/beta/firebase";
+import Image from "next/image";
 
 // Read-only letter blocks for display mode
 function DisplayLetterBlocks({
@@ -237,9 +238,15 @@ export default function BetaDisplayPlayPage() {
         <div className="mx-auto max-w-6xl">
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Zap className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold text-primary">Signull</h1>
+            <div className="flex items-center gap-1">
+              <Image
+                src="/lightning.svg"
+                alt="Lightning"
+                width={20}
+                height={20}
+                className="inline-block"
+              />
+              <h1 className="text-3xl font-bold text-primary">Apple</h1>
             </div>
             <button
               onClick={handleExit}
@@ -312,7 +319,13 @@ export default function BetaDisplayPlayPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-surface p-8">
         <div className="rounded-3xl border-2 border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <Zap className="mx-auto mb-4 h-16 w-16 text-primary" />
+          <Image
+            src="/lightning.svg"
+            alt="Lightning"
+            width={40}
+            height={35}
+            className="mb-4 inline-block"
+          />
           <h2 className="mb-2 text-3xl font-bold">Setting Up...</h2>
           <p className="text-xl text-neutral-600">
             Waiting for the setter to choose a secret word
@@ -328,29 +341,32 @@ export default function BetaDisplayPlayPage() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Zap className="h-8 w-8 text-primary" />
+          <div className="flex items-center gap-1">
+            <Image
+              src="/lightning.svg"
+              alt="Lightning"
+              width={20}
+              height={20}
+              className="inline-block"
+            />
             <h1 className="text-2xl font-bold text-primary">Signull</h1>
             <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-              {roomId}
+              DISPLAY
             </span>
           </div>
 
-          {/* Direct Guesses Counter */}
+          {/* Room Info */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-xl border-2 border-black bg-white px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <Target className="h-5 w-5 text-primary" />
-              <span className="text-lg font-bold">
-                {directGuessesLeft} Direct{" "}
-                {directGuessesLeft === 1 ? "Guess" : "Guesses"} Left
-              </span>
+              <Users className="h-5 w-5 text-neutral-600" />
+              <span className="text-lg font-bold">{roomId}</span>
             </div>
-            <button
+            {/* <button
               onClick={handleExit}
               className="rounded-lg border-2 border-black bg-white px-4 py-2 font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
             >
               Exit
-            </button>
+            </button> */}
           </div>
         </div>
 
