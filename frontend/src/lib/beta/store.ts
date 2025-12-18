@@ -66,11 +66,13 @@ interface BetaStoreState {
   unsubscribe: (() => void) | null;
   initialized: boolean; // first snapshot received
   isDisplayMode: boolean; // Whether this device is a display-only device
+  showTutorial: boolean;
 
   // Auth Actions
   setUsername: (username: string) => void;
   generateNewUsername: () => void;
   initAuth: () => Promise<void>;
+  setShowTutorial: (show: boolean) => void;
 
   // Game Actions
   initRoom: (
@@ -166,6 +168,9 @@ export const useBetaStore = create<BetaStoreState>()(
       unsubscribe: null,
       initialized: false,
       isDisplayMode: false,
+      showTutorial: true,
+
+      setShowTutorial: (show) => set({ showTutorial: show }),
 
       setUsername: (username) => set({ username }),
       generateNewUsername: () => set({ username: generateRandomNickname() }),
@@ -457,6 +462,7 @@ export const useBetaStore = create<BetaStoreState>()(
         username: state.username,
         userId: state.userId,
         roomId: state.roomId,
+        showTutorial: state.showTutorial,
       }),
     }
   )

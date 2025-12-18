@@ -1,4 +1,5 @@
 import { PostHogProvider } from "@/lib/posthog";
+import { TutorialWrapper } from "@/components/beta/TutorialWrapper";
 
 export default function BetaLayout({
   children,
@@ -7,7 +8,7 @@ export default function BetaLayout({
 }) {
   return (
     <PostHogProvider>
-      <section>{children}</section>
+      <TutorialWrapper>{children}</TutorialWrapper>
     </PostHogProvider>
   );
 }

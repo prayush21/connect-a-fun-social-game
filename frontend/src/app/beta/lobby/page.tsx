@@ -11,6 +11,7 @@ import {
   StartGameButton,
 } from "@/components/beta/lobby";
 import { AudioSettingsModal } from "@/components/beta";
+import { Checkbox } from "@/components/ui/checkbox";
 import { copyToClipboard } from "@/lib/utils";
 import { useEnableSoundsOnInteraction } from "@/lib/beta/useSound";
 import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
@@ -29,6 +30,8 @@ export default function BetaLobbyPage() {
     resetScores,
     teardown,
     leaveRoom,
+    showTutorial,
+    setShowTutorial,
   } = useBetaStore();
 
   // Use store's roomId (set immediately) instead of gameState?.roomId (async from Firebase)
@@ -273,29 +276,45 @@ export default function BetaLobbyPage() {
           isHost={isHost}
         />
 
-        {/* How to Play Button - visible to all players */}
-        <div className="mt-6 flex items-center justify-center gap-4 text-center">
-          <button
-            onClick={() => setShowHowToPlay(true)}
-            className="text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
-          >
-            How to play?
-          </button>
-          <span className="text-neutral-300">|</span>
-          <button
-            onClick={() => setShowAudioSettings(true)}
-            className="flex items-center gap-1.5 text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
-          >
-            <Volume2 className="h-4 w-4" />
-            Audio
-          </button>
-          <span className="text-neutral-300">|</span>
-          <button
-            onClick={handleLeaveRoom}
-            className="text-sm text-red-500 underline transition-colors hover:text-red-700"
-          >
-            Leave Room
-          </button>
+        {/* How to Play Button & Tutorial Checkbox */}
+        <div className="mt-6 flex flex-col items-center gap-4 text-center">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="show-tutorial"
+              checked={showTutorial}
+              onChange={(e) => setShowTutorial(e.target.checked)}
+            />
+            <label
+              htmlFor="show-tutorial"
+              className="cursor-pointer select-none text-sm text-neutral-600"
+            >
+              Show interactive tutorial on start
+            </label>
+          </div>
+
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => setShowHowToPlay(true)}
+              className="text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
+            >
+              How to play?
+            </button>
+            <span className="text-neutral-300">|</span>
+            <button
+              onClick={() => setShowAudioSettings(true)}
+              className="flex items-center gap-1.5 text-sm text-neutral-500 underline transition-colors hover:text-neutral-700"
+            >
+              <Volume2 className="h-4 w-4" />
+              Audio
+            </button>
+            <span className="text-neutral-300">|</span>
+            <button
+              onClick={handleLeaveRoom}
+              className="text-sm text-red-500 underline transition-colors hover:text-red-700"
+            >
+              Leave Room
+            </button>
+          </div>
         </div>
       </div>
 

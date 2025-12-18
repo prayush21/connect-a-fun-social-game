@@ -45,6 +45,7 @@ import type {
 } from "@/lib/beta/types";
 import { useRouter } from "next/navigation";
 import { logScorecard, getSignullStatusLabel } from "@/lib/beta/debug";
+import { useNextStep } from "nextstepjs";
 
 // Define card types
 type CardType =
@@ -201,6 +202,7 @@ function GameEndedCardWrapper({
  */
 export default function BetaPlayPage() {
   const router = useRouter();
+  const { startNextStep } = useNextStep();
 
   // Store hooks
   const game = useGame();
@@ -213,6 +215,8 @@ export default function BetaPlayPage() {
   const backToLobby = useBetaStore((state) => state.backToLobby);
   const playAgain = useBetaStore((state) => state.playAgain);
   const changeSetter = useBetaStore((state) => state.changeSetter);
+  const showTutorial = useBetaStore((state) => state.showTutorial);
+  const setShowTutorial = useBetaStore((state) => state.setShowTutorial);
 
   // Derived state from store
   const roomCode = game?.roomId || "----";
@@ -237,6 +241,16 @@ export default function BetaPlayPage() {
       router.push("/beta/lobby");
     }
   }, [game?.phase, router]);
+
+  // Trigger tutorial if needed
+  useEffect(() => {
+    if (showTutorial && game?.phase && game.phase !== "lobby") {
+      // Start tour
+      startNextStep("gameTour");
+      // Disable future tutorials
+      setShowTutorial(false);
+    }
+  }, [showTutorial, game?.phase, startNextStep, setShowTutorial]);
 
   // Reset active index to show winning card when game ends
   useEffect(() => {
@@ -758,6 +772,7 @@ export default function BetaPlayPage() {
         >
           {/* Room Info Button */}
           <div
+            id="tour-room-info"
             className={`${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
           >
             <RoomInfoButton
@@ -809,7 +824,7 @@ export default function BetaPlayPage() {
 
         {/* SECTION 3: Letter Blocks Display */}
         {isWordSet && (
-          <div className="px-6 transition-all duration-200">
+          <div id="tour-letter-blocks" className="px-6 transition-all duration-200">
             <LetterBlocks
               secretWord={word}
               revealedCount={revealedCount}
@@ -824,6 +839,7 @@ export default function BetaPlayPage() {
 
         {/* SECTION 4: Card Container - Main Game Area */}
         <div
+          id="tour-card-container"
           className={`relative flex-shrink-0 overflow-visible px-6 transition-all duration-300 ${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           {/* Navigation Arrows */}

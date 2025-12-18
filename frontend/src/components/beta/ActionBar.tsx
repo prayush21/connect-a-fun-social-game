@@ -115,6 +115,7 @@ export function ActionBar({
     >
       {/* Signull Button */}
       <RoundButton
+        id="tour-action-bar-signull"
         size="lg"
         onClick={handleSignullClick}
         title="Send Signull"
@@ -137,6 +138,7 @@ export function ActionBar({
 
       {/* Input Field */}
       <div
+        id="tour-action-bar-input"
         className={`flex flex-1 items-center justify-center rounded-full border-2 border-black bg-white px-4 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${disableInput ? "bg-neutral-200 opacity-50" : "focus-within:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"}`}
       >
         <input
