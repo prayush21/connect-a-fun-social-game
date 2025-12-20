@@ -2,6 +2,8 @@
 
 import type { CardComponentProps } from "nextstepjs";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useBetaStore } from "@/lib/beta/store";
 
 export const TutorialCard = ({
   step,
@@ -12,8 +14,23 @@ export const TutorialCard = ({
   skipTour,
   arrow,
 }: CardComponentProps) => {
+  const router = useRouter();
+  const { startGame } = useBetaStore();
+
+  const handleSkip = async () => {
+    skipTour?.();
+    // await startGame();
+    router.push("/beta/play");
+  };
+
+  const handleFinish = async () => {
+    nextStep(); // Complete the step
+    // await startGame();
+    router.push("/beta/play");
+  };
+
   return (
-    <div className="relative z-50 min-w-[300px] max-w-sm rounded-xl border-2 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(26,58,109,0.8)]">
+    <div className="relative z-50 min-w-[300px] max-w-[90vw] rounded-xl border-2 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(106,119,114,0.8)] md:max-w-sm">
       {/* Arrow pointing to element */}
       {arrow}
 
@@ -29,7 +46,7 @@ export const TutorialCard = ({
 
         {step.showSkip && (
           <button
-            onClick={skipTour}
+            onClick={handleSkip}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             aria-label="Close tutorial"
           >
@@ -51,15 +68,15 @@ export const TutorialCard = ({
           {currentStep > 0 && (
             <button
               onClick={prevStep}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-zinc-200 text-slate-400 hover:border-slate-300 hover:text-slate-600"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
           )}
 
           <button
-            onClick={nextStep}
-            className="flex h-9 items-center gap-2 rounded-lg border-2 border-black bg-indigo-600 px-4 text-sm font-bold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+            onClick={currentStep === totalSteps - 1 ? handleFinish : nextStep}
+            className="flex h-9 items-center gap-2 rounded-lg border-2 border-black bg-zinc-600 px-4 text-sm font-bold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
           >
             {currentStep === totalSteps - 1 ? "Finish" : "Next"}
             {currentStep < totalSteps - 1 && (

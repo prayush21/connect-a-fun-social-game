@@ -10,56 +10,76 @@ const steps = [
     tour: "gameTour",
     steps: [
       {
-        icon: "👋",
-        title: "Welcome to Connect!",
+        // icon: "👋",
+        title: "Welcome to C⚡S!",
         content: "Let's take a quick tour of the game interface.",
-        selector: "body",
-        side: "center",
+        selector: "#tour-game-logo",
+        side: "bottom-right",
         showControls: true,
         showSkip: true,
       },
       {
-        icon: "ℹ️",
+        // icon: "ℹ️",
         title: "Room Info",
-        content: "Tap here to see players, settings, and room code.",
+        content:
+          "Tap here to see roomcode. Double tap for settings and players.",
         selector: "#tour-room-info",
-        side: "bottom",
+        side: "bottom-left",
+        showSkip: true,
       },
       {
-        icon: "🔤",
+        // icon: "🔤",
         title: "Secret Word",
         content:
-          "The secret word is revealed here letter by letter as you win rounds.",
+          "The secret word is revealed here letter by letter as you win Signulls.",
         selector: "#tour-letter-blocks",
         side: "bottom",
+        showSkip: true,
       },
       {
-        icon: "🃏",
+        // icon: "🃏",
         title: "Game Cards",
         content:
           "Swipe left/right to view history. The active card shows current action or Signull.",
         selector: "#tour-card-container",
         side: "top",
+        showSkip: true,
       },
       {
-        icon: "⚡",
+        // icon: "⚡",
         title: "Send a Signull",
         content:
           "If you have a clue, tap the lightning bolt to send a Signull to the team.",
         selector: "#tour-action-bar-signull",
-        side: "top",
+        side: "top-left",
+        showSkip: true,
       },
       {
-        icon: "💬",
+        // icon: "💬",
         title: "Guess & Connect",
         content:
           "Type your guess here to connect to a Signull or match the secret word.",
         selector: "#tour-action-bar-input",
         side: "top",
+        showSkip: true,
+      },
+      {
+        // icon: "✅",
+        title: "This is submit button",
+        content: "Submit your connection or the Signull word pressiing here.",
+        selector: "#tour-action-bar-submit",
+        side: "top-right",
+      },
+      {
+        // icon: "💬",
+        title: "Signull Log",
+        content: "Here you can see all the connections that have been sent.",
+        selector: "#tour-action-bar-log",
+        side: "bottom",
       },
     ],
   },
-];
+] as const;
 
 export const TutorialWrapper = ({
   children,
@@ -68,7 +88,7 @@ export const TutorialWrapper = ({
 }) => {
   return (
     <NextStepProvider>
-      <NextStep steps={steps} cardComponent={TutorialCard}>
+      <NextStep steps={steps as any} cardComponent={TutorialCard}>
         {children}
       </NextStep>
     </NextStepProvider>

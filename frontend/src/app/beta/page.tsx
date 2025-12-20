@@ -250,7 +250,7 @@ function BetaHomeContent() {
         {/* Header */}
         <div className="space-y-2 text-center">
           <h1 className="flex items-center justify-center gap-2 text-5xl font-bold text-primary">
-            Signull
+            Connect
             <Image
               src="/lightning.svg"
               alt="Lightning"
@@ -258,6 +258,7 @@ function BetaHomeContent() {
               height={35}
               className="inline-block"
             />
+            Signull
           </h1>
           <p className="text-lg text-neutral-500">
             A collaborative word guessing game

@@ -81,6 +81,11 @@ export default function BetaLobbyPage() {
       return;
     }
 
+    if (gamePhase !== "lobby" && showTutorial) {
+      router.push("/beta/tour");
+      return;
+    }
+
     if (gamePhase !== "lobby") {
       router.push("/beta/play");
     }
@@ -195,7 +200,12 @@ export default function BetaLobbyPage() {
 
     try {
       await startGame();
-      router.push("/beta/play");
+
+      if (showTutorial) {
+        router.push("/beta/tour");
+      } else {
+        router.push("/beta/play");
+      }
     } catch (err) {
       console.error("Failed to start game:", err);
     }

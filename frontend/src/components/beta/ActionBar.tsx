@@ -157,6 +157,7 @@ export function ActionBar({
 
       {/* Submit Button */}
       <RoundButton
+        id="tour-action-bar-submit"
         size="lg"
         onClick={handleSubmit}
         disabled={disableSubmit}

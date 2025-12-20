@@ -20,3 +20,4 @@ export {
   ScoreBreakdownDisplay,
   ANIMATION_TIMING,
 } from "./ScoreBreakdownDisplay";
+export { TutorialWrapper } from "./TutorialWrapper";

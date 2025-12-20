@@ -46,6 +46,7 @@ import type {
 import { useRouter } from "next/navigation";
 import { logScorecard, getSignullStatusLabel } from "@/lib/beta/debug";
 import { useNextStep } from "nextstepjs";
+import Image from "next/image";
 
 // Define card types
 type CardType =
@@ -215,7 +216,7 @@ export default function BetaPlayPage() {
   const backToLobby = useBetaStore((state) => state.backToLobby);
   const playAgain = useBetaStore((state) => state.playAgain);
   const changeSetter = useBetaStore((state) => state.changeSetter);
-  const showTutorial = useBetaStore((state) => state.showTutorial);
+  // const showTutorial = useBetaStore((state) => state.showTutorial);
   const setShowTutorial = useBetaStore((state) => state.setShowTutorial);
 
   // Derived state from store
@@ -243,14 +244,14 @@ export default function BetaPlayPage() {
   }, [game?.phase, router]);
 
   // Trigger tutorial if needed
-  useEffect(() => {
-    if (showTutorial && game?.phase && game.phase !== "lobby") {
-      // Start tour
-      startNextStep("gameTour");
-      // Disable future tutorials
-      setShowTutorial(false);
-    }
-  }, [showTutorial, game?.phase, startNextStep, setShowTutorial]);
+  // useEffect(() => {
+  //   if (showTutorial && game?.phase && game.phase !== "lobby") {
+  //     // Start tour
+  //     startNextStep("gameTour");
+  //     // Disable future tutorials
+  //     setShowTutorial(false);
+  //   }
+  // }, [showTutorial, game?.phase, startNextStep, setShowTutorial]);
 
   // Reset active index to show winning card when game ends
   useEffect(() => {
@@ -820,11 +821,27 @@ export default function BetaPlayPage() {
               </RoundButtonIcon>
             </RoundButton>
           )} */}
+          <div>
+            C
+            <RoundButtonIcon size="md">
+              <Image
+                src="/lightning.svg"
+                alt="Lightning"
+                width={30}
+                height={35}
+                className="inline-block"
+              />
+            </RoundButtonIcon>
+            S
+          </div>
         </header>
 
         {/* SECTION 3: Letter Blocks Display */}
         {isWordSet && (
-          <div id="tour-letter-blocks" className="px-6 transition-all duration-200">
+          <div
+            id="tour-letter-blocks"
+            className="px-6 transition-all duration-200"
+          >
             <LetterBlocks
               secretWord={word}
               revealedCount={revealedCount}
