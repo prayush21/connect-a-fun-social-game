@@ -3,7 +3,6 @@
 import type { CardComponentProps } from "nextstepjs";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useBetaStore } from "@/lib/beta/store";
 
 export const TutorialCard = ({
   step,
@@ -15,7 +14,6 @@ export const TutorialCard = ({
   arrow,
 }: CardComponentProps) => {
   const router = useRouter();
-  const { startGame } = useBetaStore();
 
   const handleSkip = async () => {
     skipTour?.();
@@ -31,7 +29,6 @@ export const TutorialCard = ({
 
   return (
     <div className="relative z-50 min-w-[300px] max-w-[90vw] rounded-xl border-2 border-black bg-white p-6 shadow-[6px_6px_0px_0px_rgba(106,119,114,0.8)] md:max-w-sm">
-      {/* Arrow pointing to element */}
       {arrow}
 
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -47,7 +44,7 @@ export const TutorialCard = ({
         {step.showSkip && (
           <button
             onClick={handleSkip}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="hover:bg-black-100 rounded-lg p-1 text-slate-400 hover:text-slate-600"
             aria-label="Close tutorial"
           >
             <X className="h-5 w-5" />
@@ -61,7 +58,7 @@ export const TutorialCard = ({
 
       <div className="flex items-center justify-between border-t-2 border-slate-100 pt-4">
         <div className="text-xs font-semibold text-slate-400">
-          Step {currentStep + 1} of {totalSteps}
+          {currentStep + 1} / {totalSteps}
         </div>
 
         <div className="flex gap-2">

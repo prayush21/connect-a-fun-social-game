@@ -42,12 +42,15 @@ export function SignullCard({ data, onClick }: SignullCardProps) {
       {/* Header: Username and Progress */}
       <div className="mb-4 flex items-center justify-between">
         {/* Username - Left aligned */}
-        <div className="text-sm font-bold uppercase tracking-wider text-black">
+        <div
+          id="tour-clue-giver"
+          className="text-sm font-bold uppercase tracking-wider text-black"
+        >
           {clueGiverName}
         </div>
 
         {/* Progress Indicator - Right aligned */}
-        <div className="flex items-center gap-2">
+        <div id="tour-correct-indicator" className="flex items-center gap-2">
           {/* Circular Progress - based on correct connects */}
           <CircularProgress
             connectsReceived={correctConnectsFromGuessers}
@@ -58,7 +61,10 @@ export function SignullCard({ data, onClick }: SignullCardProps) {
           />
 
           {/* Ratio Text - shows total connects received / total active guessers */}
-          <span className="text-base font-bold text-black">
+          <span
+            id="tour-guesser-connects"
+            className="text-base font-bold text-black"
+          >
             {totalConnectsFromGuessers} / {totalActiveGuessers}
           </span>
         </div>
