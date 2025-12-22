@@ -54,7 +54,9 @@ export function PlayerList({
                 {player.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-bold">{player.name}</span>
+                <span className="text-start text-lg font-bold">
+                  {player.name}
+                </span>
                 <div className="flex items-center gap-2">
                   {isPlayerHost && (
                     <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
@@ -72,12 +74,6 @@ export function PlayerList({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {/* Player score - shown when feature flag is enabled */}
-              {showPlayerScores && player.score !== undefined && (
-                <span className="text-sm font-medium text-neutral-500">
-                  {player.score} pts
-                </span>
-              )}
               {isHost && player.id !== currentUserId && (
                 <button
                   onClick={() => onRemovePlayer(player.id)}
@@ -85,6 +81,12 @@ export function PlayerList({
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
+              )}
+              {/* Player score - shown when feature flag is enabled */}
+              {showPlayerScores && player.score !== undefined && (
+                <span className="text-sm font-medium text-neutral-500">
+                  {player.score} pts
+                </span>
               )}
             </div>
           </BaseCard>

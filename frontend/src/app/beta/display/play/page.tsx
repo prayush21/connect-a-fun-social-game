@@ -158,6 +158,10 @@ export default function BetaDisplayPlayPage() {
   const signullState = gameState?.signullState;
   const showScoreBreakdown = gameState?.settings?.showScoreBreakdown ?? false;
   const scoreCountingComplete = gameState?.scoreCountingComplete ?? false;
+  const setter = Object.values(players).find(
+    (player) => player.role === "setter"
+  );
+  const setterName = setter ? setter.name : "the setter";
 
   // Get all signull metrics
   const allSignulls = getAllSignullMetrics(gameState);
@@ -316,7 +320,7 @@ export default function BetaDisplayPlayPage() {
           />
           <h2 className="mb-2 text-3xl font-bold">Setting Up...</h2>
           <p className="text-xl text-neutral-600">
-            Waiting for the setter to choose a secret word
+            Waiting for <b>{setterName}</b> to choose a secret word
           </p>
         </div>
       </main>

@@ -22,7 +22,7 @@ const steps = [
         // icon: "ℹ️",
         title: "Room Info",
         content:
-          "Tap here to see roomcode. Double tap for settings and players.",
+          "Tap here to see roomcode. On dropdown, access settings and host can change setter during word setting phase.",
         selector: "#tour-room-info",
         side: "bottom-left",
         showSkip: true,
@@ -31,7 +31,7 @@ const steps = [
         // icon: "🔤",
         title: "Secret Word",
         content:
-          "The secret word is revealed here letter by letter as you win Signulls.",
+          "The secret word is revealed here letter by letter as guessers win Signulls.",
         selector: "#tour-letter-blocks",
         side: "bottom",
         showSkip: true,
@@ -40,9 +40,31 @@ const steps = [
         // icon: "🃏",
         title: "Game Cards",
         content:
-          "Swipe left/right to view history. The active card shows current action or Signull.",
+          "Signull cards show up here. Use left/right arrows to view other Signull cards.",
         selector: "#tour-card-container",
         side: "top",
+        showSkip: true,
+      },
+      {
+        title: "Clue Giver Name",
+        content: "The name of the player who sent this Signull is shown here.",
+        selector: "#tour-clue-giver",
+        side: "right",
+        showSkip: true,
+      },
+      {
+        title: "Correct Indicator",
+        content: "Circular indicator fills up guessers submit correct Connects",
+        selector: "#tour-correct-indicator",
+        side: "left",
+        showSkip: true,
+      },
+      {
+        title: "Guesser Connects",
+        content:
+          "This shows how many guessers have connected to this Signull out of the total active guessers.",
+        selector: "#tour-guesser-connects",
+        side: "left",
         showSkip: true,
       },
       {
@@ -58,14 +80,14 @@ const steps = [
         // icon: "💬",
         title: "Guess & Connect",
         content:
-          "Type your guess here to connect to a Signull or match the secret word.",
+          "Type your guess here to connect to a Signull and submit your connection.",
         selector: "#tour-action-bar-input",
         side: "top",
         showSkip: true,
       },
       {
         // icon: "✅",
-        title: "This is submit button",
+        title: "Submit button",
         content: "Submit your connection or the Signull word pressiing here.",
         selector: "#tour-action-bar-submit",
         side: "top-right",
@@ -73,7 +95,8 @@ const steps = [
       {
         // icon: "💬",
         title: "Signull Log",
-        content: "Here you can see all the connections that have been sent.",
+        content:
+          "Here you can see all the connections that have been sent to current Signull.",
         selector: "#tour-action-bar-log",
         side: "bottom",
       },

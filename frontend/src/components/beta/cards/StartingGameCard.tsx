@@ -1,5 +1,7 @@
 "use client";
 
+import { useBetaStore } from "@/lib/beta/store";
+
 /**
  * StartingGameCard Component
  *
@@ -7,6 +9,12 @@
  * Used during the "setting" phase of the game
  */
 export function StartingGameCard() {
+  const { game: gameState } = useBetaStore();
+  const players = gameState?.players || {};
+  const setter = Object.values(players).find(
+    (player) => player.role === "setter"
+  );
+  const setterName = setter ? setter.name : "the setter";
   return (
     <div className="flex h-full w-full flex-col bg-white">
       {/* Title */}
@@ -20,7 +28,7 @@ export function StartingGameCard() {
       {/* Instructions Text */}
       <div className="flex flex-1 items-center justify-center">
         <p className="text-center text-sm leading-relaxed text-neutral-700">
-          Waiting for the setter to choose a secret word...
+          Waiting for <b>{setterName}</b> to choose a secret word...
         </p>
       </div>
 

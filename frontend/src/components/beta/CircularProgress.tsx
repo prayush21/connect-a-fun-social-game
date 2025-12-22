@@ -83,7 +83,7 @@ export function CircularProgress({
 
   if (isComplete) {
     return (
-      <div className="relative h-6 w-6">
+      <div id="tour-correct-indicator" className="relative h-6 w-6">
         <div className="flex h-full w-full items-center justify-center rounded-full bg-green-500">
           {/* White checkmark */}
           <svg

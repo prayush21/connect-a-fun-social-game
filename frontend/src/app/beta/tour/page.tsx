@@ -16,6 +16,7 @@ import { SignullCard, WaitingCard } from "@/components/beta/cards";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
+import { id } from "zod/v4/locales";
 
 export default function TourPage() {
   return (
@@ -85,7 +86,16 @@ function TourContent() {
       isInactive: false,
       isFailed: false,
       isFinal: false,
-      allConnects: [],
+      allConnects: [
+        {
+          playerId: "h2",
+          playerName: "Alice",
+          playerRole: "guesser" as const,
+          guess: "PLANT",
+          isCorrect: true,
+          timestamp: new Date(),
+        },
+      ],
     },
   };
 
@@ -104,6 +114,14 @@ function TourContent() {
       message: "Connect Sent",
       timestamp: "Just now",
       role: "setter" as const,
+      isClueGiver: false,
+    },
+    {
+      id: "h3",
+      username: "You",
+      message: "Connect Sent",
+      timestamp: "Just now",
+      role: "guesser" as const,
       isClueGiver: false,
     },
   ];

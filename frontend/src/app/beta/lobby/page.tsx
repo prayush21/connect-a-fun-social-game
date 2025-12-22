@@ -249,46 +249,39 @@ export default function BetaLobbyPage() {
           copied={copied}
         />
 
-        <div className="relative">
-          <SettingsCard
-            connectsRequired={settings.connectsRequired}
-            onConnectsChange={handleConnectsChange}
-            prefixMode={settings.prefixMode}
-            onTogglePrefixMode={handlePrefixModeToggle}
-            showScoreBreakdown={settings.showScoreBreakdown ?? true}
-            onToggleScoreBreakdown={handleScoreBreakdownToggle}
-            setterName={players[setterUid]?.name || "Unknown"}
-            isSetter={isHost}
-            onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}
-            onResetScores={handleResetScores}
-          />
+        {isHost && (
+          <div className="relative">
+            <SettingsCard
+              connectsRequired={settings.connectsRequired}
+              onConnectsChange={handleConnectsChange}
+              prefixMode={settings.prefixMode}
+              onTogglePrefixMode={handlePrefixModeToggle}
+              showScoreBreakdown={settings.showScoreBreakdown ?? true}
+              onToggleScoreBreakdown={handleScoreBreakdownToggle}
+              setterName={players[setterUid]?.name || "Unknown"}
+              isHost={isHost}
+              onSetterChange={() => setShowSetterDropdown(!showSetterDropdown)}
+              onResetScores={handleResetScores}
+            />
 
-          {/* Setter Dropdown */}
-          {showSetterDropdown && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border-2 border-black bg-white shadow-xl">
-              {playersList.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => handleChangeSetter(p.id)}
-                  className={`w-full p-4 text-left font-medium transition-colors hover:bg-neutral-100 ${
-                    p.id === setterUid ? "bg-neutral-50 text-blue-600" : ""
-                  }`}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <PlayerList
-          players={playersList}
-          currentUserId={currentPlayerId}
-          hostId={hostId}
-          setterId={setterUid}
-          onRemovePlayer={handleRemovePlayer}
-          isHost={isHost}
-        />
+            {/* Setter Dropdown */}
+            {showSetterDropdown && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border-2 border-black bg-white shadow-xl">
+                {playersList.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleChangeSetter(p.id)}
+                    className={`w-full p-4 text-left font-medium transition-colors hover:bg-neutral-100 ${
+                      p.id === setterUid ? "bg-neutral-50 text-blue-600" : ""
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* How to Play Button & Tutorial Checkbox */}
         <div className="mt-6 flex flex-col items-center gap-4 text-center">
@@ -302,9 +295,18 @@ export default function BetaLobbyPage() {
               htmlFor="show-tutorial"
               className="cursor-pointer select-none text-sm text-neutral-600"
             >
-              Show interactive tutorial on start
+              Show game tour on start
             </label>
           </div>
+
+          <PlayerList
+            players={playersList}
+            currentUserId={currentPlayerId}
+            hostId={hostId}
+            setterId={setterUid}
+            onRemovePlayer={handleRemovePlayer}
+            isHost={isHost}
+          />
 
           <div className="flex items-center justify-center gap-4">
             <button
@@ -363,52 +365,49 @@ export default function BetaLobbyPage() {
             {/* Instructions */}
             <ol className="space-y-4 text-sm text-slate-600">
               <li className="flex gap-3">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   1
                 </span>
                 <span>
-                  One player sets a secret word that others team up to guess
+                  The setter sets a secret word that other guessers team up to
+                  guess
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   2
                 </span>
                 <span>
-                  Any guesser can now give clues(called Signulls) by providing a
+                  To reveal letters in the secret word, guessers give clues
+                  called Signulls. A Signull is a clue to a reference word
+                  sharing a prefix with the secret word. (no need to be of same
+                  length as secret word!)
+                  <br />
+                  {/* Any guesser can now give clues(called Signulls) by providing a
                   reference word sharing prefix with the secret word (no need to
                   be of same length!). Press on the Lightning icon to generate a
-                  signull.
+                  signull. */}
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   3
                 </span>
                 <span>
-                  Other Guessers race against the word setter to figure out the
-                  reference word based on the clues! Press the Right Arrow icon
-                  to submit your match.
+                  Other Guessers race against the setter to figure out the
+                  reference word based on the clues and connect! Guessers can
+                  connect only ONCE. Each correct connect to a resolved signull
+                  gets player points.
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   4
                 </span>
                 <span>
-                  Guessers win the next letter in secret word if they get their
-                  reference word matched before the Setter. Press on the Signull
-                  card to view who connected and guessed to a Signull
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">
-                  5
-                </span>
-                <span>
-                  At any point a guessers have a total of 3 direct guesses to
-                  directly guess the secret word. Use them wisely! Press on top
-                  right Arrow icon to make a direct guess.
+                  If the setter intercepts a signull before guessers, no letters
+                  are revealed. The setter earns points for each intercepted
+                  signull.
                 </span>
               </li>
             </ol>
@@ -417,7 +416,7 @@ export default function BetaLobbyPage() {
             <div className="mt-6">
               <button
                 onClick={() => setShowHowToPlay(false)}
-                className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+                className="w-full rounded-lg bg-slate-600 px-4 py-3 font-semibold text-white transition-all hover:bg-zinc-700 focus:outline-none focus:ring-4 focus:ring-zinc-300"
               >
                 Got it!
               </button>

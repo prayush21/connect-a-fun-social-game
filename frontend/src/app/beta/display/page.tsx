@@ -114,9 +114,6 @@ export default function BetaDisplayPage() {
               <h2 className="mb-2 text-xl font-bold text-neutral-700">
                 Scan to Join
               </h2>
-              <p className="mb-6 text-neutral-500">
-                Players can scan this QR code to join the game
-              </p>
 
               {/* QR Code */}
               <div className="mb-6 flex justify-center">
@@ -139,6 +136,10 @@ export default function BetaDisplayPage() {
                   {roomId}
                 </div>
               </div>
+
+              <p className="mb-6 text-neutral-500">
+                Players can enter the room code or join via the link
+              </p>
 
               {/* Copy Link Button */}
               <button
@@ -174,9 +175,6 @@ export default function BetaDisplayPage() {
               {playerCount === 0 ? (
                 <div className="py-8 text-center text-neutral-500">
                   <p className="text-lg">Waiting for players to join...</p>
-                  <p className="mt-2 text-sm">
-                    Scan the QR code or enter the room code
-                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -227,23 +225,23 @@ export default function BetaDisplayPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="rounded-lg bg-neutral-50 p-3">
+                <div className="rounded-lg bg-neutral-200 p-3">
                   <div className="text-neutral-500">Play Mode</div>
                   <div className="font-semibold capitalize">Classic</div>
                 </div>
-                <div className="rounded-lg bg-neutral-50 p-3">
+                <div className="rounded-lg bg-neutral-200 p-3">
                   <div className="text-neutral-500">Connects Required</div>
                   <div className="font-semibold">
                     {settings?.connectsRequired || 2}
                   </div>
                 </div>
-                <div className="rounded-lg bg-neutral-50 p-3">
+                <div className="rounded-lg bg-neutral-200 p-3">
                   <div className="text-neutral-500">Max Players</div>
                   <div className="font-semibold">
                     {settings?.maxPlayers || 8}
                   </div>
                 </div>
-                <div className="rounded-lg bg-neutral-50 p-3">
+                <div className="rounded-lg bg-neutral-200 p-3">
                   <div className="text-neutral-500">Prefix Mode</div>
                   <div className="font-semibold">
                     {settings?.prefixMode ? "On" : "Off"}
@@ -262,7 +260,8 @@ export default function BetaDisplayPage() {
                     : "Waiting for host to start the game..."}
               </div>
               <div className="mt-2 text-sm text-neutral-600">
-                The host can start the game from their device
+                The host can start the game and update game settings from their
+                device
               </div>
             </div>
           </div>

@@ -366,41 +366,52 @@ function BetaHomeContent() {
           <h2 className="text-center text-xl font-semibold text-primary">
             How to Play?
           </h2>
-          <ol className="space-y-4 text-sm text-neutral-600">
+          {/* Instructions */}
+          <ol className="space-y-4 text-sm text-slate-600">
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                 1
               </span>
               <span>
-                One player sets a secret word that others team up to guess
+                The setter sets a secret word that other guessers team up to
+                guess
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                 2
               </span>
               <span>
-                One of the guesser gives clues by providing a reference word
-                sharing prefix with the secret word (no need to be of same
-                length!)
+                To reveal letters in the secret word, guessers give clues called
+                Signulls. A Signull is a clue to a reference word sharing a
+                prefix with the secret word. (no need to be of same length as
+                secret word!)
+                <br />
+                {/* Any guesser can now give clues(called Signulls) by providing a
+                  reference word sharing prefix with the secret word (no need to
+                  be of same length!). Press on the Lightning icon to generate a
+                  signull. */}
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                 3
               </span>
               <span>
-                Other Guessers race against the word setter to figure out the
-                reference word based on the clues!
+                Other Guessers race against the setter to figure out the
+                reference word based on the clues and connect! Guessers can
+                connect only ONCE. Each correct connect to a resolved signull
+                gets player points.
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-black bg-white text-xs font-semibold text-primary">
+              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                 4
               </span>
               <span>
-                Guessers win the next letter in secret word if they get their
-                reference word matched before the Setter.
+                If the setter intercepts a signull before guessers, no letters
+                are revealed. The setter earns points for each intercepted
+                signull.
               </span>
             </li>
           </ol>
