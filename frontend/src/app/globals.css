@@ -41,6 +41,11 @@
   /* Safe area insets (iOS support) */
   --safe-area-top: env(safe-area-inset-top);
   --safe-area-bottom: env(safe-area-inset-bottom);
+
+
+  /* Font families */  
+  --font-bangers: 'Bangers', cursive;
+  --font-bricolage-grotesque: 'Bricolage Grotesque', sans-serif;
 }
 
 /* === Custom Animations === */

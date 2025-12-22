@@ -47,6 +47,7 @@ import { useRouter } from "next/navigation";
 import { logScorecard, getSignullStatusLabel } from "@/lib/beta/debug";
 import { useNextStep } from "nextstepjs";
 import Image from "next/image";
+import { Logo } from "@/components/ui/Logo";
 
 // Define card types
 type CardType =
@@ -821,19 +822,7 @@ export default function BetaPlayPage() {
               </RoundButtonIcon>
             </RoundButton>
           )} */}
-          <div>
-            C
-            <RoundButtonIcon size="md">
-              <Image
-                src="/lightning.svg"
-                alt="Lightning"
-                width={30}
-                height={35}
-                className="inline-block"
-              />
-            </RoundButtonIcon>
-            S
-          </div>
+          <Logo />
         </header>
 
         {/* SECTION 3: Letter Blocks Display */}

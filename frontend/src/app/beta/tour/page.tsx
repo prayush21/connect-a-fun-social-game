@@ -15,6 +15,7 @@ import {
 import { SignullCard, WaitingCard } from "@/components/beta/cards";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { Logo } from "@/components/ui/Logo";
 
 export default function TourPage() {
   return (
@@ -130,18 +131,8 @@ function TourContent() {
               onChangeSetter={() => {}}
             />
           </div>
-          <div id="tour-game-logo">
-            C
-            <RoundButtonIcon size="md">
-              <Image
-                src="/lightning.svg"
-                alt="Lightning"
-                width={30}
-                height={35}
-                className="inline-block"
-              />
-            </RoundButtonIcon>
-            S
+          <div id="tour-logo">
+            <Logo />
           </div>
         </header>
 

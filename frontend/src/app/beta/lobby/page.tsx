@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { copyToClipboard } from "@/lib/utils";
 import { useEnableSoundsOnInteraction } from "@/lib/beta/useSound";
 import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
+import { Logo } from "@/components/ui/Logo";
 
 export default function BetaLobbyPage() {
   const router = useRouter();
@@ -231,12 +232,15 @@ export default function BetaLobbyPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-surface px-4 py-6 md:px-6">
       <div className="mx-auto w-full max-w-md space-y-6 pb-32">
-        <div className="mb-8 space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-primary">Game Lobby</h1>
-          <p className="text-neutral-500">
-            Share the code below to invite your friends
-          </p>
-        </div>
+        <header className="mb-4 flex items-start justify-between">
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-bold text-primary">Game Lobby</h1>
+            <p className="text-neutral-500">
+              Share the code below to invite your friends
+            </p>
+          </div>
+          <Logo />
+        </header>
 
         <RoomCodeCard
           roomCode={roomId}

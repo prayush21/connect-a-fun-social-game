@@ -13,7 +13,7 @@ const steps = [
         // icon: "👋",
         title: "Welcome to C⚡S!",
         content: "Let's take a quick tour of the game interface.",
-        selector: "#tour-game-logo",
+        selector: "#tour-logo",
         side: "bottom-right",
         showControls: true,
         showSkip: true,

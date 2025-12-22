@@ -12,6 +12,7 @@ import { X } from "lucide-react";
 import Image from "next/image";
 import { DisplayModeModal } from "@/components/beta/DisplayModeModal";
 import { useIsMobile } from "@/lib/hooks";
+import { Logo } from "@/components/ui/Logo";
 
 type NicknameFormData = z.infer<typeof nicknameSchema>;
 type JoinGameFormData = z.infer<typeof joinGameSchema>;
@@ -249,7 +250,10 @@ function BetaHomeContent() {
 
         {/* Header */}
         <div className="space-y-2 text-center">
-          <h1 className="flex items-center justify-center gap-2 text-5xl font-bold text-primary">
+          <h1
+            // style={{ fontFamily: "var(--font-bangers), cursive !important" }}
+            className="flex items-center justify-center text-5xl font-bold text-primary"
+          >
             Connect
             <Image
               src="/lightning.svg"

@@ -13,6 +13,7 @@ import type {
   ScoreReason,
 } from "@/lib/beta/types";
 import { SCORING } from "@/lib/beta/types";
+import { Logo } from "../ui/Logo";
 
 // ==================== Configuration ====================
 
@@ -517,6 +518,7 @@ export function ScoreBreakdownDisplay({
             <TrophyIcon className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold text-primary">Score Breakdown</h1>
           </div>
+          <Logo />
         </div>
 
         {/* Main Content Grid */}

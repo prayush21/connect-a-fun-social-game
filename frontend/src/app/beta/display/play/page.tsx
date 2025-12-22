@@ -12,6 +12,7 @@ import { CircularProgress } from "@/components/beta/CircularProgress";
 import { ScoreBreakdownDisplay } from "@/components/beta";
 import { setScoreCountingComplete } from "@/lib/beta/firebase";
 import Image from "next/image";
+import { Logo } from "@/components/ui/Logo";
 
 // Read-only letter blocks for display mode
 function DisplayLetterBlocks({
@@ -237,23 +238,10 @@ export default function BetaDisplayPlayPage() {
       <main className="min-h-screen bg-surface p-8">
         <div className="mx-auto max-w-6xl">
           {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <Image
-                src="/lightning.svg"
-                alt="Lightning"
-                width={20}
-                height={20}
-                className="inline-block"
-              />
-              <h1 className="text-3xl font-bold text-primary">Apple</h1>
-            </div>
-            <button
-              onClick={handleExit}
-              className="rounded-lg border-2 border-black bg-white px-4 py-2 font-semibold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-            >
-              Exit Display
-            </button>
+          <div className="mb-8 flex items-start justify-between">
+            <h1 className="text-3xl font-bold text-primary">Display</h1>
+
+            <Logo />
           </div>
 
           {/* Game Ended Card */}
@@ -341,15 +329,8 @@ export default function BetaDisplayPlayPage() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Image
-              src="/lightning.svg"
-              alt="Lightning"
-              width={20}
-              height={20}
-              className="inline-block"
-            />
-            <h1 className="text-2xl font-bold text-primary">Signull</h1>
+          <div className="flex items-center gap-2">
+            <Logo />
             <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
               DISPLAY
             </span>

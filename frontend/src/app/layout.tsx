@@ -1,21 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Barrio } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const barrio = Barrio({
-  weight: "400",
-  variable: "--font-barrio",
+const bricolageGrotesque = Bricolage_Grotesque({
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-bricolage-grotesque",
   subsets: ["latin"],
 });
 
@@ -47,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={barrio.className}>
+      <body className={bricolageGrotesque.className}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
