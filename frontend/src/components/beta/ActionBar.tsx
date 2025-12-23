@@ -24,6 +24,8 @@ interface ActionBarProps {
   disableInput?: boolean;
   /** Whether the signull button should be disabled */
   disableSignull?: boolean;
+  /** Whether the Signull button is pressed */
+  isSignullPressed?: boolean;
   /** Additional CSS classes */
   className?: string;
   /** Whether the game has ended */
@@ -52,17 +54,18 @@ export function ActionBar({
   onPlayAgain,
   onBackToLobby,
   onMemoriesClick,
+  isSignullPressed,
 }: ActionBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isSignullPressed, setIsSignullPressed] = useState(false);
+  // const [isSignullPressed, setIsSignullPressed] = useState(false);
 
-  const handleSignullClick = () => {
-    setIsSignullPressed(!isSignullPressed);
-    onSignullClick();
-  };
+  // const handleSignullClick = () => {
+  //   setIsSignullPressed(!isSignullPressed);
+  //   onSignullClick();
+  // };
 
   const handleSubmit = () => {
-    setIsSignullPressed(false);
+    // setIsSignullPressed(false);
     onSubmit();
   };
 
@@ -117,7 +120,7 @@ export function ActionBar({
       <RoundButton
         id="tour-action-bar-signull"
         size="lg"
-        onClick={handleSignullClick}
+        onClick={onSignullClick}
         title="Send Signull"
         disabled={disableSignull}
         className={`disabled:cursor-not-allowed disabled:opacity-50 ${
