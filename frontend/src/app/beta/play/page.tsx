@@ -537,6 +537,13 @@ export default function BetaPlayPage() {
     justSubmittedSignullRef.current = false;
 
     prevCardsRef.current = currentCards;
+
+    console.log(
+      "Card stack updated. Active Index,",
+      activeIndex,
+      "Current cards:",
+      currentCards
+    );
   }, [cards, isInputFocused, activeIndex]);
 
   // Refs for scroll control
@@ -589,7 +596,11 @@ export default function BetaPlayPage() {
 
   // Handle Signull button click - insert send-signull card
   const handleSignullClick = () => {
-    if (isComposingSignull) {
+    const currentCard = cards[activeIndex];
+
+    // Case 1: We are currently on the draft card.
+    // Action: Close the draft (toggle off).
+    if (isComposingSignull && currentCard?.type === "send-signull") {
       showNotification("Back to reading signulls");
       setIsComposingSignull(false);
       // Go back to the card we were on before opening the composer
@@ -597,18 +608,23 @@ export default function BetaPlayPage() {
       return;
     }
 
-    // Store current index before opening composer (for cancel)
-    indexBeforeSignullRef.current = activeIndex;
+    // Case 2: We are composing but looking elsewhere (swiped away).
+    // Action: Jump back to the draft card (focus it).
+    if (isComposingSignull && currentCard?.type !== "send-signull") {
+      setActiveIndex(0); // Assuming draft is always at 0
+      showNotification("Resume composing", "signull");
+      return;
+    }
 
+    // Case 3: We are not composing at all.
+    // Action: Start composing.
+    indexBeforeSignullRef.current = activeIndex;
     setIsComposingSignull(true);
     setSignullClue("");
     setSignullWord("");
     setInputValue("");
-
-    // Always jump to the new send-signull card (index 0)
     setActiveIndex(0);
     justOpenedSignullRef.current = true;
-
     showNotification("Compose your Signull", "signull");
   };
 
@@ -724,6 +740,20 @@ export default function BetaPlayPage() {
     }
   };
 
+  const handleSubmitFromActionBar = async () => {
+    console.log("Handle submit from ActionBar");
+    if (isComposingSignull && cards[activeIndex]?.type === "send-signull") {
+      console.log("Submitting a new signull");
+      await handleSignullSubmit();
+    } else if (cards[activeIndex]?.type === "enter-secret") {
+      console.log("Submitting secret word");
+      await handleSecretWordSubmit();
+    } else {
+      console.log("Submitting connect to signull");
+      await handleConnect();
+    }
+  };
+
   // Current card history - derived from the active card
   const currentCardHistory = useMemo(() => {
     const currentCard = cards[activeIndex];
@@ -733,35 +763,101 @@ export default function BetaPlayPage() {
     return [];
   }, [cards, activeIndex]);
 
-  // Determine if input should be disabled
-  const isInputDisabled = useMemo(() => {
-    if (isComposingSignull) return false;
-
+  // Determine action bar state based on active card
+  const currentActionState = useMemo(() => {
     const currentCard = cards[activeIndex];
-    if (!currentCard) return true;
+
+    // Default state (safe fallback)
+    const baseState = {
+      value: "",
+      onChange: (val: string) => {},
+      placeholder: "...",
+      onSubmit: async () => {},
+      submitDisabled: true,
+      inputDisabled: true,
+      signullPressed: false,
+    };
+
+    if (!currentCard) return baseState;
+
+    if (currentCard.type === "send-signull") {
+      return {
+        value: signullWord,
+        onChange: setSignullWord,
+        placeholder: "Your Reference Word",
+        onSubmit: handleSignullSubmit,
+        submitDisabled: !signullClue.trim() || !signullWord.trim(),
+        inputDisabled: false,
+        signullPressed: true,
+      };
+    }
+
+    if (currentCard.type === "enter-secret") {
+      return {
+        value: inputValue,
+        onChange: setInputValue,
+        placeholder: "Enter Secret Word",
+        onSubmit: handleSecretWordSubmit,
+        submitDisabled: !inputValue.trim(),
+        inputDisabled: false, // Always allow input for setting secret
+        signullPressed: false,
+      };
+    }
 
     if (currentCard.type === "signull") {
       const signullCard = currentCard as SignullCardData;
 
-      // If card is not pending, disable input
-      if (signullCard.metrics.status !== "pending") return true;
+      // Check specific disable conditions for signull response
+      const isMySignull = signullCard.metrics.clueGiverId === userId;
+      const alreadyConnected = signullCard.hasConnected;
+      const isPending = signullCard.metrics.status === "pending";
 
-      // Disable input if player is trying to connect to their own signull
-      if (signullCard.metrics.clueGiverId === userId) return true;
+      // Logic for disabling input:
+      // 1. If not pending, it's resolved/failed -> disabled
+      // 2. If it's my own signull -> disabled
+      // 3. If I'm a guesser and already connected -> disabled (unless setter, who can intercept multiple times?)
+      //    Actually, setter usually only intercepts once effectively, but let's stick to current logic:
+      //    "If user is setter, they can always input (as long as pending)"
+      //    "If user is guesser, they can only input if they haven't connected yet"
 
-      // If user is setter, they can always input (as long as pending)
-      if (isSetter) return false;
+      let inputDisabled = true;
+      if (isPending && !isMySignull) {
+        if (isSetter) inputDisabled = false;
+        else if (!alreadyConnected) inputDisabled = false;
+      }
 
-      // If user is guesser, they can only input if they haven't connected yet
-      return signullCard.hasConnected;
+      return {
+        value: inputValue,
+        onChange: setInputValue,
+        placeholder: "Your Response",
+        onSubmit: handleConnect,
+        submitDisabled: !inputValue.trim() || inputDisabled,
+        inputDisabled,
+        signullPressed: false,
+      };
     }
 
-    // For other card types (waiting, enter-secret), input is generally disabled
-    // unless specific logic handles them (e.g. enter-secret might use a different input mechanism)
-    if (currentCard.type === "enter-secret") return false;
-
-    return true;
-  }, [cards, activeIndex, isComposingSignull, isSetter, userId]);
+    // Default for other cards (waiting, starting-game, etc.)
+    return {
+      ...baseState,
+      value: inputValue, // Keep showing generic input but disabled
+      onChange: setInputValue,
+      placeholder: "Wait for signull...",
+      submitDisabled: true,
+      inputDisabled: true,
+    };
+  }, [
+    cards,
+    activeIndex,
+    signullWord,
+    signullClue,
+    inputValue,
+    userId,
+    isSetter,
+    handleSignullSubmit,
+    handleSecretWordSubmit,
+    handleConnect,
+  ]);
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-neutral-200 p-0 md:p-4">
@@ -796,32 +892,6 @@ export default function BetaPlayPage() {
           <div className="pointer-events-none absolute inset-x-0 top-2 z-[110] flex justify-center">
             <NotificationBanner maxVisible={4} />
           </div>
-
-          {/* Direct Guess Button / Counter */}
-          {/* {isDirectGuessMode ? (
-            // Show guesses counter during direct guess mode (not blurred)
-            <div className="absolute right-4 top-2 z-[60] flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-black bg-white">
-              <span className="text-lg font-bold text-black">
-                {directGuessesLeft}
-              </span>
-            </div>
-          ) : (
-            // Show direct guess button normally
-            <RoundButton
-              size="md"
-              onClick={handleDirectGuessClick}
-              disabled={
-                isDirectGuessMode || isSetter || game?.phase === "ended"
-              }
-              title="Direct Guess"
-            >
-              <RoundButtonIcon size="md">
-                <svg viewBox="0 -960 960 960" fill="currentColor">
-                  <path d="M680-320v-360H320v-80h440v440h-80ZM480-120v-360H120v-80h440v440h-80Z" />
-                </svg>
-              </RoundButtonIcon>
-            </RoundButton>
-          )} */}
           <Logo />
         </header>
 
@@ -1012,38 +1082,17 @@ export default function BetaPlayPage() {
           className={`${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
         >
           <ActionBar
-            inputValue={isComposingSignull ? signullWord : inputValue}
-            onInputChange={(value) => {
-              if (isComposingSignull) {
-                setSignullWord(value);
-              } else {
-                setInputValue(value);
-              }
-            }}
+            inputValue={currentActionState.value}
+            onInputChange={currentActionState.onChange}
+            isSignullPressed={currentActionState.signullPressed}
             onInputFocus={handleInputFocus}
             onInputBlur={handleInputBlur}
             onSignullClick={handleSignullClick}
-            onSubmit={
-              isComposingSignull
-                ? handleSignullSubmit
-                : cards[activeIndex]?.type === "enter-secret"
-                  ? handleSecretWordSubmit
-                  : handleConnect
-            }
-            placeholder={
-              isComposingSignull
-                ? "Type word here"
-                : cards[activeIndex]?.type === "enter-secret"
-                  ? "Enter Secret Word"
-                  : "Type response"
-            }
-            disableInput={isInputDisabled}
+            onSubmit={currentActionState.onSubmit}
+            placeholder={currentActionState.placeholder}
+            disableInput={currentActionState.inputDisabled}
             disableSignull={isSetter || game?.phase === "setting"}
-            disableSubmit={
-              isComposingSignull
-                ? !signullClue.trim() || !signullWord.trim()
-                : !inputValue.trim() || isInputDisabled
-            }
+            disableSubmit={currentActionState.submitDisabled}
             isGameEnded={game?.phase === "ended"}
             onPlayAgain={() => {
               void playAgain();
