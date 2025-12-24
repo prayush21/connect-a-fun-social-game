@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Users, Play, Pause, TrophyIcon } from "lucide-react";
+import {
+  Trophy,
+  Crown,
+  Play,
+  Pause,
+  TrophyIcon,
+  FastForwardIcon,
+} from "lucide-react";
 import type {
   ScoreEvent,
   Player,
@@ -14,6 +21,7 @@ import type {
 } from "@/lib/beta/types";
 import { SCORING } from "@/lib/beta/types";
 import { Logo } from "../ui/Logo";
+import { useSound } from "@/lib/beta/useSound";
 
 // ==================== Configuration ====================
 
@@ -22,16 +30,16 @@ import { Logo } from "../ui/Logo";
  * Adjust these values to control the pace of the score counting animation
  */
 export const ANIMATION_TIMING = {
-  /** Time to display each signull group */
-  SIGNULL_DURATION_MS: 10000,
-  /** Time to display each direct guess event */
-  DIRECT_GUESS_DURATION_MS: 2500,
-  /** Time to display game end bonuses */
-  GAME_END_DURATION_MS: 10000,
-  /** Initial delay before starting the animation */
-  INITIAL_DELAY_MS: 1000,
-  /** Delay between phases (signulls -> direct guesses -> game end) */
-  PHASE_TRANSITION_DELAY_MS: 1500,
+  /** Time to display each signull group (now used as delay after all events shown) */
+  SIGNULL_DURATION_MS: 3000,
+  /** Duration for the row entry animation */
+  ROW_ENTRY_DURATION_MS: 500,
+  /** Duration for the value swoosh animation */
+  SWOOSH_DURATION_MS: 800,
+  /** Duration for the score number update animation */
+  SCORE_UPDATE_DURATION_MS: 300,
+  /** Delay between processing events */
+  BETWEEN_EVENTS_DELAY_MS: 200,
 };
 
 // ==================== Types ====================
@@ -117,22 +125,75 @@ const getReasonIcon = (reason: ScoreReason): string => {
 
 // ==================== Sub-Components ====================
 
+function FlyingScore({
+  startRect,
+  targetRect,
+  value,
+  onComplete,
+  timing,
+}: {
+  startRect: DOMRect;
+  targetRect: DOMRect;
+  value: number;
+  onComplete: () => void;
+  timing: typeof ANIMATION_TIMING;
+}) {
+  const isPositive = value > 0;
+
+  return (
+    <motion.div
+      initial={{
+        position: "fixed",
+        top: startRect.top,
+        left: startRect.right,
+        opacity: 1,
+        scale: 1,
+        pointerEvents: "none",
+        zIndex: 100,
+      }}
+      animate={{
+        top: targetRect.top + targetRect.height / 2 - 12, // Center vertically
+        left: targetRect.left + targetRect.width - 40, // Aim for the score number area
+        opacity: [1, 1, 0],
+        scale: [1, 1.2, 0.5],
+      }}
+      transition={{
+        duration: timing.SWOOSH_DURATION_MS / 1000,
+        ease: "easeInOut",
+      }}
+      onAnimationComplete={onComplete}
+      className={`text-xl font-bold ${isPositive ? "text-green-600" : "text-red-600"}`}
+    >
+      {isPositive ? "+" : ""}
+      {value}
+    </motion.div>
+  );
+}
+
 function ScoreEventRow({
   event,
   playerName,
   delay = 0,
+  rowRef,
+  timing,
 }: {
   event: ScoreEvent;
   playerName: string;
   delay?: number;
+  rowRef?: (el: HTMLDivElement | null) => void;
+  timing: typeof ANIMATION_TIMING;
 }) {
   const isPositive = event.delta > 0;
 
   return (
     <motion.div
+      ref={rowRef}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay, duration: 0.3 }}
+      transition={{
+        delay,
+        duration: timing.ROW_ENTRY_DURATION_MS / 1000,
+      }}
       className="flex items-center justify-between rounded-lg bg-neutral-50 px-4 py-2"
     >
       <div className="flex items-center gap-3">
@@ -160,9 +221,15 @@ function ScoreEventRow({
 function SignullBreakdownView({
   item,
   players,
+  visibleEventCount,
+  onEventRef,
+  timing,
 }: {
   item: SignullBreakdownItem;
   players: Record<PlayerId, Player>;
+  visibleEventCount: number;
+  onEventRef: (index: number, el: HTMLDivElement | null) => void;
+  timing: typeof ANIMATION_TIMING;
 }) {
   const statusLabel =
     item.signull.status === "resolved"
@@ -206,12 +273,14 @@ function SignullBreakdownView({
       {/* Score Events */}
       {item.events.length > 0 ? (
         <div className="space-y-2">
-          {item.events.map((event, idx) => (
+          {item.events.slice(0, visibleEventCount).map((event, idx) => (
             <ScoreEventRow
               key={`${event.playerId}-${event.reason}-${idx}`}
               event={event}
               playerName={players[event.playerId]?.name || "Unknown"}
-              delay={idx * 0.15}
+              delay={0}
+              rowRef={(el) => onEventRef(idx, el)}
+              timing={timing}
             />
           ))}
         </div>
@@ -222,112 +291,14 @@ function SignullBreakdownView({
   );
 }
 
-function DirectGuessBreakdownView({
-  item,
-  players,
-}: {
-  item: DirectGuessBreakdownItem;
-  players: Record<PlayerId, Player>;
-}) {
-  return (
-    <div className="space-y-4">
-      {/* Direct Guess Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="text-sm uppercase tracking-wide text-neutral-500">
-            Direct Guess
-          </span>
-          <h3 className="text-xl font-bold">{item.playerName}</h3>
-        </div>
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-semibold ${
-            item.isCorrect
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
-        >
-          {item.isCorrect ? "Correct!" : "Wrong"}
-        </span>
-      </div>
-
-      {/* Guess Display */}
-      <div className="rounded-xl border-2 border-black bg-white p-4 text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-        <p className="text-2xl font-bold tracking-wider">{item.guess}</p>
-      </div>
-
-      {/* Score Events */}
-      {item.events.length > 0 && (
-        <div className="space-y-2">
-          {item.events.map((event, idx) => (
-            <ScoreEventRow
-              key={`${event.playerId}-${event.reason}-${idx}`}
-              event={event}
-              playerName={players[event.playerId]?.name || "Unknown"}
-              delay={idx * 0.15}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GameEndBreakdownView({
-  item,
-  players,
-  secretWord,
-}: {
-  item: GameEndBreakdownItem;
-  players: Record<PlayerId, Player>;
-  secretWord: string;
-}) {
-  const winnerLabel =
-    item.winner === "guessers" ? "Guessers Win!" : "Setter Wins!";
-
-  return (
-    <div className="space-y-4">
-      {/* Game End Header */}
-      <div className="text-center">
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <Trophy className="mx-auto h-16 w-16 text-yellow-500" />
-        </motion.div>
-        <h3 className="mt-2 text-2xl font-bold">{winnerLabel}</h3>
-        <p className="text-neutral-500">
-          The secret word was:{" "}
-          <span className="font-bold text-primary">{secretWord}</span>
-        </p>
-      </div>
-
-      {/* Victory Bonus Events */}
-      {item.events.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            Victory Bonuses
-          </h4>
-          {item.events.map((event, idx) => (
-            <ScoreEventRow
-              key={`${event.playerId}-${event.reason}-${idx}`}
-              event={event}
-              playerName={players[event.playerId]?.name || "Unknown"}
-              delay={idx * 0.1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function RunningScoreboard({
   players,
   currentScores,
+  onPlayerRef,
 }: {
   players: Record<PlayerId, Player>;
   currentScores: Record<PlayerId, number>;
+  onPlayerRef: (playerId: string, el: HTMLDivElement | null) => void;
 }) {
   const sortedPlayers = useMemo(() => {
     return Object.values(players).sort(
@@ -340,7 +311,9 @@ function RunningScoreboard({
       {sortedPlayers.slice(0, 6).map((player, index) => (
         <motion.div
           key={player.id}
+          ref={(el) => onPlayerRef(player.id, el as HTMLDivElement | null)}
           layout
+          transition={{ duration: 0.5 }}
           className={`flex items-center justify-between rounded-lg px-3 py-2 ${
             index === 0 ? "bg-yellow-100" : "bg-neutral-50"
           }`}
@@ -375,10 +348,24 @@ export function ScoreBreakdownDisplay({
   secretWord,
   onComplete,
 }: ScoreBreakdownDisplayProps) {
+  const { playSound } = useSound();
   const [currentPhase, setCurrentPhase] = useState<BreakdownPhase>("signulls");
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [currentEventIndex, setCurrentEventIndex] = useState(0); // Track event within item
   const [isPaused, setIsPaused] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(10000); // milliseconds
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
+
+  // State for swoosh animation
+  const [activeSwoosh, setActiveSwoosh] = useState<{
+    startRect: DOMRect;
+    targetRect: DOMRect;
+    value: number;
+  } | null>(null);
+
+  // Refs for positions
+  const eventRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const playerRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const [currentScores, setCurrentScores] = useState<Record<PlayerId, number>>(
     () => {
       // Start with base scores (before this round's events)
@@ -393,6 +380,21 @@ export function ScoreBreakdownDisplay({
       });
       return baseScores;
     }
+  );
+
+  const animationTiming = useMemo(
+    () => ({
+      SIGNULL_DURATION_MS:
+        ANIMATION_TIMING.SIGNULL_DURATION_MS / speedMultiplier,
+      ROW_ENTRY_DURATION_MS:
+        ANIMATION_TIMING.ROW_ENTRY_DURATION_MS / speedMultiplier,
+      SWOOSH_DURATION_MS: ANIMATION_TIMING.SWOOSH_DURATION_MS / speedMultiplier,
+      SCORE_UPDATE_DURATION_MS:
+        ANIMATION_TIMING.SCORE_UPDATE_DURATION_MS / speedMultiplier,
+      BETWEEN_EVENTS_DELAY_MS:
+        ANIMATION_TIMING.BETWEEN_EVENTS_DELAY_MS / speedMultiplier,
+    }),
+    [speedMultiplier]
   );
 
   // Build breakdown items from score events
@@ -448,51 +450,126 @@ export function ScoreBreakdownDisplay({
     return undefined;
   }, [currentPhase, currentItemIndex, signullItems]);
 
-  // Update scores when item changes
+  // Reset event index when item changes
   useEffect(() => {
-    if (!currentItem) return;
+    setCurrentEventIndex(0);
+    eventRefs.current = {};
+  }, [currentItemIndex]);
 
-    // Add events from current item to running scores
-    const timer = setTimeout(() => {
-      setCurrentScores((prev) => {
-        const newScores = { ...prev };
-        currentItem.events.forEach((event) => {
-          newScores[event.playerId] =
-            (newScores[event.playerId] || 0) + event.delta;
-        });
-        return newScores;
-      });
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [currentItem]);
-
-  // Auto-advance logic
+  // Main Orchestration Effect
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || currentPhase !== "signulls" || !currentItem) return;
 
-    const timer = setTimeout(() => {
-      if (currentPhase === "signulls") {
-        if (currentItemIndex < signullItems.length - 1) {
-          setCurrentItemIndex((i) => i + 1);
+    let cancelled = false;
+
+    const processSequence = async () => {
+      // Logic for sequencing within the current item
+      if (currentEventIndex < currentItem.events.length) {
+        // Step 1: Wait for entry animation of the current row
+        // We assume the row is being rendered because `currentEventIndex` allows it (if we passed index + 1)
+        // Actually, we render 0 to currentEventIndex inclusive? Or exclusive?
+        // Let's say visibleEventCount = currentEventIndex + 1.
+
+        // Wait for row entry
+        await new Promise((r) =>
+          setTimeout(r, animationTiming.ROW_ENTRY_DURATION_MS)
+        );
+        if (cancelled) return;
+
+        // Step 2: Trigger Swoosh
+        const event = currentItem.events[currentEventIndex];
+        const eventEl = eventRefs.current[currentEventIndex];
+        const playerEl = playerRefs.current[event.playerId];
+
+        if (eventEl && playerEl) {
+          const startRect = eventEl.getBoundingClientRect();
+          const targetRect = playerEl.getBoundingClientRect();
+
+          setActiveSwoosh({
+            startRect,
+            targetRect,
+            value: event.delta,
+          });
         } else {
-          // All signulls shown, complete
+          // Fallback if refs missing (e.g. testing) - just update score
+          console.warn("Missing refs for animation", { eventEl, playerEl });
+        }
+
+        // Wait for swoosh to complete (handled by onComplete callback usually, but here we can wait)
+        await new Promise((r) =>
+          setTimeout(r, animationTiming.SWOOSH_DURATION_MS)
+        );
+        if (cancelled) return;
+
+        setActiveSwoosh(null);
+
+        // Step 3: Update Score and Play Sound
+        if (
+          event.reason === "lightning_signull_bonus" ||
+          event.reason === "setter_revealed_letters_bonus"
+        ) {
+          console.log("Playing extra point sound");
+          playSound("extra_game_point");
+        } else {
+          console.log("Playing standard score point sound");
+          playSound("score_point");
+        }
+
+        setCurrentScores((prev) => ({
+          ...prev,
+          [event.playerId]: (prev[event.playerId] || 0) + event.delta,
+        }));
+
+        // Wait for score update / reorder
+        await new Promise((r) =>
+          setTimeout(r, animationTiming.SCORE_UPDATE_DURATION_MS)
+        );
+        if (cancelled) return;
+
+        // Step 4: Wait between events
+        await new Promise((r) =>
+          setTimeout(r, animationTiming.BETWEEN_EVENTS_DELAY_MS)
+        );
+        if (cancelled) return;
+
+        // Advance to next event
+        setCurrentEventIndex((prev) => prev + 1);
+      } else {
+        // All events in this item done. Wait before next item.
+        await new Promise((r) =>
+          setTimeout(r, animationTiming.SIGNULL_DURATION_MS)
+        );
+        if (cancelled) return;
+
+        if (currentItemIndex < signullItems.length - 1) {
+          setCurrentItemIndex((prev) => prev + 1);
+        } else {
           setCurrentPhase("complete");
           onComplete();
         }
       }
-    }, animationSpeed);
+    };
 
-    return () => clearTimeout(timer);
+    // Only run this if we are "ready" for the next step.
+    // This effect runs on mount and when deps change.
+    // If we increment currentEventIndex, it runs again for the NEXT event.
+    // This forms the loop.
+    processSequence();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
-    currentPhase,
+    currentEventIndex,
+    currentItem,
     currentItemIndex,
-    signullItems.length,
-    onComplete,
     isPaused,
-    animationSpeed,
+    signullItems.length,
+    currentPhase,
+    onComplete,
+    playSound, // Added dependency
+    animationTiming,
   ]);
-
   // Handle empty events - skip to complete
   useEffect(() => {
     if (breakdownItems.length === 0) {
@@ -503,7 +580,6 @@ export function ScoreBreakdownDisplay({
 
   // Progress calculation
   const totalItems = signullItems.length;
-  const currentProgress = currentItemIndex + 1;
 
   if (currentPhase === "complete" || !currentItem) {
     return null;
@@ -511,6 +587,19 @@ export function ScoreBreakdownDisplay({
 
   return (
     <div className="min-h-screen bg-surface p-8">
+      {/* Swoosh Layer */}
+      <AnimatePresence>
+        {activeSwoosh && (
+          <FlyingScore
+            startRect={activeSwoosh.startRect}
+            targetRect={activeSwoosh.targetRect}
+            value={activeSwoosh.value}
+            onComplete={() => {}}
+            timing={animationTiming}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -524,7 +613,7 @@ export function ScoreBreakdownDisplay({
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left: Breakdown Display */}
-          <div className="lg:col-span-2">
+          <div className="space-y-2 lg:col-span-2">
             <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -538,35 +627,24 @@ export function ScoreBreakdownDisplay({
                     <SignullBreakdownView
                       item={currentItem}
                       players={players}
+                      visibleEventCount={currentEventIndex + 1}
+                      onEventRef={(idx, el) => {
+                        eventRefs.current[idx] = el;
+                      }}
+                      timing={animationTiming}
                     />
                   )}
                 </motion.div>
               </AnimatePresence>
             </div>
-
-            {/* Progress Indicator */}
-            <div className="mt-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <span className="text-sm font-medium text-neutral-500">
-                Progress: {currentItemIndex + 1} / {signullItems.length}
-              </span>
-              <div className="flex-1">
-                <div className="h-3 overflow-hidden rounded-full bg-neutral-200">
-                  <motion.div
-                    className="h-full bg-primary"
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${((currentItemIndex + 1) / signullItems.length) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right: Running Scoreboard */}
-          <div className="lg:col-span-1">
+          <div className="space-y-2 lg:col-span-1">
             {/* Playback Controls */}
-            <div className="mb-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            {/* Progress Indicator */}
+            <div className="flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              {/* <div className="mb-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"> */}
               {/* Pause/Play Button */}
               <button
                 onClick={() => setIsPaused(!isPaused)}
@@ -579,38 +657,70 @@ export function ScoreBreakdownDisplay({
                   <Pause className="h-5 w-5 text-white" />
                 )}
               </button>
-
-              {/* Speed Slider */}
-              <div className="flex flex-1 items-center gap-3">
-                <span className="text-sm font-medium text-neutral-600">
-                  Speed:
-                </span>
-                <input
-                  type="range"
-                  min="2000"
-                  max="5000"
-                  step="500"
-                  value={animationSpeed}
-                  onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-                  className="flex-1 accent-primary"
-                  aria-label="Animation speed"
-                />
-                <span className="text-sm font-medium text-neutral-600">
-                  {(animationSpeed / 1000).toFixed(1)}s
-                </span>
+              {/* 2x Speed Button */}
+              <button
+                onClick={() =>
+                  setSpeedMultiplier((prev) => (prev === 1 ? 2 : 1))
+                }
+                className={`flex items-center justify-center gap-1 rounded-lg border-2 border-black p-2 transition-transform hover:scale-105 active:scale-95 ${
+                  speedMultiplier === 2 ? "bg-green-500" : "bg-primary"
+                }`}
+                aria-label="Toggle 2x speed"
+              >
+                <span className="text-sm font-bold text-white">2x</span>
+                <FastForwardIcon className="h-5 w-5 text-white" />
+              </button>
+              {/* </div> */}
+              {/* <span className="text-sm font-medium text-neutral-500">
+                Progress: {currentItemIndex + 1} / {signullItems.length}
+              </span> */}
+              <div className="flex-1">
+                <div className="h-3 overflow-hidden rounded-full bg-neutral-200">
+                  <motion.div
+                    className="h-full bg-primary"
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: `${((currentItemIndex + 1) / signullItems.length) * 100}%`,
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
             <div className="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <div className="mb-3 flex items-center gap-2">
-                <Users className="h-5 w-5 text-neutral-500" />
-                <h3 className="font-bold">Live Scores</h3>
+                <Crown className="h-5 w-5 text-neutral-500" />
+                <h3 className="font-bold">Leaderboard</h3>
               </div>
               <RunningScoreboard
                 players={players}
                 currentScores={currentScores}
+                onPlayerRef={(pid, el) => {
+                  playerRefs.current[pid] = el;
+                }}
               />
             </div>
+
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-xl font-bold text-green-600">+5</span>{" "}
+              Correct Connect to Resolved Signull
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-xl font-bold text-green-600">+5</span>{" "}
+              Intercept
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-xl font-bold text-green-600">+10</span>{" "}
+              Signull Resolved
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-xl font-bold text-green-600">+5</span> Bonus
+              for Each Letter Remaning/Revealed Letter to Guesser/Setter
+            </div>
+            {/* <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <span className="text-xl font-bold text-green-600">+5</span>{" "}
+              Lightning Signull Bonus for Each Hidden Letter to Guesser
+            </div> */}
           </div>
         </div>
       </div>

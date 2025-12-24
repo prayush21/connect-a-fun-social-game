@@ -156,6 +156,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
     settings: {
       ...data.settings,
       showScoreBreakdown: data.settings.showScoreBreakdown ?? false,
+      displaySoundMode: data.settings.displaySoundMode ?? true,
     },
     scoreEvents: (data.scoreEvents || []).map((e) => ({
       playerId: e.playerId,
@@ -189,6 +190,7 @@ export const createRoom = async (
       wordValidation: settings?.wordValidation || "strict",
       prefixMode: settings?.prefixMode || false,
       showScoreBreakdown: settings?.showScoreBreakdown ?? true, // Default to true for new games
+      displaySoundMode: settings?.displaySoundMode ?? true, // Default to true for new games
     };
 
     // Build players object conditionally - empty if display mode

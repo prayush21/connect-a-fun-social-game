@@ -1078,33 +1078,42 @@ export default function BetaPlayPage() {
         </div>
 
         {/* SECTION 5: Bottom Action Bar */}
-        <div
-          className={`${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
-        >
-          <ActionBar
-            inputValue={currentActionState.value}
-            onInputChange={currentActionState.onChange}
-            isSignullPressed={currentActionState.signullPressed}
-            onInputFocus={handleInputFocus}
-            onInputBlur={handleInputBlur}
-            onSignullClick={handleSignullClick}
-            onSubmit={currentActionState.onSubmit}
-            placeholder={currentActionState.placeholder}
-            disableInput={currentActionState.inputDisabled}
-            disableSignull={isSetter || game?.phase === "setting"}
-            disableSubmit={currentActionState.submitDisabled}
-            isGameEnded={game?.phase === "ended"}
-            onPlayAgain={() => {
-              void playAgain();
-            }}
-            onBackToLobby={() => {
-              backToLobby();
-            }}
-            onMemoriesClick={() => {
-              setIsMemoriesModalOpen(true);
-            }}
-          />
-        </div>
+        {(() => {
+          const showScoreCounting =
+            game?.phase === "ended" &&
+            game.isDisplayMode &&
+            game.settings.showScoreBreakdown &&
+            !game.scoreCountingComplete;
+          return !showScoreCounting ? (
+            <div
+              className={`${isDirectGuessMode ? "pointer-events-none opacity-50 blur-sm" : ""}`}
+            >
+              <ActionBar
+                inputValue={currentActionState.value}
+                onInputChange={currentActionState.onChange}
+                isSignullPressed={currentActionState.signullPressed}
+                onInputFocus={handleInputFocus}
+                onInputBlur={handleInputBlur}
+                onSignullClick={handleSignullClick}
+                onSubmit={currentActionState.onSubmit}
+                placeholder={currentActionState.placeholder}
+                disableInput={currentActionState.inputDisabled}
+                disableSignull={isSetter || game?.phase === "setting"}
+                disableSubmit={currentActionState.submitDisabled}
+                isGameEnded={game?.phase === "ended"}
+                onPlayAgain={() => {
+                  void playAgain();
+                }}
+                onBackToLobby={() => {
+                  backToLobby();
+                }}
+                onMemoriesClick={() => {
+                  setIsMemoriesModalOpen(true);
+                }}
+              />
+            </div>
+          ) : null;
+        })()}
 
         {/* Signull History - Always visible stacked toasts for current signull */}
         {currentCardHistory.length > 0 && (

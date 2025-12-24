@@ -9,6 +9,8 @@ import { Copy, Check, Users, Settings } from "lucide-react";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
 import { LogoLongform } from "@/components/ui/LogoLongform";
+import { useSound } from "@/lib/beta/useSound";
+import { pl } from "zod/v4/locales";
 
 export default function BetaDisplayPage() {
   const router = useRouter();
@@ -20,6 +22,8 @@ export default function BetaDisplayPage() {
     teardown,
   } = useBetaStore();
 
+  const { playSound, canPlay, enableSounds, disableAllSounds } = useSound();
+
   const roomId = storeRoomId;
   const gamePhase = gameState?.phase ?? "lobby";
   const players = gameState?.players ?? {};
@@ -27,6 +31,27 @@ export default function BetaDisplayPage() {
   const hostId = gameState?.hostId;
 
   const [copied, setCopied] = useState(false);
+
+  const displaySoundMode = settings?.displaySoundMode ?? false;
+
+  useEffect(() => {
+    //log display sound mode when it is toggled
+    if (settings?.displaySoundMode !== undefined) {
+      if (settings.displaySoundMode) {
+        enableSounds();
+      } else {
+        disableAllSounds();
+      }
+
+      playSound("button_click");
+    }
+    // return () => {
+    //   // Cleanup on unmount
+    //   teardown();
+    // };
+  }, [settings?.displaySoundMode]);
+
+  console.log("Can Play Sound:", canPlay);
 
   // Redirect logic
   useEffect(() => {
@@ -96,7 +121,7 @@ export default function BetaDisplayPage() {
             </p>
           </div>
           {/* Logo */}
-          <Logo />
+          <Logo iconSize={16} />
 
           {/* <button
             onClick={handleLeave}
@@ -225,10 +250,10 @@ export default function BetaDisplayPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="rounded-lg bg-neutral-200 p-3">
+                {/* <div className="rounded-lg bg-neutral-200 p-3">
                   <div className="text-neutral-500">Play Mode</div>
                   <div className="font-semibold capitalize">Classic</div>
-                </div>
+                </div> */}
                 <div className="rounded-lg bg-neutral-200 p-3">
                   <div className="text-neutral-500">Connects Required</div>
                   <div className="font-semibold">
@@ -245,6 +270,12 @@ export default function BetaDisplayPage() {
                   <div className="text-neutral-500">Prefix Mode</div>
                   <div className="font-semibold">
                     {settings?.prefixMode ? "On" : "Off"}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-neutral-200 p-3">
+                  <div className="text-neutral-500">Display Sound</div>
+                  <div className="font-semibold">
+                    {settings?.displaySoundMode ? "On" : "Off"}
                   </div>
                 </div>
               </div>

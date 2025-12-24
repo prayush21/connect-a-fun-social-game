@@ -50,6 +50,7 @@ export default function BetaLobbyPage() {
     maxPlayers: 4,
     wordValidation: "strict" as const,
     prefixMode: false,
+    displaySoundMode: true,
     showScoreBreakdown: true,
   };
 
@@ -149,6 +150,14 @@ export default function BetaLobbyPage() {
     });
   };
 
+  // Handle display sound mode toggle
+  const handleDisplaySoundToggle = () => {
+    if (!isHost) return;
+    updateGameSettings({
+      displaySoundMode: !settings.displaySoundMode,
+    });
+  };
+
   // Handle score breakdown toggle
   const handleScoreBreakdownToggle = () => {
     if (!isHost) return;
@@ -239,7 +248,7 @@ export default function BetaLobbyPage() {
               Share the code below to invite your friends
             </p>
           </div>
-          <Logo />
+          <Logo iconSize={window.innerWidth < 768 ? 32 : 16} />
         </header>
 
         <RoomCodeCard
@@ -429,6 +438,9 @@ export default function BetaLobbyPage() {
       <AudioSettingsModal
         isOpen={showAudioSettings}
         onClose={() => setShowAudioSettings(false)}
+        isHost={isHost}
+        displaySoundMode={settings.displaySoundMode}
+        onToggleDisplaySoundMode={handleDisplaySoundToggle}
       />
     </div>
   );

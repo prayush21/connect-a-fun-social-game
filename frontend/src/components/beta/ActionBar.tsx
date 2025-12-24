@@ -100,14 +100,14 @@ export function ActionBar({
         </div>
 
         {/* Bottom row: Memories button */}
-        {onMemoriesClick && (
+        {/* {onMemoriesClick && (
           <button
             onClick={onMemoriesClick}
             className="flex h-10 items-center justify-center rounded-full border-2 border-black bg-purple-100 px-6 text-xs font-bold uppercase tracking-wider text-purple-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
           >
             📸 Memories
           </button>
-        )}
+        )} */}
       </div>
     );
   }

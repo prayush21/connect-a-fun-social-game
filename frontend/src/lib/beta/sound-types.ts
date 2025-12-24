@@ -30,6 +30,10 @@ export type SoundEvent =
   | "direct_guess_correct" // Correct direct guess
   | "direct_guess_wrong" // Wrong direct guess
 
+  // Scoring sounds
+  | "score_point" // Standard point scored
+  | "extra_game_point" // Bonus point scored
+
   // Player sounds
   | "player_joined" // Player joins the room
   | "player_left" // Player leaves the room
@@ -218,6 +222,22 @@ export const SOUND_CONFIGS: Record<SoundEvent, SoundConfig> = {
     defaultVolume: 0.7,
     description: "Wrong direct guess",
     category: "game",
+  },
+
+  // Scoring sounds
+  score_point: {
+    file: "score-point.mp3",
+    defaultVolume: 0.6,
+    description: "Standard point scored",
+    category: "game",
+    critical: true,
+  },
+  extra_game_point: {
+    file: "extra-game-point.mp3",
+    defaultVolume: 0.7,
+    description: "Bonus point scored",
+    category: "game",
+    critical: true,
   },
 
   // Player sounds
