@@ -22,7 +22,7 @@ const steps = [
         // icon: "ℹ️",
         title: "Room Info",
         content:
-          "Tap here to see roomcode. On dropdown, access settings and host can change setter during word setting phase.",
+          "Tap here to see roomcode. On dropdown, host can change setter during word setting phase.",
         selector: "#tour-room-info",
         side: "bottom-left",
         showSkip: true,
@@ -49,14 +49,15 @@ const steps = [
         title: "Clue Giver Name",
         content: "The name of the player who sent this Signull is shown here.",
         selector: "#tour-clue-giver",
-        side: "right",
+        side: "bottom-left",
         showSkip: true,
       },
       {
         title: "Correct Indicator",
-        content: "Circular indicator fills up guessers submit correct Connects",
+        content:
+          "Circular indicator fills up when guessers submit correct Connects",
         selector: "#tour-correct-indicator",
-        side: "left",
+        side: "bottom-right",
         showSkip: true,
       },
       {
@@ -64,7 +65,7 @@ const steps = [
         content:
           "This shows how many guessers have connected to this Signull out of the total active guessers.",
         selector: "#tour-guesser-connects",
-        side: "left",
+        side: "bottom-right",
         showSkip: true,
       },
       {

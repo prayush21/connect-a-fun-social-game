@@ -107,7 +107,7 @@ export function SettingsCard({
         </div>
         <div className="flex flex-col items-center space-y-3 border-t border-neutral-100 pt-4">
           <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
-            <span>Score Breakdown</span>
+            <span>Score Counting</span>
             <Trophy className="h-4 w-4" />
           </div>
           <div className="flex items-center gap-3">

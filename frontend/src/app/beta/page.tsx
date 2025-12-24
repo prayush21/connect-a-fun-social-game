@@ -252,7 +252,7 @@ function BetaHomeContent() {
         <div className="space-y-2 text-center">
           <h1
             // style={{ fontFamily: "var(--font-bangers), cursive !important" }}
-            className="flex items-center justify-center text-5xl font-bold text-primary"
+            className="flex items-center justify-center text-4xl font-bold text-primary"
           >
             Connect
             <Image
@@ -264,7 +264,7 @@ function BetaHomeContent() {
             />
             Signull
           </h1>
-          <p className="text-lg text-neutral-500">
+          <p className="text-base text-neutral-500">
             A collaborative word guessing game
           </p>
         </div>

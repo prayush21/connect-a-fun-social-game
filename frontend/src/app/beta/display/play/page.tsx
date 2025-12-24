@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useBetaStore } from "@/lib/beta/store";
 import {
   getAllSignullMetrics,
+  useLettersRevealed,
+  useSignullsGenerated,
+  useSignullsIntercepted,
   type SignullMetrics,
 } from "@/lib/beta/selectors";
 import { Users } from "lucide-react";
@@ -163,6 +166,11 @@ export default function BetaDisplayPlayPage() {
   );
   const setterName = setter ? setter.name : "the setter";
 
+  // Get stats using hooks
+  const lettersRevealed = useLettersRevealed();
+  const signullsGenerated = useSignullsGenerated();
+  const signullsIntercepted = useSignullsIntercepted();
+
   // Get all signull metrics
   const allSignulls = getAllSignullMetrics(gameState);
 
@@ -240,7 +248,7 @@ export default function BetaDisplayPlayPage() {
 
     return (
       <main className="min-h-screen bg-surface p-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto h-full max-w-6xl space-y-4">
           {/* Header */}
           <div className="mb-8 flex items-start justify-between">
             <h1 className="text-3xl font-bold text-primary">Display</h1>
@@ -249,11 +257,8 @@ export default function BetaDisplayPlayPage() {
           </div>
 
           {/* Game Ended Card */}
-          <div className="rounded-3xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="h-full rounded-3xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <div className="mb-8 text-center">
-              <h2 className="mb-2 text-4xl font-bold">
-                {winner === "guessers" ? "🎉 Guessers Win!" : "🛡️ Setter Wins!"}
-              </h2>
               <p className="text-xl text-neutral-600">
                 The secret word was:{" "}
                 <span className="font-bold text-primary">{secretWord}</span>
@@ -271,9 +276,109 @@ export default function BetaDisplayPlayPage() {
 
             {/* Scoreboard */}
             <div className="mx-auto max-w-2xl">
-              <h3 className="mb-4 text-center text-xl font-bold">
+              <h3 className="mb-4 text-center text-2xl font-bold">
                 Final Scores
               </h3>
+
+              <div className="flex h-full w-full flex-col">
+                {/* Custom Column Chart */}
+                <div className="flex flex-1 flex-col justify-end">
+                  {(() => {
+                    // Convert players record to sorted array (highest score first)
+                    const sortedPlayers = Object.values(players)
+                      .map((player) => ({
+                        id: player.id,
+                        name: player.name,
+                        score: player.score,
+                      }))
+                      .sort((a, b) => b.score - a.score);
+
+                    // Find max score for height calculation
+                    const maxScore =
+                      sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
+                    const OVERALL_CHART_HEIGHT = 120; // Increased for desktop
+
+                    // Function to get bar color based on rank
+                    const getBarColor = (rank: number) => {
+                      switch (rank) {
+                        case 1:
+                          return "bg-yellow-400"; // yellow-400
+                        case 2:
+                          return "bg-gray-400"; // gray-400
+                        case 3:
+                          return "bg-orange-400"; // orange-400
+                        default:
+                          return "bg-neutral-100"; // neutral-100
+                      }
+                    };
+
+                    // Function to calculate bar height in pixels
+                    const getBarHeight = (score: number) => {
+                      if (maxScore === 0) return 12; // minimum height
+                      const height = Math.max(
+                        (score / maxScore) * (OVERALL_CHART_HEIGHT * 0.8),
+                        12
+                      ); // minimum 12px height
+                      return Math.round(height);
+                    };
+
+                    return sortedPlayers.length === 0 ? (
+                      <p className="text-center text-lg text-neutral-500">
+                        No players to display
+                      </p>
+                    ) : (
+                      <>
+                        {/* Chart Area */}
+                        <div
+                          className="flex items-end justify-center gap-4 px-8"
+                          style={{ height: `${OVERALL_CHART_HEIGHT}px` }}
+                        >
+                          {sortedPlayers.map((player, index) => {
+                            const rank = index + 1;
+                            const barHeight = getBarHeight(player.score);
+                            return (
+                              <div
+                                key={player.id}
+                                className="flex max-w-32 flex-1 flex-col items-center"
+                              >
+                                {/* Score on top */}
+                                <div className="mb-2 text-lg font-medium text-black">
+                                  {player.score}
+                                </div>
+
+                                {/* Bar */}
+                                <div
+                                  className={`w-full rounded-t ${getBarColor(rank)}`}
+                                  style={{
+                                    height: `${barHeight}px`,
+                                    minHeight: "12px",
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Player Names */}
+                        <div className="mt-4 flex justify-center gap-4 px-8">
+                          {sortedPlayers.map((player) => (
+                            <div
+                              key={player.id}
+                              className="max-w-32 flex-1 text-center"
+                            >
+                              <span className="block truncate text-base text-black">
+                                {player.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/*
               <div className="space-y-2">
                 {playerList.map((player, index) => (
                   <div
@@ -298,6 +403,48 @@ export default function BetaDisplayPlayPage() {
                     </span>
                   </div>
                 ))}
+              </div>
+              */}
+            </div>
+          </div>
+          <div className="h-full rounded-3xl border-2 border-black bg-white p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex flex-1 items-center justify-center">
+              <div className="flex items-end justify-center gap-8 space-x-6">
+                {/* Signulls Generated - Left */}
+                <div className="mt-2 flex flex-col items-center">
+                  <div className="text-3xl font-bold text-neutral-700">
+                    {signullsGenerated}
+                  </div>
+                  <div className="text-md mt-1 text-center text-neutral-500">
+                    Signulls
+                    <br />
+                    Generated
+                  </div>
+                </div>
+
+                {/* Letters Revealed - Center (podium top) */}
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl font-bold text-neutral-700">
+                    {lettersRevealed - 1}
+                  </div>
+                  <div className="text-md mt-1 text-center text-neutral-500">
+                    Letters
+                    <br />
+                    Revealed
+                  </div>
+                </div>
+
+                {/* Signulls Intercepted - Right */}
+                <div className="mt-2 flex flex-col items-center">
+                  <div className="text-3xl font-bold text-neutral-700">
+                    {signullsIntercepted}
+                  </div>
+                  <div className="text-md mt-1 text-center text-neutral-500">
+                    Signulls
+                    <br />
+                    Intercepted
+                  </div>
+                </div>
               </div>
             </div>
           </div>

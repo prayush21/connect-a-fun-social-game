@@ -208,6 +208,32 @@ export function hasPlayerConnected(
   return signull.connects.some((c) => c.playerId === playerId);
 }
 
+/**
+ * Get the number of letters revealed to show in stats/display
+ */
+export function getLettersRevealed(state: GameState | null): number {
+  if (!state) return 0;
+  return state.revealedCount;
+}
+
+/**
+ * Get the total number of signulls generated in the game
+ */
+export function getSignullsGenerated(state: GameState | null): number {
+  if (!state) return 0;
+  return Object.keys(state.signullState.itemsById).length;
+}
+
+/**
+ * Get the number of signulls that were intercepted by the setter
+ */
+export function getSignullsIntercepted(state: GameState | null): number {
+  if (!state) return 0;
+  return Object.values(state.signullState.itemsById).filter(
+    (signull) => signull.status === "blocked"
+  ).length;
+}
+
 // Hooks --------------------------------------------------------
 
 export function useGame() {
@@ -262,4 +288,16 @@ export function useHasPlayerConnected(
   playerId: PlayerId
 ) {
   return useBetaStore((s) => hasPlayerConnected(s.game, signullId, playerId));
+}
+
+export function useLettersRevealed() {
+  return useBetaStore((s) => getLettersRevealed(s.game));
+}
+
+export function useSignullsGenerated() {
+  return useBetaStore((s) => getSignullsGenerated(s.game));
+}
+
+export function useSignullsIntercepted() {
+  return useBetaStore((s) => getSignullsIntercepted(s.game));
 }

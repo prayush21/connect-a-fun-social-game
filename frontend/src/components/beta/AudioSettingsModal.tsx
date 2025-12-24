@@ -11,13 +11,19 @@ import { X } from "lucide-react";
 import { AudioSettings } from "./AudioSettings";
 
 interface AudioSettingsModalProps {
+  isHost: boolean;
   isOpen: boolean;
   onClose: () => void;
+  displaySoundMode: boolean;
+  onToggleDisplaySoundMode: () => void;
 }
 
 export function AudioSettingsModal({
+  isHost,
   isOpen,
   onClose,
+  displaySoundMode,
+  onToggleDisplaySoundMode,
 }: AudioSettingsModalProps) {
   if (!isOpen) return null;
 
@@ -38,7 +44,11 @@ export function AudioSettingsModal({
 
         {/* Modal Content */}
         <div className="p-6">
-          <AudioSettings />
+          <AudioSettings
+            isHost={isHost}
+            displaySoundMode={displaySoundMode}
+            onToggleDisplaySoundMode={onToggleDisplaySoundMode}
+          />
         </div>
 
         {/* Modal Footer */}

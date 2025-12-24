@@ -103,6 +103,7 @@ export interface GameSettings {
   timeLimitSeconds: number; // limit for setting secret word or signull
   wordValidation: "strict" | "relaxed";
   prefixMode: boolean;
+  displaySoundMode: boolean;
   showScoreBreakdown: boolean; // Whether to show score counting animation at game end
 }
 
@@ -214,6 +215,7 @@ export interface FirestoreGameRoom {
     wordValidation: "strict" | "relaxed";
     prefixMode: boolean;
     showScoreBreakdown: boolean;
+    displaySoundMode: boolean;
   };
   scoreEvents: FirestoreScoreEvent[];
   scoreCountingComplete: boolean;

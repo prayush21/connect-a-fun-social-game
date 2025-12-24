@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { Player, PlayerId } from "@/lib/beta/types";
 import { useShowPlayerScores } from "@/lib/posthog";
 import { ScoresCard } from "./ScoresCard";
+import {
+  useLettersRevealed,
+  useSignullsGenerated,
+  useSignullsIntercepted,
+} from "@/lib/beta/selectors";
 
 /**
  * WinningCard Component
@@ -41,35 +46,10 @@ export function WinningCardFront({
   winningPlayerName,
   showFlipHint = false,
 }: WinningCardProps & { showFlipHint?: boolean }) {
-  const title =
-    winnerRole === "setter"
-      ? "Setter Wins!"
-      : winnerRole === "guessers"
-        ? "Guessers Win!"
-        : "Game Over";
-
-  const getVictoryMessage = (): string => {
-    if (winnerRole === "setter") {
-      return `The guessers ran out of direct guesses! The secret word was "${secretWord || "???"}".`;
-    }
-
-    if (winnerRole === "guessers") {
-      if (winCondition === "direct_guess") {
-        if (winningPlayerName) {
-          return `${winningPlayerName} made a brilliant direct guess: "${secretWord || "???"}"! 🎯`;
-        }
-        return `A guesser correctly guessed the secret word: "${secretWord || "???"}". 🎯`;
-      }
-
-      if (winCondition === "all_letters_revealed") {
-        return `The team revealed all letters one by one and uncovered the secret word: "${secretWord || "???"}". 🧩`;
-      }
-
-      return `The guessers successfully discovered the secret word: "${secretWord || "???"}".`;
-    }
-
-    return "The game has ended.";
-  };
+  const title = "Guessers Got the word!"; // Default title
+  const lettersRevealed = useLettersRevealed();
+  const signullsGenerated = useSignullsGenerated();
+  const signullsIntercepted = useSignullsIntercepted();
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -83,9 +63,43 @@ export function WinningCardFront({
 
       {/* Victory Message */}
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-center text-sm leading-relaxed text-neutral-700">
-          {getVictoryMessage()}
-        </p>
+        <div className="flex items-end justify-center gap-8 space-x-6">
+          {/* Signulls Generated - Left */}
+          <div className="mt-2 flex flex-col items-center">
+            <div className="text-3xl font-bold text-neutral-700">
+              {signullsGenerated}
+            </div>
+            <div className="mt-1 text-center text-xs text-neutral-500">
+              Signulls
+              <br />
+              Generated
+            </div>
+          </div>
+
+          {/* Letters Revealed - Center (podium top) */}
+          <div className="flex flex-col items-center">
+            <div className="text-3xl font-bold text-neutral-700">
+              {lettersRevealed - 1}
+            </div>
+            <div className="mt-1 text-center text-xs text-neutral-500">
+              Letters
+              <br />
+              Revealed
+            </div>
+          </div>
+
+          {/* Signulls Intercepted - Right */}
+          <div className="mt-2 flex flex-col items-center">
+            <div className="text-3xl font-bold text-neutral-700">
+              {signullsIntercepted}
+            </div>
+            <div className="mt-1 text-center text-xs text-neutral-500">
+              Signulls
+              <br />
+              Intercepted
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tap hint */}

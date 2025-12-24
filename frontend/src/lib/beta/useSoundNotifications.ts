@@ -71,6 +71,8 @@ const CRITICAL_SOUNDS: SoundEvent[] = [
   "signull_resolved",
   "signull_intercepted",
   "notification",
+  "score_point",
+  "extra_game_point",
 ];
 
 /**

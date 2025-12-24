@@ -111,6 +111,7 @@ export function useSound() {
     mode,
     hasUserInteracted,
     markUserInteracted,
+    setEnabled,
     getEffectiveVolume,
     shouldPlaySound,
   } = useSoundStore();
@@ -276,7 +277,16 @@ export function useSound() {
    */
   const enableSounds = useCallback(() => {
     markUserInteracted();
-  }, [markUserInteracted]);
+    setEnabled(true);
+  }, [markUserInteracted, setEnabled]);
+
+  /**
+   * Disable all sounds and stop playback
+   */
+  const disableAllSounds = useCallback(() => {
+    stopAll();
+    setEnabled(false);
+  }, [stopAll, setEnabled]);
 
   return {
     // Core playback functions
@@ -293,6 +303,7 @@ export function useSound() {
 
     // Actions
     enableSounds,
+    disableAllSounds,
 
     // Helpers
     canPlay: enabled && hasUserInteracted && mode !== "none",
