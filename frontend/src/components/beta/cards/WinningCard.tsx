@@ -17,7 +17,7 @@ import {
  * Features: Title, horizontal divider, and victory message explaining how the game was won
  *
  * When the player scores feature flag is enabled, the card becomes flippable.
- * Tapping the card flips it to reveal player scores on the back.
+ * Tapping the card flips it to reveal game stats on the back.
  *
  * Note: This component provides the CONTENT for the card. The actual flip animation
  * is handled by the parent via isFlipped/onFlip props or internally if managing its own state.
@@ -37,9 +37,93 @@ export interface WinningCardProps {
 }
 
 /**
- * Get the front content (victory message) for the WinningCard
+ * Get the front content (player scores) for the WinningCard
  */
 export function WinningCardFront({
+  players,
+  showFlipHint = false,
+}: {
+  players?: Record<PlayerId, Player>;
+  showFlipHint?: boolean;
+}) {
+  if (!players) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <p className="text-sm text-neutral-500">No scores available</p>
+      </div>
+    );
+  }
+
+  // Convert players record to sorted array (highest score first)
+  const sortedPlayers = Object.values(players)
+    .map((player) => ({
+      id: player.id,
+      name: player.name,
+      score: player.score,
+      isHighestScorer: false,
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  // Find highest score and mark top scorers
+  const highestScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
+
+  const playersWithHighlight = sortedPlayers.map((player) => ({
+    ...player,
+    isHighestScorer: player.score === highestScore && highestScore > 0,
+  }));
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      {/* Title */}
+      <h2 className="mb-4 text-center text-sm font-bold uppercase tracking-wider text-black">
+        Player Scores
+      </h2>
+
+      {/* Horizontal Divider */}
+      <div className="mb-4 w-full border-t-2 border-black" />
+
+      {/* Scores Table */}
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+        {playersWithHighlight.length === 0 ? (
+          <p className="text-center text-sm text-neutral-500">
+            No players to display
+          </p>
+        ) : (
+          playersWithHighlight.map((player, index) => (
+            <div
+              key={player.id}
+              className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                player.isHighestScorer
+                  ? "bg-yellow-200 font-semibold"
+                  : "bg-neutral-50"
+              }`}
+            >
+              <span className="text-sm ">
+                <span className="font-bold text-neutral-400">#{index + 1}</span>
+                <span className="mx-2 truncate text-black">{player.name}</span>
+              </span>
+              <span className="ml-4 text-sm font-medium text-black">
+                {player.score}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tap hint */}
+      {showFlipHint && (
+        <p className="mt-4 text-center text-xs text-neutral-400">
+          Tap to see stats
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Get the back content (victory message) for the WinningCard
+ */
+export function WinningCardBack({
   winnerRole,
   winCondition,
   secretWord,
@@ -113,25 +197,6 @@ export function WinningCardFront({
 }
 
 /**
- * Get the back content (scores) for the WinningCard
- */
-export function WinningCardBack({
-  players,
-}: {
-  players?: Record<PlayerId, Player>;
-}) {
-  if (!players) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <p className="text-sm text-neutral-500">No scores available</p>
-      </div>
-    );
-  }
-
-  return <ScoresCard players={players} />;
-}
-
-/**
  * Main WinningCard component - provides content only (no flip animation)
  * Used when the parent handles flipping via FlippableBaseCard
  */
@@ -156,36 +221,30 @@ export function WinningCard({
 
   // Simple non-flipping version when feature is disabled
   if (!canFlip) {
-    return (
-      <WinningCardFront
-        winnerRole={winnerRole}
-        winCondition={winCondition}
-        secretWord={secretWord}
-        winningPlayerName={winningPlayerName}
-        showFlipHint={false}
-      />
-    );
+    return <WinningCardFront players={players} showFlipHint={false} />;
   }
 
   // Show the appropriate side based on flip state
   // Note: The actual flip animation is now handled by the parent FlippableBaseCard
+  // Front: Player Scores, Back: Game Stats
   if (isFlipped) {
     return (
       <div onClick={handleClick} className="h-full w-full cursor-pointer">
-        <WinningCardBack players={players} />
+        <WinningCardBack
+          winnerRole={winnerRole}
+          winCondition={winCondition}
+          secretWord={secretWord}
+          winningPlayerName={winningPlayerName}
+          players={players}
+          showFlipHint={true}
+        />
       </div>
     );
   }
 
   return (
     <div onClick={handleClick} className="h-full w-full cursor-pointer">
-      <WinningCardFront
-        winnerRole={winnerRole}
-        winCondition={winCondition}
-        secretWord={secretWord}
-        winningPlayerName={winningPlayerName}
-        showFlipHint={true}
-      />
+      <WinningCardFront players={players} showFlipHint={true} />
     </div>
   );
 }
@@ -209,9 +268,11 @@ export function useWinningCardContent(props: WinningCardProps) {
   const canFlip =
     showPlayerScores && props.players && Object.keys(props.players).length > 0;
 
-  const frontContent = <WinningCardFront {...props} showFlipHint={canFlip} />;
+  const frontContent = (
+    <WinningCardFront players={props.players} showFlipHint={canFlip} />
+  );
 
-  const backContent = <WinningCardBack players={props.players} />;
+  const backContent = <WinningCardBack {...props} showFlipHint={canFlip} />;
 
   return {
     frontContent,

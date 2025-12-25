@@ -715,7 +715,7 @@ export function ScoreBreakdownDisplay({
             </div>
             <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               <span className="text-xl font-bold text-green-600">+5</span> Bonus
-              for Each Letter Remaning/Revealed Letter to Guesser/Setter
+              for Each Letter Revealed/Remaining
             </div>
             {/* <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
               <span className="text-xl font-bold text-green-600">+5</span>{" "}

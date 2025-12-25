@@ -83,11 +83,10 @@ export function PlayerList({
                 </button>
               )}
               {/* Player score - shown when feature flag is enabled */}
-              {showPlayerScores && player.score !== undefined && (
-                <span className="text-sm font-medium text-neutral-500">
-                  {player.score} pts
-                </span>
-              )}
+
+              <span className="text-sm font-medium text-neutral-500">
+                {player.score} pts
+              </span>
             </div>
           </BaseCard>
         );

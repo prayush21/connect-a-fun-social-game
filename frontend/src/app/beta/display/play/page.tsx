@@ -354,23 +354,16 @@ export default function BetaDisplayPlayPage() {
                                     minHeight: "12px",
                                   }}
                                 />
+
+                                {/* Player Name below */}
+                                <div className="mt-2 text-center">
+                                  <span className="break-words text-base text-black">
+                                    {player.name}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })}
-                        </div>
-
-                        {/* Player Names */}
-                        <div className="mt-4 flex justify-center gap-4 px-8">
-                          {sortedPlayers.map((player) => (
-                            <div
-                              key={player.id}
-                              className="max-w-32 flex-1 text-center"
-                            >
-                              <span className="block truncate text-base text-black">
-                                {player.name}
-                              </span>
-                            </div>
-                          ))}
                         </div>
                       </>
                     );

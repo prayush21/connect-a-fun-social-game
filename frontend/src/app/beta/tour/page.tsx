@@ -48,7 +48,7 @@ function TourContent() {
     },
     {
       id: "2",
-      name: "Alice",
+      name: "Dustin",
       role: "setter" as const,
       isOnline: true,
       lastActive: new Date(),
@@ -56,7 +56,7 @@ function TourContent() {
     },
     {
       id: "3",
-      name: "Bob",
+      name: "Steve",
       role: "guesser" as const,
       isOnline: true,
       lastActive: new Date(),
@@ -73,7 +73,7 @@ function TourContent() {
     metrics: {
       signullId: "tour-signull",
       clueGiverId: "3",
-      clueGiverName: "Bob",
+      clueGiverName: "Steve",
       clue: "Wall-e's godchild",
       word: "PLANT",
       status: "pending" as const,
@@ -89,7 +89,7 @@ function TourContent() {
       allConnects: [
         {
           playerId: "h2",
-          playerName: "Alice",
+          playerName: "Dustin",
           playerRole: "guesser" as const,
           guess: "PLANT",
           isCorrect: true,
@@ -102,7 +102,7 @@ function TourContent() {
   const mockHistory = [
     {
       id: "h1",
-      username: "Bob",
+      username: "Steve",
       message: "Wall-e's godchild",
       timestamp: "2m ago",
       role: "guesser" as const,

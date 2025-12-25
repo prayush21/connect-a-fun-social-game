@@ -63,7 +63,7 @@ const steps = [
       {
         title: "Guesser Connects",
         content:
-          "This shows how many guessers have connected to this Signull out of the total active guessers.",
+          "Numbers show how many guessers have Connected to this Signull out of total guessers.",
         selector: "#tour-guesser-connects",
         side: "bottom-right",
         showSkip: true,
@@ -80,8 +80,7 @@ const steps = [
       {
         // icon: "💬",
         title: "Guess & Connect",
-        content:
-          "Type your guess here to connect to a Signull and submit your connection.",
+        content: "Type your guess to a Signull here and send Connect!",
         selector: "#tour-action-bar-input",
         side: "top",
         showSkip: true,
@@ -89,7 +88,7 @@ const steps = [
       {
         // icon: "✅",
         title: "Submit button",
-        content: "Submit your connection or the Signull word pressiing here.",
+        content: "Submit your Connect or the Signull word here",
         selector: "#tour-action-bar-submit",
         side: "top-right",
       },
@@ -97,7 +96,7 @@ const steps = [
         // icon: "💬",
         title: "Signull Log",
         content:
-          "Here you can see all the connections that have been sent to current Signull.",
+          "Here you can see all the Connects that have been sent to current Signull.",
         selector: "#tour-action-bar-log",
         side: "bottom",
       },
