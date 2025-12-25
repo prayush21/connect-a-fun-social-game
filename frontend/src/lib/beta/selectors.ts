@@ -183,13 +183,23 @@ export function getSignullMetrics(
 }
 
 /**
- * Get all signulls with computed metrics
+ * Get all signulls with computed metrics in reverse order (most recent first)
  */
 export function getAllSignullMetrics(
   state: GameState | null
 ): SignullMetrics[] {
   if (!state) return [];
-  return Object.keys(state.signullState.itemsById)
+  const { signullState } = state;
+  const keys = Object.keys(signullState.order)
+    .map(Number)
+    .sort((a, b) => a - b);
+  const flattenedOrder = keys
+    .reduce(
+      (acc, key) => acc.concat(signullState.order[String(key)]),
+      [] as SignullId[]
+    )
+    .reverse();
+  return flattenedOrder
     .map((id) => getSignullMetrics(state, id))
     .filter((data): data is SignullMetrics => data !== null);
 }
