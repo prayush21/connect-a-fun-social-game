@@ -48,6 +48,7 @@ import { logScorecard, getSignullStatusLabel } from "@/lib/beta/debug";
 import { useNextStep } from "nextstepjs";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
+import { captureEvent } from "@/lib/posthog";
 
 // Define card types
 type CardType =
@@ -258,8 +259,24 @@ export default function BetaPlayPage() {
   useEffect(() => {
     if (game?.phase === "ended") {
       setActiveIndex(0);
+
+      // Track game completion event (only from host to avoid duplicates)
+      if (userId === game.hostId) {
+        captureEvent("game_completed", {
+          roomId: game.roomId,
+          winner: game.winner,
+          playerCount: Object.keys(game.players).length,
+          totalSignulls: Object.keys(game.signullState.itemsById).length,
+          revealedLetters: game.revealedCount,
+          directGuessesUsed: 3 - game.directGuessesLeft,
+          playMode: game.settings.playMode,
+          connectsRequired: game.settings.connectsRequired,
+          flow: "beta",
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
-  }, [game?.phase]);
+  }, [game, userId]);
 
   const connectsRequired = game?.settings.connectsRequired || 3;
   const prefixMode = game?.settings.prefixMode || false;

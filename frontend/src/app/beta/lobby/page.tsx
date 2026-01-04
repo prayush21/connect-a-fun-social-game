@@ -16,6 +16,7 @@ import { copyToClipboard } from "@/lib/utils";
 import { useEnableSoundsOnInteraction } from "@/lib/beta/useSound";
 import { useSoundNotifications } from "@/lib/beta/useSoundNotifications";
 import { Logo } from "@/components/ui/Logo";
+import { captureEvent } from "@/lib/posthog";
 
 export default function BetaLobbyPage() {
   const router = useRouter();
@@ -210,6 +211,19 @@ export default function BetaLobbyPage() {
 
     try {
       await startGame();
+
+      // Track game start event
+      captureEvent("game_started", {
+        roomId: roomId,
+        playerCount: playersList.length,
+        playMode: settings.playMode,
+        connectsRequired: settings.connectsRequired,
+        maxPlayers: settings.maxPlayers,
+        prefixMode: settings.prefixMode,
+        showTutorial: showTutorial,
+        flow: "beta",
+        timestamp: new Date().toISOString(),
+      });
 
       if (showTutorial) {
         router.push("/beta/tour");

@@ -276,7 +276,7 @@ export default function BetaDisplayPlayPage() {
 
             {/* Scoreboard */}
             <div className="mx-auto max-w-2xl">
-              <h3 className="mb-4 text-center text-2xl font-bold">
+              <h3 className="mb-10 text-center text-2xl font-bold">
                 Final Scores
               </h3>
 
@@ -296,7 +296,7 @@ export default function BetaDisplayPlayPage() {
                     // Find max score for height calculation
                     const maxScore =
                       sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
-                    const OVERALL_CHART_HEIGHT = 120; // Increased for desktop
+                    const OVERALL_CHART_HEIGHT = 180; // Increased for desktop
 
                     // Function to get bar color based on rank
                     const getBarColor = (rank: number) => {
