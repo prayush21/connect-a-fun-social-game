@@ -53,17 +53,16 @@ const steps = [
         showSkip: true,
       },
       {
-        title: "Correct Indicator",
-        content:
-          "Circular indicator fills up when guessers submit correct Connects",
+        title: "Connect Indicator",
+        content: "Circular indicator fills up when guessers submit Connects",
         selector: "#tour-correct-indicator",
         side: "bottom-right",
         showSkip: true,
       },
       {
-        title: "Guesser Connects",
+        title: "Correct Connects ",
         content:
-          "Numbers show how many guessers have Connected to this Signull out of total guessers.",
+          "Numbers show how many guessers correctly connected to this Signull out of required connects.",
         selector: "#tour-guesser-connects",
         side: "bottom-right",
         showSkip: true,

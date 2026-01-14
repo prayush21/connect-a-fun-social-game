@@ -95,14 +95,17 @@ function DisplaySignullCard({ data }: { data: SignullMetrics }) {
         </span>
         <div className="flex items-center gap-2">
           <CircularProgress
-            connectsReceived={correctConnectsFromGuessers}
-            connectsRequired={connectsRequired}
+            connectsReceived={totalConnectsFromGuessers}
+            connectsRequired={totalActiveGuessers}
             isIntercepted={isIntercepted}
             isInactive={isInactive}
             isFailed={isFailed}
           />
-          <span className="text-sm font-bold">
+          {/* <span className="text-sm font-bold">
             {totalConnectsFromGuessers}/{totalActiveGuessers}
+          </span> */}
+          <span className="text-sm font-bold">
+            {correctConnectsFromGuessers}/{connectsRequired}
           </span>
         </div>
       </div>

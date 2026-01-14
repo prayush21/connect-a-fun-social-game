@@ -51,21 +51,21 @@ export function SignullCard({ data, onClick }: SignullCardProps) {
 
         {/* Progress Indicator - Right aligned */}
         <div id="tour-correct-indicator" className="flex items-center gap-2">
-          {/* Circular Progress - based on correct connects */}
+          {/* Circular Progress - based on total connects */}
           <CircularProgress
-            connectsReceived={correctConnectsFromGuessers}
-            connectsRequired={connectsRequired}
+            connectsReceived={totalConnectsFromGuessers}
+            connectsRequired={totalActiveGuessers}
             isIntercepted={isIntercepted}
             isInactive={isInactive}
             isFailed={isFailed}
           />
 
-          {/* Ratio Text - shows total connects received / total active guessers */}
+          {/* Ratio Text - shows correct connects received / required connects */}
           <span
             id="tour-guesser-connects"
             className="text-base font-bold text-black"
           >
-            {totalConnectsFromGuessers} / {totalActiveGuessers}
+            {correctConnectsFromGuessers} / {connectsRequired}
           </span>
         </div>
       </div>
