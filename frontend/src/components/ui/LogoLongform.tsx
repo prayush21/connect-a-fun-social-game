@@ -13,9 +13,9 @@ interface LogoProps {
 }
 
 export const LogoLongform: React.FC<LogoProps> = ({
-  height = 10,
-  fontSize = 20,
-  iconSize = 16,
+  height = 40,
+  fontSize = 32,
+  iconSize = 20,
   className = "",
 }) => {
   return (
@@ -28,7 +28,7 @@ export const LogoLongform: React.FC<LogoProps> = ({
           }
           style={{ fontSize }}
         >
-          {letter}
+          {"Connect"}
         </h1>
       ))}
       {/* <h1
@@ -57,7 +57,7 @@ export const LogoLongform: React.FC<LogoProps> = ({
           }
           style={{ fontSize }}
         >
-          {letter}
+          {"Signull"}
         </h1>
       ))}
     </div>
