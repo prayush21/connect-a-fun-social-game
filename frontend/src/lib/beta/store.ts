@@ -16,6 +16,7 @@ import {
   playAgain as fxPlayAgain,
   backToLobby as fxBackToLobby,
   resetScoresOnly as fxResetScoresOnly,
+  updatePlayerName as fxUpdatePlayerName,
   subscribeToRoom,
 } from "./firebase";
 import type {
@@ -87,6 +88,7 @@ interface BetaStoreState {
   updateGameSettings: (settings: Partial<GameSettings>) => Promise<void>;
   changeSetter: (newSetterId: PlayerId) => Promise<void>;
   removePlayerFromRoom: (playerId: PlayerId) => Promise<void>;
+  updatePlayerName: (playerId: PlayerId, newName: string) => Promise<void>;
   startGame: () => Promise<void>;
   playAgain: () => Promise<void>;
   backToLobby: (resetScores?: boolean) => Promise<void>;
@@ -415,6 +417,19 @@ export const useBetaStore = create<BetaStoreState>()(
         if (!roomId) return;
         try {
           await fxLeaveRoom(roomId, playerId);
+        } catch (e) {
+          set({ error: mapError(e) });
+        }
+      },
+      updatePlayerName: async (playerId, newName) => {
+        const { roomId, userId } = get();
+        if (!roomId) return;
+        try {
+          await fxUpdatePlayerName(roomId, playerId, newName);
+          // Also update local username if it's the current user
+          if (playerId === userId) {
+            set({ username: newName.trim() });
+          }
         } catch (e) {
           set({ error: mapError(e) });
         }

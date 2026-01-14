@@ -27,6 +27,7 @@ export default function BetaLobbyPage() {
     initialized,
     updateGameSettings,
     removePlayerFromRoom,
+    updatePlayerName,
     changeSetter,
     startGame,
     resetScores,
@@ -50,7 +51,7 @@ export default function BetaLobbyPage() {
     timeLimitSeconds: 60,
     maxPlayers: 4,
     wordValidation: "strict" as const,
-    prefixMode: false,
+    prefixMode: true,
     displaySoundMode: true,
     showScoreBreakdown: true,
   };
@@ -174,6 +175,15 @@ export default function BetaLobbyPage() {
       await removePlayerFromRoom(playerId);
     } catch (err) {
       console.error("Failed to remove player:", err);
+    }
+  };
+
+  // Handle edit player name
+  const handleEditPlayerName = async (playerId: string, newName: string) => {
+    try {
+      await updatePlayerName(playerId, newName);
+    } catch (err) {
+      console.error("Failed to update player name:", err);
     }
   };
 
@@ -328,6 +338,7 @@ export default function BetaLobbyPage() {
             hostId={hostId}
             setterId={setterUid}
             onRemovePlayer={handleRemovePlayer}
+            onEditPlayerName={handleEditPlayerName}
             isHost={isHost}
           />
 
