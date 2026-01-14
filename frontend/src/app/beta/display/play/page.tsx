@@ -418,7 +418,7 @@ export default function BetaDisplayPlayPage() {
                 {/* Letters Revealed - Center (podium top) */}
                 <div className="flex flex-col items-center">
                   <div className="text-3xl font-bold text-neutral-700">
-                    {lettersRevealed - 1}
+                    {lettersRevealed}
                   </div>
                   <div className="text-md mt-1 text-center text-neutral-500">
                     Letters
