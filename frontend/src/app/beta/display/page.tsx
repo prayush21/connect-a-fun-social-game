@@ -6,11 +6,9 @@ import { useBetaStore } from "@/lib/beta/store";
 import { copyToClipboard } from "@/lib/utils";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, Check, Users, Settings } from "lucide-react";
-import Image from "next/image";
+
 import { Logo } from "@/components/ui/Logo";
-import { LogoLongform } from "@/components/ui/LogoLongform";
 import { useSound } from "@/lib/beta/useSound";
-import { pl } from "zod/v4/locales";
 
 export default function BetaDisplayPage() {
   const router = useRouter();
