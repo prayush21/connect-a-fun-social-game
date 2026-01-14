@@ -49,8 +49,13 @@
 }
 
 /* === Custom Animations === */
+/* 
+ * NOTE: Core keyframes (fadeIn, scaleIn, slideUp, cardEnter, cardExit, 
+ * letterSlideUp, notificationFade) are defined in tailwind.config.ts
+ * Only define CSS-specific animations here that aren't needed in Tailwind.
+ */
 
-/* Custom animations for game components */
+/* Game-specific animations not used via Tailwind utilities */
 @keyframes letterReveal {
   from {
     opacity: 0;
@@ -93,77 +98,6 @@
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* === Beta Card System Animations === */
-
-/* Card entrance animation */
-@keyframes cardEnter {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Card exit animation */
-@keyframes cardExit {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-}
-
-/* Letter block slide up from behind card */
-@keyframes letterSlideUp {
-  0% {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Notification fade in Section 2 */
-@keyframes notificationFade {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
 /* Card stack depth effect */
 @keyframes cardStackIn {
   0% {
@@ -199,21 +133,13 @@
   animation-delay: 0.6s;
 }
 
-/* Custom component animations */
+/* Custom component animations 
+ * These reference keyframes - use Tailwind animate-* utilities where possible.
+ * Prefer: animate-fade-in, animate-scale-in, animate-slide-up, 
+ *         animate-card-enter, animate-card-exit, animate-letter-slide-up
+ */
 .letter-reveal {
   animation: letterReveal 0.3s ease-out;
-}
-
-.letter-slide-up {
-  animation: letterSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-enter {
-  animation: cardEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-exit {
-  animation: cardExit 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .game-card-enter {
@@ -226,10 +152,6 @@
 
 .status-indicator {
   animation: pulseGlow 2s infinite;
-}
-
-.notification-fade {
-  animation: notificationFade 0.3s ease-in-out;
 }
 
 /* === Dynamic Letter Block Sizing Utilities === */
@@ -292,7 +214,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-bricolage-grotesque), system-ui, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -367,14 +289,14 @@ body {
     transition-duration: 0.01ms !important;
   }
   
-  .letter-slide-up {
-    animation: none;
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  .card-enter,
-  .card-exit {
+  /* Override Tailwind animation utilities */
+  .animate-letter-slide-up,
+  .animate-card-enter,
+  .animate-card-exit,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-up,
+  .animate-notification-fade {
     animation: none;
     opacity: 1;
     transform: none;

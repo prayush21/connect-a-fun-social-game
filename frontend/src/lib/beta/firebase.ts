@@ -188,7 +188,7 @@ export const createRoom = async (
       maxPlayers: settings?.maxPlayers || 8,
       timeLimitSeconds: settings?.timeLimitSeconds || 30,
       wordValidation: settings?.wordValidation || "strict",
-      prefixMode: settings?.prefixMode || false,
+      prefixMode: settings?.prefixMode ?? true, // Default to true for new games
       showScoreBreakdown: settings?.showScoreBreakdown ?? true, // Default to true for new games
       displaySoundMode: settings?.displaySoundMode ?? true, // Default to true for new games
     };
@@ -879,6 +879,36 @@ export const updateGameSettings = async (
     }
     updates.updatedAt = serverTimestamp();
     await updateDoc(docRef, updates);
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+export const updatePlayerName = async (
+  roomId: RoomId,
+  playerId: PlayerId,
+  newName: string
+): Promise<void> => {
+  try {
+    const docRef = doc(getRoomsCollection(), roomId);
+    await runTransaction(getDb(), async (trx) => {
+      const snap = await trx.get(docRef);
+      if (!snap.exists()) {
+        throw new Error("ROOM_NOT_FOUND");
+      }
+      const data = snap.data() as FirestoreGameRoom;
+      if (!data.players[playerId]) {
+        throw new Error("PLAYER_NOT_FOUND");
+      }
+      const trimmedName = newName.trim();
+      if (!trimmedName) {
+        throw new Error("INVALID_NAME");
+      }
+      trx.update(docRef, {
+        [`players.${playerId}.name`]: trimmedName,
+        updatedAt: serverTimestamp(),
+      });
+    });
   } catch (error) {
     handleFirebaseError(error);
   }

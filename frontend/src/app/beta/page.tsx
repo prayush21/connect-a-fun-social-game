@@ -9,10 +9,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X } from "lucide-react";
-import Image from "next/image";
 import { DisplayModeModal } from "@/components/beta/DisplayModeModal";
 import { useIsMobile } from "@/lib/hooks";
 import { Logo } from "@/components/ui/Logo";
+import { DynamicLogo } from "@/components/ui/DynamicLogo";
 
 type NicknameFormData = z.infer<typeof nicknameSchema>;
 type JoinGameFormData = z.infer<typeof joinGameSchema>;
@@ -249,8 +249,8 @@ function BetaHomeContent() {
         </div>
 
         {/* Header */}
-        <div className="space-y-2 text-center">
-          <h1
+        <div className="flex flex-col items-center space-y-2 text-center">
+          {/* <h1
             // style={{ fontFamily: "var(--font-bangers), cursive !important" }}
             className="flex items-center justify-center text-4xl font-bold text-primary"
           >
@@ -263,9 +263,11 @@ function BetaHomeContent() {
               className="inline-block"
             />
             Signull
-          </h1>
+          </h1> */}
+          <DynamicLogo />
+
           <p className="text-base text-neutral-500">
-            A collaborative word guessing game
+            A multiplayer word guessing game
           </p>
         </div>
 

@@ -86,6 +86,11 @@ const config: Config = {
         "card-2": "0 4px 12px rgba(0, 0, 0, 0.12)",
         "card-3": "0 8px 16px rgba(0, 0, 0, 0.16)",
         "card-4": "0 12px 24px rgba(0, 0, 0, 0.20)",
+        // Neobrutalist shadows - hard offset, no blur
+        "neobrutalist-sm": "2px 2px 0px 0px rgba(0,0,0,1)",
+        neobrutalist: "4px 4px 0px 0px rgba(0,0,0,1)",
+        "neobrutalist-lg": "8px 8px 0px 0px rgba(0,0,0,1)",
+        "neobrutalist-hover": "1px 1px 0px 0px rgba(0,0,0,1)",
       },
       // Card border radius
       borderRadius: {

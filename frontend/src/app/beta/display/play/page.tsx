@@ -95,14 +95,17 @@ function DisplaySignullCard({ data }: { data: SignullMetrics }) {
         </span>
         <div className="flex items-center gap-2">
           <CircularProgress
-            connectsReceived={correctConnectsFromGuessers}
-            connectsRequired={connectsRequired}
+            connectsReceived={totalConnectsFromGuessers}
+            connectsRequired={totalActiveGuessers}
             isIntercepted={isIntercepted}
             isInactive={isInactive}
             isFailed={isFailed}
           />
-          <span className="text-sm font-bold">
+          {/* <span className="text-sm font-bold">
             {totalConnectsFromGuessers}/{totalActiveGuessers}
+          </span> */}
+          <span className="text-sm font-bold">
+            {correctConnectsFromGuessers}/{connectsRequired}
           </span>
         </div>
       </div>
@@ -356,8 +359,11 @@ export default function BetaDisplayPlayPage() {
                                 />
 
                                 {/* Player Name below */}
-                                <div className="mt-2 text-center">
-                                  <span className="break-words text-base text-black">
+                                <div className="mt-2 w-full text-center">
+                                  <span
+                                    className="block truncate text-base text-black"
+                                    title={player.name}
+                                  >
                                     {player.name}
                                   </span>
                                 </div>
@@ -418,7 +424,7 @@ export default function BetaDisplayPlayPage() {
                 {/* Letters Revealed - Center (podium top) */}
                 <div className="flex flex-col items-center">
                   <div className="text-3xl font-bold text-neutral-700">
-                    {lettersRevealed - 1}
+                    {lettersRevealed}
                   </div>
                   <div className="text-md mt-1 text-center text-neutral-500">
                     Letters

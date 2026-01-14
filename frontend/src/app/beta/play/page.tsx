@@ -278,6 +278,30 @@ export default function BetaPlayPage() {
     }
   }, [game, userId]);
 
+  // Reset all local UI state when starting a new game (phase transitions to "setting")
+  // This clears stale input values, card state, and refs from the previous game
+  useEffect(() => {
+    if (game?.phase === "setting") {
+      // Reset input states
+      setInputValue("");
+      setSignullClue("");
+      setSignullWord("");
+      setIsComposingSignull(false);
+      setIsDirectGuessMode(false);
+      setIsWinningCardFlipped(false);
+      setIsMemoriesModalOpen(false);
+      setActiveIndex(0);
+      setIsSubmittingSignull(false);
+
+      // Reset refs to prevent stale data affecting new game
+      prevCardsRef.current = [];
+      prevSignullStatusesRef.current = {};
+      justOpenedSignullRef.current = false;
+      justSubmittedSignullRef.current = false;
+      indexBeforeSignullRef.current = 0;
+    }
+  }, [game?.phase]);
+
   const connectsRequired = game?.settings.connectsRequired || 3;
   const prefixMode = game?.settings.prefixMode || false;
   const directGuessesLeft = game?.directGuessesLeft || 0;
@@ -298,6 +322,7 @@ export default function BetaPlayPage() {
   const [isMemoriesModalOpen, setIsMemoriesModalOpen] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isSubmittingSignull, setIsSubmittingSignull] = useState(false);
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
@@ -656,6 +681,11 @@ export default function BetaPlayPage() {
       return;
     }
 
+    // Prevent double submission - guard against rapid clicks
+    if (isSubmittingSignull) {
+      return;
+    }
+
     // Validate clue and word
     if (!signullClue.trim()) {
       showNotification("Please enter a clue message", "error");
@@ -667,6 +697,7 @@ export default function BetaPlayPage() {
       return;
     }
 
+    setIsSubmittingSignull(true);
     try {
       await addSignull(signullWord.trim(), signullClue.trim());
       setIsComposingSignull(false);
@@ -680,6 +711,8 @@ export default function BetaPlayPage() {
     } catch (error) {
       showNotification("Failed to send Signull", "error");
       console.error(error);
+    } finally {
+      setIsSubmittingSignull(false);
     }
   };
 
@@ -803,8 +836,9 @@ export default function BetaPlayPage() {
         onChange: setSignullWord,
         placeholder: "Your Reference Word",
         onSubmit: handleSignullSubmit,
-        submitDisabled: !signullClue.trim() || !signullWord.trim(),
-        inputDisabled: false,
+        submitDisabled:
+          !signullClue.trim() || !signullWord.trim() || isSubmittingSignull,
+        inputDisabled: isSubmittingSignull,
         signullPressed: true,
       };
     }
@@ -871,6 +905,7 @@ export default function BetaPlayPage() {
     inputValue,
     userId,
     isSetter,
+    isSubmittingSignull,
     handleSignullSubmit,
     handleSecretWordSubmit,
     handleConnect,

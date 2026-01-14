@@ -319,7 +319,7 @@ export function SignullHistoryInline({
                   className="w-full"
                 >
                   <div
-                    className={`mx-auto rounded-xl border-2 border-black bg-white px-3 py-2 ${index === 0 ? "w-full" : "w-1/2"} ${correctStyles} ${incorrectStyles}`}
+                    className={`mx-auto w-full rounded-xl border-2 border-black bg-white px-3 py-2 ${correctStyles} ${incorrectStyles}`}
                   >
                     <div className="flex w-full items-center justify-between gap-2">
                       <span className="w-20 shrink-0 text-[10px] font-bold uppercase tracking-wider text-black">
