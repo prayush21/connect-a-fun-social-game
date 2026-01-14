@@ -359,8 +359,11 @@ export default function BetaDisplayPlayPage() {
                                 />
 
                                 {/* Player Name below */}
-                                <div className="mt-2 text-center">
-                                  <span className="break-words text-base text-black">
+                                <div className="mt-2 w-full text-center">
+                                  <span
+                                    className="block truncate text-base text-black"
+                                    title={player.name}
+                                  >
                                     {player.name}
                                   </span>
                                 </div>
