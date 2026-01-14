@@ -278,6 +278,30 @@ export default function BetaPlayPage() {
     }
   }, [game, userId]);
 
+  // Reset all local UI state when starting a new game (phase transitions to "setting")
+  // This clears stale input values, card state, and refs from the previous game
+  useEffect(() => {
+    if (game?.phase === "setting") {
+      // Reset input states
+      setInputValue("");
+      setSignullClue("");
+      setSignullWord("");
+      setIsComposingSignull(false);
+      setIsDirectGuessMode(false);
+      setIsWinningCardFlipped(false);
+      setIsMemoriesModalOpen(false);
+      setActiveIndex(0);
+      setIsSubmittingSignull(false);
+
+      // Reset refs to prevent stale data affecting new game
+      prevCardsRef.current = [];
+      prevSignullStatusesRef.current = {};
+      justOpenedSignullRef.current = false;
+      justSubmittedSignullRef.current = false;
+      indexBeforeSignullRef.current = 0;
+    }
+  }, [game?.phase]);
+
   const connectsRequired = game?.settings.connectsRequired || 3;
   const prefixMode = game?.settings.prefixMode || false;
   const directGuessesLeft = game?.directGuessesLeft || 0;
