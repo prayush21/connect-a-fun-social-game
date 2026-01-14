@@ -298,6 +298,7 @@ export default function BetaPlayPage() {
   const [isMemoriesModalOpen, setIsMemoriesModalOpen] = useState(false);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isSubmittingSignull, setIsSubmittingSignull] = useState(false);
 
   // Card stack state
   const [activeIndex, setActiveIndex] = useState(0);
@@ -656,6 +657,11 @@ export default function BetaPlayPage() {
       return;
     }
 
+    // Prevent double submission - guard against rapid clicks
+    if (isSubmittingSignull) {
+      return;
+    }
+
     // Validate clue and word
     if (!signullClue.trim()) {
       showNotification("Please enter a clue message", "error");
@@ -667,6 +673,7 @@ export default function BetaPlayPage() {
       return;
     }
 
+    setIsSubmittingSignull(true);
     try {
       await addSignull(signullWord.trim(), signullClue.trim());
       setIsComposingSignull(false);
@@ -680,6 +687,8 @@ export default function BetaPlayPage() {
     } catch (error) {
       showNotification("Failed to send Signull", "error");
       console.error(error);
+    } finally {
+      setIsSubmittingSignull(false);
     }
   };
 
@@ -803,8 +812,9 @@ export default function BetaPlayPage() {
         onChange: setSignullWord,
         placeholder: "Your Reference Word",
         onSubmit: handleSignullSubmit,
-        submitDisabled: !signullClue.trim() || !signullWord.trim(),
-        inputDisabled: false,
+        submitDisabled:
+          !signullClue.trim() || !signullWord.trim() || isSubmittingSignull,
+        inputDisabled: isSubmittingSignull,
         signullPressed: true,
       };
     }
@@ -871,6 +881,7 @@ export default function BetaPlayPage() {
     inputValue,
     userId,
     isSetter,
+    isSubmittingSignull,
     handleSignullSubmit,
     handleSecretWordSubmit,
     handleConnect,
