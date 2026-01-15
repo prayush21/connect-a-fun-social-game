@@ -1,62 +1,8 @@
 import Link from "next/link";
 import { Calendar, ChevronRight, Rocket, ArrowRight } from "lucide-react";
+import { getFeaturedPost, getAllPosts, type BlogPost } from "@/lib/blog/posts";
 
-// Blog post data - this could come from a CMS or API in the future
-const featuredPost = {
-  slug: "beta-launch",
-  title: "Launch Day: Beta is officially LIVE!",
-  excerpt:
-    "We are thrilled to announce that Connect Signull has officially entered open beta. Invite your friends, create rooms, and start connecting clues like never before. Here's everything you need to know about getting started.",
-  date: "October 27, 2023",
-  dateTime: "2023-10-27",
-  version: "v1.2.0 Update",
-  isNew: true,
-};
-
-const blogPosts = [
-  {
-    slug: "setter-tips",
-    title: 'Mastering the "Signull": Tips for Setters',
-    excerpt:
-      "Being a setter is an art. Learn how to give clues that are helpful but not obvious, and how to use the reference word to your advantage.",
-    date: "Oct 15, 2023",
-    dateTime: "2023-10-15",
-    category: "Strategy",
-    categoryColor: "text-blue-600",
-  },
-  {
-    slug: "patch-v1-1",
-    title: "Patch v1.1: Mobile Experience Improvements",
-    excerpt:
-      "We've squashed some bugs and improved the layout for smaller screens. The input field no longer zooms in on iOS devices.",
-    date: "Oct 02, 2023",
-    dateTime: "2023-10-02",
-    category: "Patch Notes",
-    categoryColor: "text-purple-600",
-  },
-  {
-    slug: "dictionary-gang",
-    title: 'Community Spotlight: The "Dictionary" Gang',
-    excerpt:
-      "We interview a group of players who have managed to guess the secret word using only 2 signulls in 5 consecutive games.",
-    date: "Sep 28, 2023",
-    dateTime: "2023-09-28",
-    category: "Community",
-    categoryColor: "text-green-600",
-  },
-  {
-    slug: "design-diary-neobrutalism",
-    title: "Design Diary: Why Neo-brutalism?",
-    excerpt:
-      "Ever wondered why the game looks the way it does? We dive into our design choices, accessibility, and the joy of thick borders.",
-    date: "Sep 15, 2023",
-    dateTime: "2023-09-15",
-    category: "Behind the Scenes",
-    categoryColor: "text-gray-500",
-  },
-];
-
-function FeaturedPostCard({ post }: { post: typeof featuredPost }) {
+function FeaturedPostCard({ post }: { post: BlogPost }) {
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-black bg-white shadow-neobrutalist transition-all duration-200 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neobrutalist-hover">
       {/* NEW Badge */}
@@ -80,8 +26,12 @@ function FeaturedPostCard({ post }: { post: typeof featuredPost }) {
         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-500">
           <Calendar className="h-4 w-4" />
           <time dateTime={post.dateTime}>{post.date}</time>
-          <span className="mx-1">•</span>
-          <span>{post.version}</span>
+          {post.readTime && (
+            <>
+              <span className="mx-1">•</span>
+              <span>{post.readTime}</span>
+            </>
+          )}
         </div>
 
         {/* Title */}
@@ -107,7 +57,7 @@ function FeaturedPostCard({ post }: { post: typeof featuredPost }) {
   );
 }
 
-function BlogPostCard({ post }: { post: (typeof blogPosts)[0] }) {
+function BlogPostCard({ post }: { post: BlogPost }) {
   return (
     <article className="group flex flex-col rounded-2xl border-2 border-black bg-white shadow-neobrutalist transition-all duration-200 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-neobrutalist-hover">
       <div className="flex h-full flex-col p-6">
@@ -145,6 +95,9 @@ function BlogPostCard({ post }: { post: (typeof blogPosts)[0] }) {
 }
 
 export default function BlogPage() {
+  const featuredPost = getFeaturedPost();
+  const blogPosts = getAllPosts().filter((post) => !post.isFeatured);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
@@ -169,9 +122,11 @@ export default function BlogPage() {
       </div>
 
       {/* Featured Post */}
-      <div className="mb-12">
-        <FeaturedPostCard post={featuredPost} />
-      </div>
+      {featuredPost && (
+        <div className="mb-12">
+          <FeaturedPostCard post={featuredPost} />
+        </div>
+      )}
 
       {/* Blog Post Grid */}
       <div className="grid gap-8 md:grid-cols-2">

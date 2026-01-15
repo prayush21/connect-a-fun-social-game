@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { Menu, X, Zap, Twitter, Github } from "lucide-react";
+import { DynamicLogo } from "@/components/ui/DynamicLogo";
+import Image from "next/image";
+import { LogoLongform } from "@/components/ui/LogoLongform";
 
 const navLinks = [
-  { href: "/beta", label: "Game" },
+  { href: "/beta", label: "Play" },
   { href: "/blog", label: "Blog", active: true },
-  { href: "/beta/tour", label: "Rules" },
+  { href: "/rules", label: "Rules" },
 ];
 
 function Header() {
@@ -24,10 +27,8 @@ function Header() {
             className="flex-shrink-0 transition-opacity hover:opacity-80"
           >
             <div className="flex items-center gap-2">
-              <Logo height={32} fontSize={18} iconSize={14} />
-              <span className="hidden font-bold text-primary sm:block">
-                Connect Signull
-              </span>
+              {/* <DynamicLogo height={20} iconSize={18} fontSize={20} /> */}
+              <LogoLongform height={20} iconSize={18} fontSize={20} />
             </div>
           </Link>
 
@@ -101,9 +102,7 @@ function Footer() {
       <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         {/* Logo */}
         <div className="mb-4 flex items-center justify-center gap-2">
-          <span className="font-bold text-primary">Connect</span>
-          <Zap className="h-5 w-5 text-yellow-500" />
-          <span className="font-bold text-primary">Signull</span>
+          <Logo />
         </div>
 
         {/* Social Links */}
@@ -115,7 +114,14 @@ function Footer() {
             className="text-gray-400 transition-colors hover:text-gray-500"
           >
             <span className="sr-only">Twitter</span>
-            <Twitter className="h-6 w-6" />
+            {/* <Twitter className="h-6 w-6" /> */}
+            <Image
+              alt="X(formerly Twitter) handle"
+              src="/icons/x-logo.svg"
+              width={24}
+              height={24}
+              style={{ filter: "brightness(0)" }}
+            />
           </a>
           <a
             href="https://github.com"
@@ -124,7 +130,13 @@ function Footer() {
             className="text-gray-400 transition-colors hover:text-gray-500"
           >
             <span className="sr-only">GitHub</span>
-            <Github className="h-6 w-6" />
+            <Image
+              alt="GitHub handle"
+              src="/icons/github-mark.svg"
+              color="black"
+              width={24}
+              height={24}
+            />
           </a>
         </div>
 
