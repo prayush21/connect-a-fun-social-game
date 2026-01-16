@@ -66,8 +66,8 @@ export const blogPosts: BlogPost[] = [
     tags: ["guide", "strategy", "gameplay", "mechanics"],
   },
   {
-    slug: "design-of-connection",
-    title: "The Design of Connection: Cards, Scoring & Neobrutalism",
+    slug: "design-for-connection",
+    title: "The Design for Connection: Cards, Scoring & Neobrutalism",
     excerpt:
       "A deep dive into the design decisions behind ConnectSignull, including the card-based interface, 'neobrutalist' aesthetic, and the psychology of scoring.",
     date: "January 14, 2026",
