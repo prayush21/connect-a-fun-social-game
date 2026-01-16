@@ -10,7 +10,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 // ====================
 // Layout Components
@@ -70,7 +71,7 @@ export function BlogHeader({
       </h1>
 
       {/* Meta Information */}
-      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+      <div className="flex flex-wrap items-center gap-4 border-b-2 border-gray-200 pb-8 text-sm text-gray-500">
         {/* {author && (
           <div className="flex items-center gap-3">
             {author.avatar && (
@@ -453,9 +454,67 @@ interface BlogShareButtonsProps {
 }
 
 export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
-  const shareLinks = {
-    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const shareUrl = useMemo(() => {
+    const path = pathname ?? "";
+    const search = searchParams?.toString();
+    const pathWithSearch = `${path}${search ? `?${search}` : ""}`;
+    const origin =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : "";
+
+    if (origin && path) {
+      return `${origin}${pathWithSearch}`;
+    }
+
+    return url;
+  }, [pathname, searchParams, url]);
+
+  const shareLinks = useMemo(
+    () => ({
+      x: `https://x.com/intent/tweet?text=${encodeURIComponent(
+        title
+      )}&url=${encodeURIComponent(shareUrl)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+        shareUrl
+      )}`,
+    }),
+    [shareUrl, title]
+  );
+
+  const fallbackCopyText = (text: string) => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  };
+
+  const handleCopyLink = async () => {
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.clipboard !== "undefined" &&
+      navigator.clipboard.writeText
+    ) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        return;
+      } catch (error) {
+        console.error("Failed to copy share link", error);
+      }
+    }
+
+    fallbackCopyText(shareUrl);
   };
 
   return (
@@ -465,23 +524,29 @@ export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
       </h3>
       <div className="flex justify-center gap-4">
         <a
-          href={shareLinks.twitter}
+          href={shareLinks.x}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-[#1DA1F2] px-6 py-2 text-sm font-bold text-white shadow-neobrutalist-sm transition-all hover:bg-white hover:text-[#1DA1F2] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-black px-6 py-2 text-sm font-bold text-white shadow-neobrutalist-sm transition-all hover:bg-gray-800 hover:text-[#1DA1F2] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
         >
-          Twitter
+          <Image // X (Twitter) Logo
+            src="/icons/x-logo.svg"
+            alt="X Logo"
+            width={16}
+            height={16}
+            className="mr-2"
+          />
         </a>
         <a
-          href={shareLinks.facebook}
+          href={shareLinks.linkedin}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-[#1877F2] px-6 py-2 text-sm font-bold text-white shadow-neobrutalist-sm transition-all hover:bg-white hover:text-[#1877F2] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-[#0077B5] px-6 py-2 text-sm font-bold text-white shadow-neobrutalist-sm transition-all hover:bg-white hover:text-[#0077B5] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
         >
-          Facebook
+          LinkedIn
         </a>
         <button
-          onClick={() => navigator.clipboard.writeText(url)}
+          onClick={handleCopyLink}
           className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-white px-6 py-2 text-sm font-bold text-primary shadow-neobrutalist-sm transition-all hover:bg-gray-50 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
         >
           Copy Link

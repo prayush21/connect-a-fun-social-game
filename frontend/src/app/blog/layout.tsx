@@ -11,7 +11,7 @@ import { LogoLongform } from "@/components/ui/LogoLongform";
 const navLinks = [
   { href: "/beta", label: "Play" },
   { href: "/blog", label: "Blog", active: true },
-  { href: "/rules", label: "Rules" },
+  { href: "/blog/how-to-play-connect-signull", label: "Rules" },
 ];
 
 function Header() {

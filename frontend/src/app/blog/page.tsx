@@ -136,14 +136,14 @@ export default function BlogPage() {
       </div>
 
       {/* Load More Button */}
-      <div className="mt-16 flex justify-center">
+      {/* <div className="mt-16 flex justify-center">
         <button
           type="button"
           className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-white px-8 py-3 text-sm font-bold text-primary shadow-neobrutalist-sm transition-all hover:bg-gray-50 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
         >
-          Load More Articles
+          Load More Writings
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }
