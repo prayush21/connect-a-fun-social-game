@@ -8,11 +8,13 @@ import { nicknameSchema, joinGameSchema } from "@/lib/validation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 import { DisplayModeModal } from "@/components/beta/DisplayModeModal";
 import { useIsMobile } from "@/lib/hooks";
 import { Logo } from "@/components/ui/Logo";
 import { DynamicLogo } from "@/components/ui/DynamicLogo";
+import { getFeaturedPost, getAllPosts } from "@/lib/blog/posts";
+import Link from "next/link";
 
 type NicknameFormData = z.infer<typeof nicknameSchema>;
 type JoinGameFormData = z.infer<typeof joinGameSchema>;
@@ -240,7 +242,7 @@ function BetaHomeContent() {
 
   return (
     <main className="min-h-screen bg-surface px-4 py-8">
-      <div className="mx-auto max-w-md space-y-8">
+      <div className="mx-auto space-y-8">
         {/* Beta Badge */}
         <div className="flex justify-center">
           <span className="rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-semibold text-primary shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
@@ -272,151 +274,212 @@ function BetaHomeContent() {
         </div>
 
         {/* Main Card */}
-        <div className="rounded-2xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          {/* Nickname Section */}
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="nickname"
-                className="mb-2 block text-sm font-medium text-neutral-600"
-              >
-                Your Nickname
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="nickname"
-                  type="text"
-                  className="flex-1 rounded-lg border-2 border-black px-4 py-3 shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
-                  placeholder="Enter your nickname"
-                  value={username || ""}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={generateNewUsername}
-                  className="rounded-lg border-2 border-black bg-white px-4 py-3 text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+        <div className="mx-auto max-w-md">
+          <div className="rounded-2xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            {/* Nickname Section */}
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="nickname"
+                  className="mb-2 block text-sm font-medium text-neutral-600"
                 >
-                  🎲
-                </button>
-              </div>
-              {nicknameForm.formState.errors.nickname && (
-                <p className="mt-1 text-sm text-red-600">
-                  {nicknameForm.formState.errors.nickname.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-6 space-y-4">
-            <button
-              onClick={handleCreateNewGame}
-              disabled={isCreating}
-              className="w-full rounded-lg border-2 border-black bg-primary px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isCreating ? "Creating..." : "Create a New Game"}
-            </button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-3 text-neutral-500">or</span>
-              </div>
-            </div>
-
-            <form
-              onSubmit={joinGameForm.handleSubmit(onJoinGameSubmit)}
-              className="space-y-3"
-            >
-              <div className="flex flex-row items-center gap-2">
-                <div className="flex-1">
+                  Your Nickname
+                </label>
+                <div className="flex gap-2">
                   <input
-                    {...joinGameForm.register("gameCode")}
+                    id="nickname"
                     type="text"
-                    placeholder="Enter Game Code"
-                    className="w-full rounded-lg border-2 border-black px-4 py-3 uppercase shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
-                    maxLength={6}
-                    onChange={(e) => {
-                      // Convert to uppercase as user types
-                      e.target.value = e.target.value.toUpperCase();
-                      joinGameForm.setValue("gameCode", e.target.value);
-                    }}
+                    className="flex-1 rounded-lg border-2 border-black px-4 py-3 shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
+                    placeholder="Enter your nickname"
+                    value={username || ""}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    onClick={generateNewUsername}
+                    className="rounded-lg border-2 border-black bg-white px-4 py-3 text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+                  >
+                    🎲
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isJoining}
-                  className="ml-2 rounded-lg border-2 border-black bg-primary px-6 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{ minWidth: "80px" }}
-                >
-                  {isJoining ? "..." : "Join"}
-                </button>
+                {nicknameForm.formState.errors.nickname && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {nicknameForm.formState.errors.nickname.message}
+                  </p>
+                )}
               </div>
-              {joinGameForm.formState.errors.gameCode && (
-                <p className="text-sm text-red-600">
-                  {joinGameForm.formState.errors.gameCode.message}
-                </p>
-              )}
-            </form>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 space-y-4">
+              <button
+                onClick={handleCreateNewGame}
+                disabled={isCreating}
+                className="w-full rounded-lg border-2 border-black bg-primary px-4 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isCreating ? "Creating..." : "Create a New Game"}
+              </button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-white px-3 text-neutral-500">or</span>
+                </div>
+              </div>
+
+              <form
+                onSubmit={joinGameForm.handleSubmit(onJoinGameSubmit)}
+                className="space-y-3"
+              >
+                <div className="flex flex-row items-center gap-2">
+                  <div className="flex-1">
+                    <input
+                      {...joinGameForm.register("gameCode")}
+                      type="text"
+                      placeholder="Enter Game Code"
+                      className="w-full rounded-lg border-2 border-black px-4 py-3 uppercase shadow-sm transition-all focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none"
+                      maxLength={6}
+                      onChange={(e) => {
+                        // Convert to uppercase as user types
+                        e.target.value = e.target.value.toUpperCase();
+                        joinGameForm.setValue("gameCode", e.target.value);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isJoining}
+                    className="ml-2 rounded-lg border-2 border-black bg-primary px-6 py-3 font-semibold text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ minWidth: "80px" }}
+                  >
+                    {isJoining ? "..." : "Join"}
+                  </button>
+                </div>
+                {joinGameForm.formState.errors.gameCode && (
+                  <p className="text-sm text-red-600">
+                    {joinGameForm.formState.errors.gameCode.message}
+                  </p>
+                )}
+              </form>
+            </div>
           </div>
         </div>
 
-        {/* How to Play Section */}
-        <div className="space-y-4 rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <h2 className="text-center text-xl font-semibold text-primary">
-            How to Play?
-          </h2>
-          {/* Instructions */}
-          <ol className="space-y-4 text-sm text-slate-600">
-            <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
-                1
-              </span>
-              <span>
-                The setter sets a secret word that other guessers team up to
-                guess
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
-                2
-              </span>
-              <span>
-                To reveal letters in the secret word, guessers give clues called
-                Signulls. A Signull is a clue to a reference word sharing a
-                prefix with the secret word. (no need to be of same length as
-                secret word!)
-                <br />
-                {/* Any guesser can now give clues(called Signulls) by providing a
-                  reference word sharing prefix with the secret word (no need to
-                  be of same length!). Press on the Lightning icon to generate a
-                  signull. */}
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
-                3
-              </span>
-              <span>
-                Other Guessers race against the setter to figure out the
-                reference word based on the clues and connect! Guessers can
-                connect only ONCE. Each correct connect to a resolved signull
-                gets player points.
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
-                4
-              </span>
-              <span>
-                If the setter intercepts a signull before guessers, no letters
-                are revealed. The setter earns points for each intercepted
-                signull.
-              </span>
-            </li>
-          </ol>
+        {/* How to Play & Latest Updates Section */}
+        <div className="mx-auto grid max-w-md grid-cols-1 gap-6 lg:max-w-6xl lg:grid-cols-2">
+          {/* How to Play Section */}
+          <div className="space-y-4 rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h2 className="text-center text-xl font-semibold text-primary">
+              How to Play?
+            </h2>
+            {/* Instructions */}
+            <ol className="space-y-4 text-sm text-slate-600">
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+                  1
+                </span>
+                <div>
+                  <strong className="text-primary">The Setup:</strong> One
+                  player becomes the <strong>Word-Setter</strong> and chooses a
+                  secret word. Everyone else joins the{" "}
+                  <strong>Guesser Team</strong> working together to uncover it.
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+                  2
+                </span>
+                <div>
+                  <strong className="text-primary">Creating a Signull:</strong>{" "}
+                  Guessers see blank spaces (e.g., _ _ _ _ _). To reveal
+                  letters, create a <strong>Signull</strong> - a clue for a word
+                  that starts with the same letters as the secret word. For "P _
+                  _ _ _", if you think of "PARROT", your clue might be "green
+                  bird".
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+                  3
+                </span>
+                <div>
+                  <strong className="text-primary">The Race:</strong> Other
+                  guessers try to solve the signull before the Word-Setter does.
+                  Each guesser can <strong>connect only ONCE</strong> per
+                  signull. Correct connections earn points and reveal letters!
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
+                  4
+                </span>
+                <div>
+                  <strong className="text-primary">The Interception:</strong> If
+                  the Word-Setter guesses the signull first, it's intercepted!
+                  No letters are revealed and the setter earns points. Use
+                  obscure clues to outsmart them!
+                </div>
+              </li>
+            </ol>
+            <div className="mt-4 rounded-lg border-l-4 border-primary bg-neutral-50 p-3 text-xs text-slate-600">
+              <strong className="text-primary">Pro Tip:</strong> Get creative
+              with your clues! Inside jokes and niche references are harder to
+              intercept but riskier for your team to guess.
+            </div>
+          </div>
+
+          {/* Latest Updates & Blogs Section */}
+          <div className="space-y-4 rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h2 className="text-center text-xl font-semibold text-primary">
+              Latest Updates & Blogs
+            </h2>
+            <div className="space-y-3">
+              {(() => {
+                const featuredPost = getFeaturedPost();
+                const allPosts = getAllPosts();
+                const topPosts = allPosts.slice(0, 4);
+                const postsToShow = featuredPost
+                  ? [
+                      featuredPost,
+                      ...topPosts.filter((p) => p.slug !== featuredPost.slug),
+                    ].slice(0, 4)
+                  : topPosts;
+
+                return postsToShow.map((post, index) => (
+                  <Link
+                    key={post.slug}
+                    href={`/blog/${post.slug}`}
+                    className="block rounded-lg border-2 border-black bg-neutral-50 p-4 text-sm transition-all hover:translate-y-[1px] hover:bg-neutral-100 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+                  >
+                    <div>
+                      <h3 className="line-clamp-2 font-semibold text-primary">
+                        {post.title}
+                      </h3>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-neutral-500">
+                        <span className={`font-semibold ${post.categoryColor}`}>
+                          {post.category}
+                        </span>
+                        <span>•</span>
+                        <span>{post.date}</span>
+                        <span>•</span>
+                        <span>{post.readTime}</span>
+                      </p>
+                    </div>
+                  </Link>
+                ));
+              })()}
+            </div>
+            {/* View All Link */}
+            <Link
+              href="/blog"
+              className="flex justify-end gap-2 rounded-lg  px-4 py-2 text-sm font-semibold text-primary transition-all hover:underline active:translate-y-[2px] active:shadow-none"
+            >
+              View All Posts
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </div>
 

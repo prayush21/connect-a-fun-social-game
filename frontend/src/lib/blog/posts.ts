@@ -133,28 +133,28 @@ export const blogPosts: BlogPost[] = [
     },
     tags: ["design", "social", "hybrid", "mechanics"],
   },
-  {
-    slug: "beta-launch",
-    title: "Launch Day: Beta is officially LIVE!",
-    excerpt:
-      "We are thrilled to announce that Connect Signull has officially entered open beta. Invite your friends, create rooms, and start connecting clues like never before.",
-    date: "October 27, 2023",
-    dateTime: "2023-10-27",
-    category: "ANNOUNCEMENT",
-    categoryColor: "text-yellow-600",
-    readTime: "5 min read",
-    isFeatured: false,
-    author: {
-      name: "James Signull",
-      role: "Lead Developer and Word Enthusiast",
-    },
-    tags: ["launch", "beta", "announcement"],
-    heroImage: {
-      src: "/blog/beta-launch-hero.png",
-      alt: "Connect Signull Beta Launch",
-      caption: "The wait is over - Connect Signull is now in open beta!",
-    },
-  },
+  // {
+  //   slug: "beta-launch",
+  //   title: "Launch Day: Beta is officially LIVE!",
+  //   excerpt:
+  //     "We are thrilled to announce that Connect Signull has officially entered open beta. Invite your friends, create rooms, and start connecting clues like never before.",
+  //   date: "October 27, 2023",
+  //   dateTime: "2023-10-27",
+  //   category: "ANNOUNCEMENT",
+  //   categoryColor: "text-yellow-600",
+  //   readTime: "5 min read",
+  //   isFeatured: false,
+  //   author: {
+  //     name: "James Signull",
+  //     role: "Lead Developer and Word Enthusiast",
+  //   },
+  //   tags: ["launch", "beta", "announcement"],
+  //   heroImage: {
+  //     src: "/blog/beta-launch-hero.png",
+  //     alt: "Connect Signull Beta Launch",
+  //     caption: "The wait is over - Connect Signull is now in open beta!",
+  //   },
+  // },
   // {
   //   slug: "setter-tips",
   //   title: 'Mastering the "Signull": Tips for Setters',

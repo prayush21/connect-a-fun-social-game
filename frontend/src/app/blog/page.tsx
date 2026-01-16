@@ -105,7 +105,7 @@ export default function BlogPage() {
         {/* Badge */}
         <div className="mb-4 inline-flex items-center justify-center rounded-full border-2 border-black bg-white px-4 py-1 shadow-neobrutalist-sm">
           <span className="text-xs font-bold uppercase tracking-wider text-primary">
-            Developer Updates
+            Updates
           </span>
         </div>
 
