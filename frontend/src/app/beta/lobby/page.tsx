@@ -402,49 +402,54 @@ export default function BetaLobbyPage() {
                 <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   1
                 </span>
-                <span>
-                  The setter sets a secret word that other guessers team up to
-                  guess
-                </span>
+                <div>
+                  <strong className="text-primary">The Setup:</strong> One
+                  player becomes the <strong>Word-Setter</strong> and chooses a
+                  secret word. Everyone else joins the{" "}
+                  <strong>Guesser Team</strong> working together to uncover it.
+                </div>
               </li>
               <li className="flex gap-3">
                 <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   2
                 </span>
-                <span>
-                  To reveal letters in the secret word, guessers give clues
-                  called Signulls. A Signull is a clue to a reference word
-                  sharing a prefix with the secret word. (no need to be of same
-                  length as secret word!)
-                  <br />
-                  {/* Any guesser can now give clues(called Signulls) by providing a
-                  reference word sharing prefix with the secret word (no need to
-                  be of same length!). Press on the Lightning icon to generate a
-                  signull. */}
-                </span>
+                <div>
+                  <strong className="text-primary">Creating a Signull:</strong>{" "}
+                  Guessers see blank spaces (e.g., _ _ _ _ _). To reveal
+                  letters, create a <strong>Signull</strong> - a clue for a word
+                  that starts with the same letters as the secret word. For "P _
+                  _ _ _", if you think of "PARROT", your clue might be "green
+                  bird".
+                </div>
               </li>
               <li className="flex gap-3">
                 <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   3
                 </span>
-                <span>
-                  Other Guessers race against the setter to figure out the
-                  reference word based on the clues and connect! Guessers can
-                  connect only ONCE. Each correct connect to a resolved signull
-                  gets player points.
-                </span>
+                <div>
+                  <strong className="text-primary">The Race:</strong> Other
+                  guessers try to solve the signull before the Word-Setter does.
+                  Each guesser can <strong>connect only ONCE</strong> per
+                  signull. Correct connections earn points and reveal letters!
+                </div>
               </li>
               <li className="flex gap-3">
                 <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600">
                   4
                 </span>
-                <span>
-                  If the setter intercepts a signull before guessers, no letters
-                  are revealed. The setter earns points for each intercepted
-                  signull.
-                </span>
+                <div>
+                  <strong className="text-primary">The Interception:</strong> If
+                  the Word-Setter guesses the signull first, it's intercepted!
+                  No letters are revealed and the setter earns points. Use
+                  obscure clues to outsmart them!
+                </div>
               </li>
             </ol>
+            <div className="mt-4 rounded-lg border-l-4 border-primary bg-neutral-50 p-3 text-xs text-slate-600">
+              <strong className="text-primary">Pro Tip:</strong> Get creative
+              with your clues! Inside jokes and niche references are harder to
+              intercept but riskier for your team to guess.
+            </div>
 
             {/* Close Button */}
             <div className="mt-6">
