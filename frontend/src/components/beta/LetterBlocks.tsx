@@ -31,7 +31,10 @@ export const LetterBlocks = ({
   // Dynamic sizing based on word length
   const blockSize = Math.max(24, Math.min(48, 300 / wordLength));
   const fontSize = blockSize * 0.8;
-  const gap = Math.min(4, Math.min(12, 120 / wordLength));
+  const baseGap = Math.min(4, Math.min(12, 120 / wordLength));
+
+  // Animate gap to negative when game ends for tighter word feel
+  const gap = isGameEnded ? -2 : baseGap;
 
   // Direct guess state
   const [guessInput, setGuessInput] = useState<string[]>(
@@ -173,20 +176,33 @@ export const LetterBlocks = ({
           position: "relative",
         }}
       >
-        <div
+        <motion.div
           className="flex items-center justify-center"
-          style={{ gap: `${gap}px` }}
+          animate={{ gap: `${gap}px` }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 25,
+            duration: 0.6,
+          }}
         >
           {letters.map((letter, index) => {
             const isRevealed = index < effectiveRevealedCount;
             const isEditable =
               isDirectGuessMode && index >= effectiveRevealedCount;
 
+            // When game ends, remove borders between blocks for merged look
+            const isFirstLetter = index === 0;
+            const isLastLetter = index === wordLength - 1;
+
             return (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
                 transition={{
                   delay: 0.4 + index * 0.05, // Delay after card entrance
                   type: "spring",
@@ -195,9 +211,14 @@ export const LetterBlocks = ({
                 }}
                 className={`
                   flex items-center justify-center 
-                  border-2 border-black bg-white font-bold
+                  bg-white font-bold
                   shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                  transition-all duration-200
+                  transition-all duration-500
+                  ${
+                    isGameEnded
+                      ? `border-y-2 border-black ${isFirstLetter ? "rounded-l-md border-l-2" : ""} ${isLastLetter ? "rounded-r-md border-r-2" : ""}`
+                      : "border-2 border-black"
+                  }
                   ${
                     isDirectGuessMode && focusedIndex === index && isEditable
                       ? "shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ring-2 ring-black ring-opacity-30"
@@ -246,7 +267,7 @@ export const LetterBlocks = ({
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </motion.div>
     </>
   );
