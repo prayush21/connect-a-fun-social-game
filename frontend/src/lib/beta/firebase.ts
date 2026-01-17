@@ -509,8 +509,11 @@ export const computeInsights = (
   const blockedSignulls = signulls.filter((s) => s.status === "blocked");
 
   // Helper to generate unique ID
-  const genId = () =>
-    `insight_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  let insightCounter = 0;
+  const genId = () => {
+    insightCounter += 1;
+    return `insight_${Date.now()}_${insightCounter.toString(36)}`;
+  };
 
   // 1. Dynamic Duo: Two players who connected to each other's signulls ≥2 times
   // Priority: 1 (highest)
@@ -537,7 +540,13 @@ export const computeInsights = (
     }
   }
 
-  // Find pairs who connected to each other's signulls at least 2 times each
+  // Find pairs with mutual connects (each connected to other's signulls at least 2 times)
+  const qualifyingPairs: Array<{
+    p1: string;
+    p2: string;
+    totalConnects: number;
+  }> = [];
+
   for (let i = 0; i < guesserIds.length; i++) {
     for (let j = i + 1; j < guesserIds.length; j++) {
       const p1 = guesserIds[i];
@@ -546,20 +555,34 @@ export const computeInsights = (
       const p2ToP1 = mutualConnects[p2]?.[p1] || 0;
 
       if (p1ToP2 >= 2 && p2ToP1 >= 2) {
-        const name1 = players[p1].name;
-        const name2 = players[p2].name;
         const totalConnects = p1ToP2 + p2ToP1;
+        qualifyingPairs.push({ p1, p2, totalConnects });
+      }
+    }
+  }
+
+  // Find the maximum total connects among qualifying pairs
+  if (qualifyingPairs.length > 0) {
+    const maxConnects = Math.max(
+      ...qualifyingPairs.map((pair) => pair.totalConnects)
+    );
+
+    // Add all pairs that have the maximum connects
+    qualifyingPairs
+      .filter((pair) => pair.totalConnects === maxConnects)
+      .forEach((pair) => {
+        const name1 = players[pair.p1].name;
+        const name2 = players[pair.p2].name;
         insights.push({
           id: genId(),
           type: "dynamic_duo",
-          playerIds: [p1, p2],
+          playerIds: [pair.p1, pair.p2],
           title: `${name1} & ${name2} are on the same wavelength!`,
-          subtitle: `Connected to each other's signulls ${totalConnects} times`,
-          metadata: { connects: totalConnects },
+          subtitle: `Connected to each other's signulls ${pair.totalConnects} times`,
+          metadata: { connects: pair.totalConnects },
           priority: 1,
         });
-      }
-    }
+      });
   }
 
   // 2. OG Interceptor: Setter who intercepted ≥70% of signulls
@@ -661,6 +684,12 @@ export const computeInsights = (
   if (topInsights.length < 2 && resolvedSignulls.length > 0) {
     // Find the longest word from resolved signulls
     let longestSignull = resolvedSignulls[0];
+    
+    // Additional safety check to handle edge cases
+    if (!longestSignull) {
+      return topInsights.map(({ priority, ...insight }) => insight);
+    }
+    
     for (const signull of resolvedSignulls) {
       if (signull.word.length > longestSignull.word.length) {
         longestSignull = signull;

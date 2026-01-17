@@ -10,7 +10,6 @@ import { Sparkles, Zap, Users, Target, Music } from "lucide-react";
 
 interface InsightCardProps {
   insight: GameInsight;
-  players: Record<PlayerId, Player>;
 }
 
 // Color themes for different insight types
