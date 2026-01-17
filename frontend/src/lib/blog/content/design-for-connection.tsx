@@ -102,10 +102,7 @@ export default function DesignOfConnection({ post }: BlogPostContentProps) {
           buttonLink="/"
         />
 
-        <BlogShareButtons
-          title={post.title}
-          url={`https://connect-signull.vercel.app/blog/${post.slug}`}
-        />
+        <BlogShareButtons title={post.title} url={`/blog/${post.slug}`} />
       </BlogSection>
     </>
   );
