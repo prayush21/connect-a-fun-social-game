@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "@/components/ui/Logo";
-import { Menu, X, Zap, Twitter, Github } from "lucide-react";
-import { DynamicLogo } from "@/components/ui/DynamicLogo";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import { LogoLongform } from "@/components/ui/LogoLongform";
 

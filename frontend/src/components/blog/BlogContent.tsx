@@ -10,7 +10,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, useState, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 // ====================
@@ -456,6 +456,16 @@ interface BlogShareButtonsProps {
 export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">(
+    "idle"
+  );
+
+  useEffect(() => {
+    if (copyStatus !== "idle") {
+      const timer = setTimeout(() => setCopyStatus("idle"), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copyStatus]);
 
   const shareUrl = useMemo(() => {
     const path = pathname ?? "";
@@ -485,9 +495,9 @@ export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
     [shareUrl, title]
   );
 
-  const fallbackCopyText = (text: string) => {
+  const fallbackCopyText = (text: string): boolean => {
     if (typeof document === "undefined") {
-      return;
+      return false;
     }
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -496,8 +506,9 @@ export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
     textarea.style.left = "-9999px";
     document.body.appendChild(textarea);
     textarea.select();
-    document.execCommand("copy");
+    const successful = document.execCommand("copy");
     document.body.removeChild(textarea);
+    return successful;
   };
 
   const handleCopyLink = async () => {
@@ -508,13 +519,15 @@ export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
     ) {
       try {
         await navigator.clipboard.writeText(shareUrl);
-        return;
+        setCopyStatus("success");
       } catch (error) {
         console.error("Failed to copy share link", error);
+        setCopyStatus("error");
       }
+    } else {
+      const success = fallbackCopyText(shareUrl);
+      setCopyStatus(success ? "success" : "error");
     }
-
-    fallbackCopyText(shareUrl);
   };
 
   return (
@@ -547,9 +560,20 @@ export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
         </a>
         <button
           onClick={handleCopyLink}
-          className="inline-flex items-center justify-center rounded-lg border-2 border-black bg-white px-6 py-2 text-sm font-bold text-primary shadow-neobrutalist-sm transition-all hover:bg-gray-50 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          disabled={copyStatus !== "idle"}
+          className={`inline-flex items-center justify-center rounded-lg border-2 border-black px-6 py-2 text-sm font-bold shadow-neobrutalist-sm transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${
+            copyStatus === "idle"
+              ? "bg-white text-primary hover:bg-gray-50"
+              : copyStatus === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+          }`}
         >
-          Copy Link
+          {copyStatus === "idle"
+            ? "Copy Link"
+            : copyStatus === "success"
+              ? "Copied!"
+              : "Failed"}
         </button>
       </div>
     </div>

@@ -29,33 +29,15 @@ export default function IntroducingConnectSignull({
       />
 
       <BlogSection>
-        <BlogParagraph>
-          Instagram should stop changing the buttons in its layout every few
-          years. That is what I thought too, until I realized why they are doing
-          it.
-        </BlogParagraph>
-
-        <BlogParagraph>
-          It is not just a random design tweak. It is a signal of a massive
-          industry shift. For the last decade, most digital platforms
-          prioritized passive consumption. Now, we are seeing a major pivot
-          toward "multiplayer" experiences designed to create deeper human
-          connections. You see the clues everywhere, from Spotify adding a Party
-          feature to Instagram bringing DMs into your primary "thumb zone."
-        </BlogParagraph>
-
+        <BlogQuote author="Albert Einstein, Physicist">
+          Play is the highest form of research.
+        </BlogQuote>
         <BlogParagraph>
           I started with a feeling. It was that specific energy you get when you
           are having a genuine, great time with friends.{" "}
           <strong>ConnectSignull</strong> is the manifestation of that feeling
           into a design, a piece of code, and a prototype.
         </BlogParagraph>
-
-        <BlogQuote author="Prayush Dave, Creator">
-          "My goal was to move beyond 'attention-maximizing' engagement and see
-          how digital tools can actually enhance the quality of our
-          relationships."
-        </BlogQuote>
 
         <BlogHeading level={2}>What is ConnectSignull?</BlogHeading>
 
@@ -101,10 +83,7 @@ export default function IntroducingConnectSignull({
           buttonLink="/"
         />
 
-        <BlogShareButtons
-          title={post.title}
-          url={`/blog/${post.slug}`}
-        />
+        <BlogShareButtons title={post.title} url={`/blog/${post.slug}`} />
       </BlogSection>
     </>
   );

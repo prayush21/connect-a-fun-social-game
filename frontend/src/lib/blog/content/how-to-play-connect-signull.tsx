@@ -44,7 +44,7 @@ export default function HowToPlay({ post }: BlogPostContentProps) {
         <BlogList
           items={[
             "Word-Setter: You are the mastermind. You choose a secret word and try to intercept the team's clues.",
-            "Guessers: You are the detectives. You work together to figure out the secret word by generating clues and revealing letters.",
+            "Guessers: You are the creative detectives. You work together to figure out the secret word by generating clues and revealing letters.",
           ]}
         />
 
@@ -108,10 +108,7 @@ export default function HowToPlay({ post }: BlogPostContentProps) {
           buttonLink="/"
         />
 
-        <BlogShareButtons
-          title={post.title}
-          url={`/blog/${post.slug}`}
-        />
+        <BlogShareButtons title={post.title} url={`/blog/${post.slug}`} />
       </BlogSection>
     </>
   );

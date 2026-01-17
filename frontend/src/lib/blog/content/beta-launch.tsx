@@ -6,7 +6,6 @@
 
 import {
   BlogHeader,
-  BlogHeroImage,
   BlogSection,
   BlogParagraph,
   BlogHeading,
@@ -19,7 +18,7 @@ import {
   FeatureBox,
 } from "@/components/blog/BlogContent";
 import { BlogPost } from "@/lib/blog/posts";
-import { CheckCircle, Globe, Trophy, Users } from "lucide-react";
+import { Globe, Trophy, Users } from "lucide-react";
 
 interface BlogPostContentProps {
   post: BlogPost;

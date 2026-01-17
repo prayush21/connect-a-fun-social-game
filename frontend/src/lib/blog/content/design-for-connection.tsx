@@ -7,7 +7,6 @@ import {
   BlogList,
   BlogCTA,
   BlogShareButtons,
-  BlogQuote,
 } from "@/components/blog/BlogContent";
 import { BlogPost } from "@/lib/blog/posts";
 
