@@ -36,6 +36,8 @@ interface ActionBarProps {
   onBackToLobby?: () => void;
   /** Callback when Memories button is clicked */
   onMemoriesClick?: () => void;
+  /** Whether the current user is the host */
+  isHost?: boolean;
 }
 
 export function ActionBar({
@@ -55,6 +57,7 @@ export function ActionBar({
   onBackToLobby,
   onMemoriesClick,
   isSignullPressed,
+  isHost = false,
 }: ActionBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   // const [isSignullPressed, setIsSignullPressed] = useState(false);
@@ -79,35 +82,73 @@ export function ActionBar({
   };
 
   if (isGameEnded) {
+    // Host view - show action buttons
+    if (isHost) {
+      return (
+        <div
+          className={`z-50 mt-4 flex flex-shrink-0 flex-col items-center justify-center gap-3 bg-neutral-100 p-4 pb-6 transition-all duration-200 ${className}`}
+        >
+          {/* Top row: Back to Lobby and Play Again */}
+          <div className="flex w-full justify-center gap-3">
+            <button
+              onClick={onBackToLobby}
+              className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-neutral-200 px-6 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+            >
+              Back to Lobby
+            </button>
+            <button
+              onClick={onPlayAgain}
+              className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-white px-6 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+            >
+              Play Again
+            </button>
+          </div>
+
+          {/* Info for setter */}
+          {isHost && (
+            <div className="flex items-start gap-2 rounded-lg bg-blue-50 px-4 py-3 text-left">
+              <svg
+                className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <p className="text-xs text-blue-900">
+                You can change the setter from the top-right menu after pressing
+                Play Again for the next turn.
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Non-host view - show info message
     return (
       <div
         className={`z-50 mt-4 flex flex-shrink-0 flex-col items-center justify-center gap-3 bg-neutral-100 p-4 pb-6 transition-all duration-200 ${className}`}
       >
-        {/* Top row: Back to Lobby and Play Again */}
-        <div className="flex w-full justify-center gap-3">
-          <button
-            onClick={onBackToLobby}
-            className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-neutral-200 px-6 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
+        <div className="flex items-start gap-2 rounded-lg bg-neutral-200 px-4 py-3 text-center">
+          <svg
+            className="mt-0.5 h-5 w-5 flex-shrink-0 text-neutral-700"
+            fill="currentColor"
+            viewBox="0 0 20 20"
           >
-            Back to Lobby
-          </button>
-          <button
-            onClick={onPlayAgain}
-            className="flex h-12 items-center justify-center rounded-full border-2 border-black bg-white px-6 text-sm font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
-          >
-            Play Again
-          </button>
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p className="text-sm text-neutral-800">
+            The host can start a new game and update the setter.
+          </p>
         </div>
-
-        {/* Bottom row: Memories button */}
-        {/* {onMemoriesClick && (
-          <button
-            onClick={onMemoriesClick}
-            className="flex h-10 items-center justify-center rounded-full border-2 border-black bg-purple-100 px-6 text-xs font-bold uppercase tracking-wider text-purple-700 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none"
-          >
-            📸 Memories
-          </button>
-        )} */}
       </div>
     );
   }
