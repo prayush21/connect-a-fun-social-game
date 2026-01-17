@@ -674,6 +674,14 @@ export const removePlayer = async (
   roomId: RoomId,
   playerId: PlayerId
 ): Promise<void> => {
+  // Validate inputs
+  if (!playerId || typeof playerId !== "string" || playerId.trim() === "") {
+    throw new Error("Invalid player ID");
+  }
+  if (!roomId || typeof roomId !== "string" || roomId.trim() === "") {
+    throw new Error("Invalid room ID");
+  }
+
   const docRef = doc(getGameRoomsCollection(), roomId);
   const docSnap = await getDoc(docRef);
 
