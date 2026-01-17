@@ -84,13 +84,13 @@ function DisplaySignullCard({ data }: { data: SignullMetrics }) {
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border-2 border-black bg-white p-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ${
+      className={`flex flex-col rounded-3xl border-2 border-black bg-white p-4 shadow-neobrutalist ${
         isInactive || isFailed ? "opacity-50 grayscale" : ""
       } ${isPending ? "ring-2 ring-primary ring-offset-2" : ""}`}
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-bold uppercase tracking-wide text-neutral-700">
+        <span className="text-sm font-bold uppercase tracking-wider text-black">
           {clueGiverName}
         </span>
         <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export default function BetaDisplayPlayPage() {
           </div>
 
           {/* Game Ended Card */}
-          <div className="h-full rounded-3xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="h-full rounded-3xl border-2 border-black bg-white p-8 shadow-neobrutalist">
             <div className="mb-8 text-center">
               <p className="text-xl text-neutral-600">
                 The secret word was:{" "}
@@ -406,7 +406,7 @@ export default function BetaDisplayPlayPage() {
               */}
             </div>
           </div>
-          <div className="h-full rounded-3xl border-2 border-black bg-white p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="h-full rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
             <div className="flex flex-1 items-center justify-center">
               <div className="flex items-end justify-center gap-8 space-x-6">
                 {/* Signulls Generated - Left */}
@@ -456,7 +456,7 @@ export default function BetaDisplayPlayPage() {
   if (gamePhase === "setting") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-surface p-8">
-        <div className="rounded-3xl border-2 border-black bg-white p-12 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="rounded-3xl border-2 border-black bg-white p-12 text-center shadow-neobrutalist">
           <Image
             src="/lightning.svg"
             alt="Lightning"
@@ -488,7 +488,7 @@ export default function BetaDisplayPlayPage() {
 
           {/* Room Info */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-xl border-2 border-black bg-white px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 rounded-xl border-2 border-black bg-white px-4 py-2 shadow-neobrutalist-sm">
               <Users className="h-5 w-5 text-neutral-600" />
               <span className="text-lg font-bold">{roomId}</span>
             </div>
@@ -502,7 +502,7 @@ export default function BetaDisplayPlayPage() {
         </div>
 
         {/* Letter Blocks - Prominent Display */}
-        <div className="mb-8 rounded-3xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="mb-8 rounded-3xl border-2 border-black bg-white p-8 shadow-neobrutalist">
           <DisplayLetterBlocks
             secretWord={secretWord}
             revealedCount={revealedCount}
@@ -529,7 +529,7 @@ export default function BetaDisplayPlayPage() {
           </h2>
 
           {activeSignulls.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-12 text-center">
+            <div className="rounded-3xl border-2 border-dashed border-neutral-300 bg-white p-12 text-center">
               <p className="text-xl text-neutral-500">
                 Waiting for players to send signulls...
               </p>

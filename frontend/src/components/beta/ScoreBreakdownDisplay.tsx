@@ -263,7 +263,7 @@ function SignullBreakdownView({
       </div>
 
       {/* Clue Display */}
-      <div className="rounded-xl border-2 border-black bg-white p-4 text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+      <div className="rounded-xl border-2 border-black bg-white p-4 text-center shadow-neobrutalist-sm">
         <p className="text-lg font-medium">&ldquo;{item.signull.clue}&rdquo;</p>
         <p className="mt-1 text-sm text-neutral-500">
           Word: <span className="font-bold">{item.signull.word}</span>
@@ -614,7 +614,7 @@ export function ScoreBreakdownDisplay({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left: Breakdown Display */}
           <div className="space-y-2 lg:col-span-2">
-            <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${currentPhase}-${currentItemIndex}`}
@@ -643,8 +643,7 @@ export function ScoreBreakdownDisplay({
           <div className="space-y-2 lg:col-span-1">
             {/* Playback Controls */}
             {/* Progress Indicator */}
-            <div className="flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              {/* <div className="mb-6 flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"> */}
+            <div className="flex items-center gap-4 rounded-2xl border-2 border-black bg-white p-4 shadow-neobrutalist-sm">
               {/* Pause/Play Button */}
               <button
                 onClick={() => setIsPaused(!isPaused)}
@@ -687,10 +686,12 @@ export function ScoreBreakdownDisplay({
               </div>
             </div>
 
-            <div className="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="rounded-2xl border-2 border-black bg-white p-4 shadow-neobrutalist">
               <div className="mb-3 flex items-center gap-2">
                 <Crown className="h-5 w-5 text-neutral-500" />
-                <h3 className="font-bold">Leaderboard</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-black">
+                  Leaderboard
+                </h3>
               </div>
               <RunningScoreboard
                 players={players}
@@ -701,23 +702,23 @@ export function ScoreBreakdownDisplay({
               />
             </div>
 
-            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-neobrutalist-sm">
               <span className="text-xl font-bold text-green-600">+5</span>{" "}
               Correct Connect to Resolved Signull
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-neobrutalist-sm">
               <span className="text-xl font-bold text-green-600">+5</span>{" "}
               Intercept
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-neobrutalist-sm">
               <span className="text-xl font-bold text-green-600">+10</span>{" "}
               Signull Resolved
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-neobrutalist-sm">
               <span className="text-xl font-bold text-green-600">+5</span> Bonus
               for Each Letter Revealed
             </div>
-            {/* <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            {/* <div className="flex items-center gap-2 rounded-2xl border-2 border-black bg-white p-2 shadow-neobrutalist-sm">
               <span className="text-xl font-bold text-green-600">+5</span>{" "}
               Lightning Signull Bonus for Each Hidden Letter to Guesser
             </div> */}

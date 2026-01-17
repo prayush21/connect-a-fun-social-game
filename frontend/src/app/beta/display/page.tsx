@@ -132,15 +132,15 @@ export default function BetaDisplayPage() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Left Column - QR Code and Join Info */}
-          <div className="rounded-2xl border-2 border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="rounded-3xl border-2 border-black bg-white p-8 shadow-neobrutalist">
             <div className="text-center">
-              <h2 className="mb-2 text-xl font-bold text-neutral-700">
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wider text-black">
                 Scan to Join
               </h2>
 
               {/* QR Code */}
               <div className="mb-6 flex justify-center">
-                <div className="rounded-xl border-2 border-black bg-white p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <div className="rounded-xl border-2 border-black bg-white p-4 shadow-neobrutalist-sm">
                   {joinUrl && (
                     <QRCodeSVG
                       value={joinUrl}
@@ -167,7 +167,7 @@ export default function BetaDisplayPage() {
               {/* Copy Link Button */}
               <button
                 onClick={handleCopyCode}
-                className="inline-flex items-center gap-2 rounded-lg border-2 border-black bg-neutral-100 px-4 py-2 font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-black bg-neutral-100 px-4 py-2 text-sm font-bold uppercase tracking-wider shadow-neobrutalist-sm transition-all hover:translate-y-[1px] hover:shadow-neobrutalist-hover active:translate-y-[2px] active:shadow-none"
               >
                 {copied ? (
                   <>
@@ -187,10 +187,10 @@ export default function BetaDisplayPage() {
           {/* Right Column - Players and Settings */}
           <div className="space-y-6">
             {/* Players Card */}
-            <div className="rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
               <div className="mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                <h3 className="text-lg font-bold">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-black">
                   Players ({playerCount}/{settings?.maxPlayers || 8})
                 </h3>
               </div>
@@ -241,10 +241,12 @@ export default function BetaDisplayPage() {
             </div>
 
             {/* Settings Card */}
-            <div className="rounded-2xl border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
               <div className="mb-4 flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                <h3 className="text-lg font-bold">Game Settings</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-black">
+                  Game Settings
+                </h3>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -280,7 +282,7 @@ export default function BetaDisplayPage() {
             </div>
 
             {/* Waiting Message */}
-            <div className="rounded-2xl border-2 border-black bg-primary/10 p-6 text-center">
+            <div className="rounded-3xl border-2 border-black bg-primary/10 p-6 text-center">
               <div className="text-lg font-semibold text-primary">
                 {playerCount === 0
                   ? "Waiting for players to join..."
