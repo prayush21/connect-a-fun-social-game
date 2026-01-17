@@ -110,7 +110,7 @@ export default function HowToPlay({ post }: BlogPostContentProps) {
 
         <BlogShareButtons
           title={post.title}
-          url={`https://connect-signull.vercel.app/blog/${post.slug}`}
+          url={`/blog/${post.slug}`}
         />
       </BlogSection>
     </>
