@@ -15,15 +15,12 @@ export function GameInsights({ insights, players }: GameInsightsProps) {
   }
 
   return (
-    <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
-      <h3 className="mb-4 text-center text-sm font-bold uppercase tracking-wider text-neutral-500">
-        ✨ Game Highlights
-      </h3>
-      <div className="flex flex-col gap-4 md:flex-row">
-        {insights.slice(0, 2).map((insight) => (
-          <InsightCard key={insight.id} insight={insight} players={players} />
-        ))}
-      </div>
+    // <div className="rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
+    <div className="flex flex-col gap-4 md:flex-row">
+      {insights.slice(0, 2).map((insight) => (
+        <InsightCard key={insight.id} insight={insight} players={players} />
+      ))}
     </div>
+    // </div>
   );
 }

@@ -54,7 +54,7 @@ const INSIGHT_THEMES: Record<
 const INSIGHT_ICONS: Record<InsightType, React.ReactNode> = {
   dynamic_duo: <Users className="h-5 w-5" />,
   og_interceptor: <Target className="h-5 w-5" />,
-  signull_machine: <Zap className="h-5 w-5" />,
+  signull_machine: <Zap fill="yellow" className="h-5 w-5" />,
   knows_it_all: <Sparkles className="h-5 w-5" />,
   longest_word_vibe: <Music className="h-5 w-5" />,
 };
