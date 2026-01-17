@@ -184,6 +184,7 @@ function ScoreEventRow({
   timing: typeof ANIMATION_TIMING;
 }) {
   const isPositive = event.delta > 0;
+  const connectGuess = event.details?.connectGuess as string | undefined;
 
   return (
     <motion.div
@@ -198,11 +199,18 @@ function ScoreEventRow({
     >
       <div className="flex items-center gap-3">
         <span className="text-lg">{getReasonIcon(event.reason)}</span>
-        <div>
-          <span className="font-semibold">{playerName}</span>
-          <span className="ml-2 text-sm text-neutral-500">
-            {getReasonLabel(event.reason)}
-          </span>
+        <div className="flex flex-col">
+          <div>
+            <span className="font-semibold">{playerName}</span>
+            <span className="ml-2 text-sm text-neutral-500">
+              {getReasonLabel(event.reason)}
+            </span>
+          </div>
+          {connectGuess && (
+            <span className="text-sm text-neutral-600">
+              Guessed: <span className="font-medium">{connectGuess}</span>
+            </span>
+          )}
         </div>
       </div>
       <motion.span

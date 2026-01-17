@@ -174,6 +174,7 @@ export const calculateSignullResolvedScore = (
           {
             signullId: entry.id,
             word: entry.word,
+            connectGuess: connect.guess,
           }
         )
       );
@@ -224,6 +225,7 @@ export const calculateSignullResolvedScore = (
               signullId: entry.id,
               secretWord: data.secretWord,
               remainingLetters,
+              connectGuess: connect.guess,
             }
           )
         );
@@ -310,6 +312,7 @@ export const calculateFailedLightningSignullScore = (
             signullId: entry.id,
             secretWord: data.secretWord,
             remainingLetters,
+            connectGuess: connect.guess,
           }
         )
       );
