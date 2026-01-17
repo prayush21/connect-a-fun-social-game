@@ -25,6 +25,9 @@ import type {
   ScoreUpdates,
   ScoreEvent,
   FirestoreScoreEvent,
+  GameInsight,
+  FirestoreGameInsight,
+  InsightType,
 } from "./types";
 import {
   calculateCorrectSignullGuessScore,
@@ -166,6 +169,14 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
       details: e.details,
     })),
     scoreCountingComplete: data.scoreCountingComplete ?? false,
+    insights: (data.insights || []).map((i) => ({
+      id: i.id,
+      type: i.type,
+      playerIds: i.playerIds,
+      title: i.title,
+      subtitle: i.subtitle,
+      metadata: i.metadata,
+    })),
     createdAt: tsToDate(data.createdAt),
     updatedAt: tsToDate(data.updatedAt),
   };
@@ -227,6 +238,7 @@ export const createRoom = async (
       settings: finalSettings,
       scoreEvents: [],
       scoreCountingComplete: false,
+      insights: [],
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
     };
@@ -480,6 +492,199 @@ export const evaluateResolution = (
   return null; // still pending
 };
 
+// ==================== Game Insights Computation ====================
+
+/**
+ * Compute game insights based on player performance.
+ * Returns max 2 insights, sorted by priority.
+ * Falls back to "longest word vibe" if no notable insights found.
+ */
+export const computeInsights = (
+  data: FirestoreGameRoom
+): FirestoreGameInsight[] => {
+  const insights: (FirestoreGameInsight & { priority: number })[] = [];
+  const players = data.players;
+  const signulls = Object.values(data.signullState.itemsById);
+  const resolvedSignulls = signulls.filter((s) => s.status === "resolved");
+  const blockedSignulls = signulls.filter((s) => s.status === "blocked");
+
+  // Helper to generate unique ID
+  const genId = () =>
+    `insight_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  // 1. Dynamic Duo: Two players who connected to each other's signulls ≥2 times
+  // Priority: 1 (highest)
+  const guesserIds = Object.keys(players).filter(
+    (id) => players[id].role === "guesser"
+  );
+  const mutualConnects: Record<string, Record<string, number>> = {};
+
+  for (const signull of signulls) {
+    const creatorId = signull.playerId;
+    if (!mutualConnects[creatorId]) mutualConnects[creatorId] = {};
+
+    for (const connect of signull.connects) {
+      const connecterId = connect.playerId;
+      // Only count correct connects from guessers
+      if (
+        connect.isCorrect &&
+        players[connecterId]?.role === "guesser" &&
+        connecterId !== creatorId
+      ) {
+        mutualConnects[creatorId][connecterId] =
+          (mutualConnects[creatorId][connecterId] || 0) + 1;
+      }
+    }
+  }
+
+  // Find pairs who connected to each other's signulls at least 2 times each
+  for (let i = 0; i < guesserIds.length; i++) {
+    for (let j = i + 1; j < guesserIds.length; j++) {
+      const p1 = guesserIds[i];
+      const p2 = guesserIds[j];
+      const p1ToP2 = mutualConnects[p1]?.[p2] || 0;
+      const p2ToP1 = mutualConnects[p2]?.[p1] || 0;
+
+      if (p1ToP2 >= 2 && p2ToP1 >= 2) {
+        const name1 = players[p1].name;
+        const name2 = players[p2].name;
+        const totalConnects = p1ToP2 + p2ToP1;
+        insights.push({
+          id: genId(),
+          type: "dynamic_duo",
+          playerIds: [p1, p2],
+          title: `${name1} & ${name2} are on the same wavelength!`,
+          subtitle: `Connected to each other's signulls ${totalConnects} times`,
+          metadata: { connects: totalConnects },
+          priority: 1,
+        });
+      }
+    }
+  }
+
+  // 2. OG Interceptor: Setter who intercepted ≥70% of signulls
+  // Priority: 2
+  if (signulls.length >= 3) {
+    const interceptRate = blockedSignulls.length / signulls.length;
+    if (interceptRate >= 0.7) {
+      const setterId = data.setterId;
+      const setterName = players[setterId]?.name || "Setter";
+      insights.push({
+        id: genId(),
+        type: "og_interceptor",
+        playerIds: [setterId],
+        title: `${setterName} is the OG Interceptor!`,
+        subtitle: `Blocked ${Math.round(interceptRate * 100)}% of all signulls`,
+        metadata: { percentage: Math.round(interceptRate * 100) },
+        priority: 2,
+      });
+    }
+  }
+
+  // 3. Signull Machine: Player who created ≥50% of resolved signulls
+  // Priority: 3
+  if (resolvedSignulls.length >= 2) {
+    const creatorCounts: Record<string, number> = {};
+    for (const signull of resolvedSignulls) {
+      creatorCounts[signull.playerId] =
+        (creatorCounts[signull.playerId] || 0) + 1;
+    }
+
+    for (const [playerId, count] of Object.entries(creatorCounts)) {
+      const percentage = count / resolvedSignulls.length;
+      if (percentage >= 0.5) {
+        const playerName = players[playerId]?.name || "Player";
+        insights.push({
+          id: genId(),
+          type: "signull_machine",
+          playerIds: [playerId],
+          title: `${playerName} is a Signull Machine!`,
+          subtitle: `Created ${count} of ${resolvedSignulls.length} resolved signulls`,
+          metadata: {
+            count,
+            total: resolvedSignulls.length,
+            percentage: Math.round(percentage * 100),
+          },
+          priority: 3,
+        });
+        break; // Only one signull machine
+      }
+    }
+  }
+
+  // 4. Knows-It-All: Player with ≥70% correct connect rate (min 3 connects)
+  // Priority: 4
+  const playerConnectStats: Record<string, { correct: number; total: number }> =
+    {};
+
+  for (const signull of signulls) {
+    for (const connect of signull.connects) {
+      const pid = connect.playerId;
+      if (players[pid]?.role === "guesser" && pid !== signull.playerId) {
+        if (!playerConnectStats[pid])
+          playerConnectStats[pid] = { correct: 0, total: 0 };
+        playerConnectStats[pid].total++;
+        if (connect.isCorrect) playerConnectStats[pid].correct++;
+      }
+    }
+  }
+
+  for (const [playerId, stats] of Object.entries(playerConnectStats)) {
+    if (stats.total >= 3) {
+      const rate = stats.correct / stats.total;
+      if (rate >= 0.7) {
+        const playerName = players[playerId]?.name || "Player";
+        insights.push({
+          id: genId(),
+          type: "knows_it_all",
+          playerIds: [playerId],
+          title: `${playerName} knows-it-all!`,
+          subtitle: `Connected correctly ${Math.round(rate * 100)}% of the time`,
+          metadata: {
+            percentage: Math.round(rate * 100),
+            correct: stats.correct,
+            total: stats.total,
+          },
+          priority: 4,
+        });
+        break; // Only one knows-it-all
+      }
+    }
+  }
+
+  // Sort by priority and take top 2
+  insights.sort((a, b) => a.priority - b.priority);
+  const topInsights = insights.slice(0, 2);
+
+  // 5. Fallback: Longest Word Vibe (if we have less than 2 insights)
+  // Priority: 5 (lowest, always last)
+  if (topInsights.length < 2 && resolvedSignulls.length > 0) {
+    // Find the longest word from resolved signulls
+    let longestSignull = resolvedSignulls[0];
+    for (const signull of resolvedSignulls) {
+      if (signull.word.length > longestSignull.word.length) {
+        longestSignull = signull;
+      }
+    }
+
+    const creatorName = players[longestSignull.playerId]?.name || "Someone";
+    const word = longestSignull.word;
+
+    topInsights.push({
+      id: genId(),
+      type: "longest_word_vibe",
+      playerIds: [longestSignull.playerId],
+      title: `${creatorName} made everyone vibe on "${word}"!`,
+      subtitle: `That's a ${word.length}-letter connection. Crazy!`,
+      metadata: { word, length: word.length },
+      priority: 5,
+    });
+  }
+
+  // Remove priority field before returning
+  return topInsights.map(({ priority, ...insight }) => insight);
+};
+
 export const submitConnect = async (
   roomId: RoomId,
   playerId: PlayerId,
@@ -654,6 +859,11 @@ export const submitConnect = async (
         updatedAt: serverTimestamp(),
       };
 
+      // Compute and store insights if game ended
+      if (resolution?.gameEnded) {
+        updatePayload.insights = computeInsights(data);
+      }
+
       // Append score events to existing array
       if (firestoreScoreEvents.length > 0) {
         const existingEvents = data.scoreEvents || [];
@@ -759,6 +969,7 @@ export const submitDirectGuess = async (
             phase: "ended",
             directGuessesLeft: remaining,
             lastDirectGuess,
+            insights: computeInsights(data),
             updatedAt: serverTimestamp(),
           },
           scoreResult
@@ -778,6 +989,7 @@ export const submitDirectGuess = async (
             {
               winner: "setter",
               phase: "ended",
+              insights: computeInsights(data),
               directGuessesLeft: 0,
               lastDirectGuess,
               updatedAt: serverTimestamp(),
@@ -976,6 +1188,7 @@ export const playAgain = async (roomId: RoomId): Promise<void> => {
       winner: deleteField(),
       scoreEvents: [], // Clear score events for new round
       scoreCountingComplete: false,
+      insights: [], // Clear insights for new round
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -1009,6 +1222,7 @@ export const backToLobby = async (
           winner: deleteField(),
           scoreEvents: [], // Clear score events
           scoreCountingComplete: false,
+          insights: [], // Clear insights
           updatedAt: serverTimestamp(),
         };
 
@@ -1033,6 +1247,7 @@ export const backToLobby = async (
         winner: deleteField(),
         scoreEvents: [], // Clear score events
         scoreCountingComplete: false,
+        insights: [], // Clear insights
         updatedAt: serverTimestamp(),
       });
     }

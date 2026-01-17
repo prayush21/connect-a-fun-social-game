@@ -5,14 +5,11 @@ import { useRouter } from "next/navigation";
 import { useBetaStore } from "@/lib/beta/store";
 import {
   getAllSignullMetrics,
-  useLettersRevealed,
-  useSignullsGenerated,
-  useSignullsIntercepted,
   type SignullMetrics,
 } from "@/lib/beta/selectors";
 import { Users } from "lucide-react";
 import { CircularProgress } from "@/components/beta/CircularProgress";
-import { ScoreBreakdownDisplay } from "@/components/beta";
+import { ScoreBreakdownDisplay, GameInsights } from "@/components/beta";
 import { setScoreCountingComplete } from "@/lib/beta/firebase";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
@@ -164,15 +161,11 @@ export default function BetaDisplayPlayPage() {
   const signullState = gameState?.signullState;
   const showScoreBreakdown = gameState?.settings?.showScoreBreakdown ?? false;
   const scoreCountingComplete = gameState?.scoreCountingComplete ?? false;
+  const insights = gameState?.insights ?? [];
   const setter = Object.values(players).find(
     (player) => player.role === "setter"
   );
   const setterName = setter ? setter.name : "the setter";
-
-  // Get stats using hooks
-  const lettersRevealed = useLettersRevealed();
-  const signullsGenerated = useSignullsGenerated();
-  const signullsIntercepted = useSignullsIntercepted();
 
   // Get all signull metrics
   const allSignulls = getAllSignullMetrics(gameState);
@@ -406,47 +399,9 @@ export default function BetaDisplayPlayPage() {
               */}
             </div>
           </div>
-          <div className="h-full rounded-3xl border-2 border-black bg-white p-6 shadow-neobrutalist">
-            <div className="flex flex-1 items-center justify-center">
-              <div className="flex items-end justify-center gap-8 space-x-6">
-                {/* Signulls Generated - Left */}
-                <div className="mt-2 flex flex-col items-center">
-                  <div className="text-3xl font-bold text-neutral-700">
-                    {signullsGenerated}
-                  </div>
-                  <div className="text-md mt-1 text-center text-neutral-500">
-                    Signulls
-                    <br />
-                    Generated
-                  </div>
-                </div>
 
-                {/* Letters Revealed - Center (podium top) */}
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl font-bold text-neutral-700">
-                    {lettersRevealed}
-                  </div>
-                  <div className="text-md mt-1 text-center text-neutral-500">
-                    Letters
-                    <br />
-                    Revealed
-                  </div>
-                </div>
-
-                {/* Signulls Intercepted - Right */}
-                <div className="mt-2 flex flex-col items-center">
-                  <div className="text-3xl font-bold text-neutral-700">
-                    {signullsIntercepted}
-                  </div>
-                  <div className="text-md mt-1 text-center text-neutral-500">
-                    Signulls
-                    <br />
-                    Intercepted
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Game Insights */}
+          <GameInsights insights={insights} players={players} />
         </div>
       </main>
     );
