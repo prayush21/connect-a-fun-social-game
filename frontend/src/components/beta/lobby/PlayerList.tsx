@@ -159,8 +159,17 @@ export function PlayerList({
                 {player.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex flex-col">
-                <span className="text-start text-lg font-bold">
-                  {player.name}
+                <span className="space-x-2 text-start text-lg font-bold">
+                  {player.name} {/* Edit name button - only for current user */}
+                  {player.id === currentUserId && (
+                    <button
+                      onClick={() => setEditModalOpen(true)}
+                      className="rounded-full border-2 border-transparent p-2 text-neutral-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]"
+                      title="Edit your name"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
                 </span>
                 <div className="flex items-center gap-2">
                   {isPlayerHost && (
@@ -191,16 +200,6 @@ export function PlayerList({
               <span className="text-sm font-medium text-neutral-500">
                 {player.score} pts
               </span>
-              {/* Edit name button - only for current user */}
-              {player.id === currentUserId && (
-                <button
-                  onClick={() => setEditModalOpen(true)}
-                  className="rounded-full border-2 border-transparent p-2 text-neutral-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,0)] transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,0.1)]"
-                  title="Edit your name"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-              )}
             </div>
           </BaseCard>
         );
