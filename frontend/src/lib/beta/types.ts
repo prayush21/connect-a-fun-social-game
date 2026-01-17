@@ -114,6 +114,30 @@ export interface LastDirectGuess {
   timestamp: Date;
 }
 
+// ==================== Game Insights Types ====================
+
+/**
+ * Types of insights that can be computed at game end
+ */
+export type InsightType =
+  | "knows_it_all" // Player with ≥70% correct connect rate
+  | "signull_machine" // Player who created ≥50% of resolved signulls
+  | "dynamic_duo" // Two players who connected to each other's signulls ≥2 times
+  | "og_interceptor" // Setter who intercepted ≥70% of signulls
+  | "longest_word_vibe"; // Fallback: longest resolved signull word
+
+/**
+ * A single game insight to display at game end
+ */
+export interface GameInsight {
+  id: string;
+  type: InsightType;
+  playerIds: PlayerId[]; // Players involved in this insight
+  title: string; // Main text (e.g., "Satyam knows-it-all!")
+  subtitle: string; // Supporting text/stats
+  metadata?: Record<string, unknown>; // Additional data (e.g., percentage, word)
+}
+
 export interface GameState {
   schemaVersion: 2; // fixed version for beta schema
   roomId: RoomId;
@@ -131,6 +155,7 @@ export interface GameState {
   settings: GameSettings;
   scoreEvents: ScoreEvent[]; // Chronological history of all scoring events
   scoreCountingComplete: boolean; // Whether score counting animation has completed
+  insights: GameInsight[]; // Game insights computed at game end
   createdAt: Date; // snapshot conversion from Firestore Timestamp
   updatedAt: Date;
 }
@@ -180,6 +205,19 @@ export interface FirestoreScoreEvent {
   details?: Record<string, unknown>;
 }
 
+/**
+ * Firestore representation of a game insight
+ * (No timestamps needed, insights are computed once at game end)
+ */
+export interface FirestoreGameInsight {
+  id: string;
+  type: InsightType;
+  playerIds: PlayerId[];
+  title: string;
+  subtitle: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface FirestoreGameRoom {
   schemaVersion: 2;
   roomId: RoomId;
@@ -219,6 +257,7 @@ export interface FirestoreGameRoom {
   };
   scoreEvents: FirestoreScoreEvent[];
   scoreCountingComplete: boolean;
+  insights: FirestoreGameInsight[]; // Game insights computed at game end
   createdAt: FirestoreTimeValue;
   updatedAt: FirestoreTimeValue;
 }

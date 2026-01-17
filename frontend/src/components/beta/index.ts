@@ -21,3 +21,5 @@ export {
   ANIMATION_TIMING,
 } from "./ScoreBreakdownDisplay";
 export { TutorialWrapper } from "./TutorialWrapper";
+export { InsightCard } from "./InsightCard";
+export { GameInsights } from "./GameInsights";

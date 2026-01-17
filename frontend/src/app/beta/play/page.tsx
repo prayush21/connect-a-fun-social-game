@@ -1153,6 +1153,7 @@ export default function BetaPlayPage() {
                 disableSignull={isSetter || game?.phase === "setting"}
                 disableSubmit={currentActionState.submitDisabled}
                 isGameEnded={game?.phase === "ended"}
+                isHost={userId === game?.hostId}
                 onPlayAgain={() => {
                   void playAgain();
                 }}
