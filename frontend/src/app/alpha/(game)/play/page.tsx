@@ -18,7 +18,6 @@ import {
 } from "@/components/game";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { RoomDropdown } from "@/components/ui/RoomDropdown";
 
 export default function PlayRoute() {
   const router = useRouter();
@@ -207,7 +206,7 @@ export default function PlayRoute() {
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-6">
       <header className="flex flex-col items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-md md:flex-row">
         <div className="flex items-center gap-3">
-          <RoomDropdown roomId={roomId || ""} />
+          <h1 className="text-xl font-bold">Room: {roomId}</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -228,81 +227,104 @@ export default function PlayRoute() {
         </div>
       </header>
 
-      {gamePhase === "word_setting" && (
-        <WordSetting
-          currentPlayer={currentPlayer}
-          currentClueGiver={currentClueGiver}
-          onSubmitWord={handleWordSetting}
-        />
+      {/* Setting Word Phase - The setter sets the secret word */}
+      {gamePhase === "setting_word" && currentPlayer?.role === "setter" && (
+        <WordSetting onSetWord={handleWordSetting} />
       )}
 
-      {gamePhase === "waiting_for_clue" && (
+      {gamePhase === "setting_word" && currentPlayer?.role === "guesser" && (
         <WaitingState
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
+          playerName={gameState.players[gameState.setterUid]?.name || "Setter"}
+          mode="word"
         />
       )}
 
-      {gamePhase === "clue_input" && (
-        <ClueInput
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
-          onSubmitClue={handleClueSubmission}
-          canSubmitReference={canSubmitReference}
-        />
+      {/* Guessing Phase */}
+      {gamePhase === "guessing" && (
+        <>
+          {/* Show letter reveal */}
+          <LetterReveal
+            secretWord={gameState.secretWord}
+            revealedCount={gameState.revealedCount}
+          />
+
+          {/* If there's no clue giver and player can volunteer */}
+          {!currentClueGiver &&
+            canVolunteerAsClueGiver &&
+            !gameState.currentReference && (
+              <VolunteerClueGiver onVolunteer={handleVolunteerAsClueGiver} />
+            )}
+
+          {/* If player is the current clue giver and no reference is set */}
+          {currentClueGiver?.id === sessionId &&
+            canSubmitReference &&
+            !gameState.currentReference && (
+              <ClueInput
+                revealedPrefix={revealedPrefix}
+                onSubmitClue={handleClueSubmission}
+              />
+            )}
+
+          {/* If there's a reference, show it */}
+          {gameState.currentReference && (
+            <>
+              <ViewReference
+                reference={gameState.currentReference}
+                revealedPrefix={revealedPrefix}
+              />
+
+              {/* Allow other players to connect */}
+              {currentPlayer?.role === "guesser" &&
+                currentPlayer.id !== gameState.currentReference.clueGiverId && (
+                  <Connect
+                    currentPlayerId={currentPlayer.id}
+                    currentReference={gameState.currentReference}
+                    onConnect={handleConnect}
+                  />
+                )}
+
+              {/* Allow setter to sabotage */}
+              {currentPlayer?.role === "setter" && (
+                <Sabotage
+                  currentReference={gameState.currentReference}
+                  onSabotage={handleSabotage}
+                />
+              )}
+
+              {/* Show waiting for connects */}
+              {(currentClueGiver?.id === sessionId ||
+                (currentPlayer?.role === "guesser" &&
+                  gameState.currentReference.guesses[currentPlayer.id])) && (
+                <WaitingForConnects
+                  guessesReceived={guessesReceived}
+                  majorityNeeded={majorityNeeded}
+                />
+              )}
+            </>
+          )}
+
+          {/* If waiting for clue */}
+          {currentClueGiver &&
+            currentClueGiver.id !== sessionId &&
+            !gameState.currentReference && (
+              <WaitingState playerName={currentClueGiver.name} mode="clue" />
+            )}
+
+          {/* Direct Guess Option */}
+          {canSubmitDirectGuess && (
+            <DirectGuess
+              directGuessesLeft={gameState.directGuessesLeft}
+              revealedPrefix={revealedPrefix}
+              secretWordLength={gameState.secretWord.length}
+              onSubmitDirectGuess={handleDirectGuess}
+            />
+          )}
+        </>
       )}
 
-      {gamePhase === "reference_display" && (
-        <ViewReference
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
-          canSubmitDirectGuess={canSubmitDirectGuess}
-          onSubmitDirectGuess={handleDirectGuess}
-        />
-      )}
-
-      {gamePhase === "connect_phase" && (
-        <Connect
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
-          onSubmitConnect={handleConnect}
-        />
-      )}
-
-      {gamePhase === "sabotage_phase" && (
-        <Sabotage
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
-          onSubmitConnect={handleSabotage}
-        />
-      )}
-
-      {gamePhase === "waiting_for_connects" && (
-        <WaitingForConnects
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
-        />
-      )}
-
-      {gamePhase === "volunteer_phase" && (
-        <VolunteerClueGiver
-          currentClueGiver={currentClueGiver}
-          currentPlayer={currentPlayer}
-          canVolunteerAsClueGiver={canVolunteerAsClueGiver}
-          onVolunteer={handleVolunteerAsClueGiver}
-        />
-      )}
-
-      {gamePhase === "letter_reveal" && (
-        <LetterReveal
-          revealedPrefix={revealedPrefix}
-          guessesReceived={guessesReceived}
-          majorityNeeded={majorityNeeded}
-        />
-      )}
-
-      {gamePhase === "history" && (
-        <History currentPlayer={currentPlayer} onRemove={handleRemovePlayer} />
+      {/* Game History */}
+      {gameState.gameHistory.length > 0 && (
+        <History entries={gameState.gameHistory} autoScroll />
       )}
 
       {error && (

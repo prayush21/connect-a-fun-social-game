@@ -10,7 +10,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode, useMemo, useState, useEffect } from "react";
+import { ReactNode, useMemo, useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 // ====================
@@ -453,7 +453,8 @@ interface BlogShareButtonsProps {
   url: string;
 }
 
-export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
+// Internal component that uses useSearchParams
+function BlogShareButtonsInner({ title, url }: BlogShareButtonsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">(
@@ -577,5 +578,27 @@ export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
         </button>
       </div>
     </div>
+  );
+}
+
+// Exported component with Suspense boundary
+export function BlogShareButtons({ title, url }: BlogShareButtonsProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="my-12 border-t-2 border-gray-200 pt-8">
+          <h3 className="mb-4 text-center text-lg font-bold text-gray-700">
+            Share this update
+          </h3>
+          <div className="flex justify-center gap-4">
+            <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200" />
+            <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200" />
+            <div className="h-10 w-32 animate-pulse rounded-lg bg-gray-200" />
+          </div>
+        </div>
+      }
+    >
+      <BlogShareButtonsInner title={title} url={url} />
+    </Suspense>
   );
 }

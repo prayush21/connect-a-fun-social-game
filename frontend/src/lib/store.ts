@@ -858,6 +858,20 @@ export const useStore = create<UiState & AuthState & GameStateStore>()(
         const { roomId: currentRoomId, sessionId, gameState, username } = get();
         if (!currentRoomId || !gameState) return;
 
+        // Validate playerId
+        if (
+          !playerId ||
+          typeof playerId !== "string" ||
+          playerId.trim() === ""
+        ) {
+          const error = createGameError(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Invalid player ID"
+          );
+          set({ error });
+          throw error;
+        }
+
         const { error } = await withErrorHandling(async () => {
           // Validate removal permissions
           const canRemoveValidation = canRemovePlayer(
