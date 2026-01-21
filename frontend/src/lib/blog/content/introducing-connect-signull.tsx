@@ -42,38 +42,34 @@ export default function IntroducingConnectSignull({
         <BlogHeading level={2}>What is ConnectSignull?</BlogHeading>
 
         <BlogParagraph>
-          ConnectSignull is a collaborative word game explicitly designed to
-          create shared experiences. It's built on three core pillars:
+          Imagine this: a group of friends mutuals gather around, either in
+          person or virtually, just meeting casually. One person thinks of a
+          word, say "Pineapple". And they declare its P9, indicating it's a
+          9-letter word starting with 'P'. The rest of the group, the
+          "guessers", then take turns suggesting clues to words that start with
+          P. Say someone mentions "what do Jupiter, Saturn, and Mars have in
+          common?" The setter, while puzzled, the rest of the group shouts
+          together, "Planet!". The setter feeling absolutely betrayed by
+          himself, begrudging gives the next letter in the P9 acronym he gave:
+          "PI" The guessers continue this process, now with thinking and trying
+          to get other friends connect over words starting with "PI", and trying
+          to piece together the original word based on the clues given, untill
+          they have directly figured it out!
         </BlogParagraph>
 
         <BlogParagraph>
-          <strong>1. Asymmetric Teamwork:</strong> A cooperative team works
-          together against a single word-setter. It's not just about getting the
-          answer; it's about outsmarting the setter together.
+          That's ConnectSignull in a nutshell - a game of cooperative deception
+          and social connection through shared references.
         </BlogParagraph>
-
-        <BlogParagraph>
-          <strong>2. Cultural References:</strong> You do not win through
-          dictionary knowledge; you win by using shared memories and references
-          to decode words. It's about that moment of "I know that you know that
-          I know."
-        </BlogParagraph>
-
-        <BlogParagraph>
-          <strong>3. Active Participation:</strong> Unlike passive scrolling,
-          this requires coordination and shared emotional experiences in a
-          common game state.
-        </BlogParagraph>
-
         <BlogDivider />
 
         <BlogHeading level={2}>Join the Experience</BlogHeading>
 
         <BlogParagraph>
           We didn&apos;t just want to make another word game. We wanted to build
-          a platform for social interaction. Whether you are in the same room or
+          a place for social interaction. Whether you are in the same room or
           connecting remotely, ConnectSignull is designed to bring you closer
-          together.
+          together through shared moments of discovery and fun.
         </BlogParagraph>
 
         <BlogCTA
