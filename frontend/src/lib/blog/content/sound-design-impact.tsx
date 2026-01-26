@@ -97,6 +97,15 @@ export default function SoundDesignImpact({ post }: BlogPostContentProps) {
           </p>
         </BlogCallout>
 
+        <BlogCallout type="tip">
+          <p>
+            <strong>Pro Tip:</strong> Consider incorporating haptics alongside
+            sound design to create a multi-sensory experience. Haptic feedback
+            can add a tactile dimension that enhances user immersion and
+            complements visual and auditory cues.
+          </p>
+        </BlogCallout>
+
         <BlogHeading level={2}>
           Why Sound Works When Nothing Else Does
         </BlogHeading>
