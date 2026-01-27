@@ -360,7 +360,7 @@ export function BlogCodeBlock({ children, language }: BlogCodeBlockProps) {
 // ====================
 
 interface BlogListProps {
-  items: string[];
+  items: (string | ReactNode)[];
   ordered?: boolean;
 }
 

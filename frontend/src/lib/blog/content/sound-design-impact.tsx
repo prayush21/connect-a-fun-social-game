@@ -73,11 +73,26 @@ export default function SoundDesignImpact({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "<strong>Secret Word Setting:</strong> A subtle, almost mysterious tone that signals the start of a challenge.",
-            "<strong>New Signull Creation:</strong> A bright, encouraging sound that celebrates player creativity.",
-            "<strong>Player Connection:</strong> A celebratory chime when teammates successfully decode a clue together.",
-            "<strong>Letter Revelation:</strong> A satisfying 'reveal' sound that feels like information unfolding.",
-            "<strong>Game Conclusion:</strong> Different tones for victory and defeat that provide clear closure.",
+            <>
+              <strong>Secret Word Setting:</strong> A subtle, almost mysterious
+              tone that signals the start of a challenge.
+            </>,
+            <>
+              <strong>New Signull Creation:</strong> A bright, encouraging sound
+              that celebrates player creativity.
+            </>,
+            <>
+              <strong>Player Connection:</strong> A celebratory chime when
+              teammates successfully decode a clue together.
+            </>,
+            <>
+              <strong>Letter Revelation:</strong> A satisfying 'reveal' sound
+              that feels like information unfolding.
+            </>,
+            <>
+              <strong>Game Conclusion:</strong> Different tones for victory and
+              defeat that provide clear closure.
+            </>,
           ]}
           ordered={false}
         />
@@ -173,11 +188,23 @@ export default function SoundDesignImpact({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "Use audio to highlight key moments of progression.",
-            "Ensure sounds feel semantically connected to their actions—celebration sounds should feel celebratory.",
-            "Keep the audio distinct enough to be noticed, subtle enough to not be annoying.",
-            "Test with users. Let them tell you if the sounds enhance or detract from the experience.",
-            "Remember that shared sounds create shared moments. Use audio to synchronize group experience.",
+            <>Use audio to highlight key moments of progression.</>,
+            <>
+              Ensure sounds feel semantically connected to their
+              actions—celebration sounds should feel celebratory.
+            </>,
+            <>
+              Keep the audio distinct enough to be noticed, subtle enough to not
+              be annoying.
+            </>,
+            <>
+              Test with users. Let them tell you if the sounds enhance or
+              detract from the experience.
+            </>,
+            <>
+              Remember that shared sounds create shared moments. Use audio to
+              synchronize group experience.
+            </>,
           ]}
           ordered={true}
         />

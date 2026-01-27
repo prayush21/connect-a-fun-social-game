@@ -53,9 +53,28 @@ export default function ScoringSystemBlog({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "<strong>Drives Focus & Purpose:</strong> Most importantly, a good scoring system guides players toward the actions and goals that matter. Without it, players can easily get lost in menial tasks or directionless play. Scoring clarifies what winning looks like and what behaviors lead to success.",
-            "<strong>Rewards & Motivation:</strong> Humans are hardwired to seek feedback and recognition. A scoring system acts as a reward mechanism, motivating players to compete, improve, and push themselves harder. Each point earned is a small dopamine hit that keeps players engaged.",
-            "<strong>Sustains Engagement:</strong> Scoring creates a narrative arc for each game. Players finish a round with a sense of tangible accomplishment—not just 'we solved a word,' but 'we scored 427 points.' This quantified achievement makes replaying feel compelling. In our A/B testing, groups with scoring enabled played 40% more games and stayed engaged 50% longer.",
+            <>
+              <strong>Drives Focus & Purpose:</strong> Most importantly, a good
+              scoring system guides players toward the actions and goals that
+              matter. Without it, players can easily get lost in menial tasks or
+              directionless play. Scoring clarifies what winning looks like and
+              what behaviors lead to success.
+            </>,
+            <>
+              <strong>Rewards & Motivation:</strong> Humans are hardwired to
+              seek feedback and recognition. A scoring system acts as a reward
+              mechanism, motivating players to compete, improve, and push
+              themselves harder. Each point earned is a small dopamine hit that
+              keeps players engaged.
+            </>,
+            <>
+              <strong>Sustains Engagement:</strong> Scoring creates a narrative
+              arc for each game. Players finish a round with a sense of tangible
+              accomplishment—not just 'we solved a word,' but 'we scored 427
+              points.' This quantified achievement makes replaying feel
+              compelling. In our A/B testing, groups with scoring enabled played
+              40% more games and stayed engaged 50% longer.
+            </>,
           ]}
         />
 
@@ -81,9 +100,26 @@ export default function ScoringSystemBlog({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "<strong>+5 for an Intercept:</strong> When the word-setter successfully identifies a signull before the guessing team can solve it, they earn 5 points. This rewards the setter for staying engaged and making strategic decisions about which clues to block.",
-            "<strong>+5 for a Connect:</strong> When a guesser successfully solves a signull (recognizes the cultural reference) and it resolves to reveal a letter, the guesser who made the connection earns 5 points. This rewards active participation and cultural knowledge.",
-            "<strong>+10 for Making a Signull (if it resolves):</strong> When a player creates a signull that's successfully guessed by the team (before the setter intercepts it), the creator earns 10 points. This incentivizes thoughtful, clever clue-making and rewards creativity that helps the team progress.",
+            <>
+              <strong>+5 for an Intercept:</strong> When the word-setter
+              successfully identifies a signull before the guessing team can
+              solve it, they earn 5 points. This rewards the setter for staying
+              engaged and making strategic decisions about which clues to block.
+            </>,
+            <>
+              <strong>+5 for a Connect:</strong> When a guesser successfully
+              solves a signull (recognizes the cultural reference) and it
+              resolves to reveal a letter, the guesser who made the connection
+              earns 5 points. This rewards active participation and cultural
+              knowledge.
+            </>,
+            <>
+              <strong>+10 for Making a Signull (if it resolves):</strong> When a
+              player creates a signull that's successfully guessed by the team
+              (before the setter intercepts it), the creator earns 10 points.
+              This incentivizes thoughtful, clever clue-making and rewards
+              creativity that helps the team progress.
+            </>,
           ]}
         />
 
@@ -96,8 +132,20 @@ export default function ScoringSystemBlog({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "<strong>+5 for every letter revealed to the setter:</strong> If the guessing team forced the word-setter to reveal 5 letters before solving the word, the setter earns 25 bonus points. This rewards setters for choosing difficult words that keep the game competitive.",
-            "<strong>+5 for every letter guessers didn't require:</strong> If the word is 7 letters long but the team solved it after only 4 letters were revealed, they earn 15 bonus points (5 × 3). This rewards clever deduction and celebrates moments where the team 'gets' the word faster than expected.",
+            <>
+              <strong>+5 for every letter revealed to the setter:</strong> If
+              the guessing team forced the word-setter to reveal 5 letters
+              before solving the word, the setter earns 25 bonus points. This
+              rewards setters for choosing difficult words that keep the game
+              competitive.
+            </>,
+            <>
+              <strong>+5 for every letter guessers didn't require:</strong> If
+              the word is 7 letters long but the team solved it after only 4
+              letters were revealed, they earn 15 bonus points (5 × 3). This
+              rewards clever deduction and celebrates moments where the team
+              'gets' the word faster than expected.
+            </>,
           ]}
         />
 
@@ -121,9 +169,28 @@ export default function ScoringSystemBlog({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "<strong>Competition vs. Cooperation:</strong> We wanted scoring to motivate players without creating stress or toxic competitiveness. The solution: individual contributions are scored (who made that awesome clue?), but the team's collective achievement is the main goal. Scoring celebrates individual creativity within a cooperative context.",
-            "<strong>Clarity vs. Simplicity:</strong> The system needed to be complex enough to feel meaningful, but simple enough that players understood it instantly. We avoided nested multipliers or esoteric formulas. Every point is earned through a clear, understandable action.",
-            "<strong>Intrinsic vs. Extrinsic Motivation:</strong> Research shows that external rewards can sometimes undermine intrinsic motivation. By deferring the score reveal until after gameplay ends, players focus on the collaborative experience first, then get the dopamine hit of seeing the final tally.",
+            <>
+              <strong>Competition vs. Cooperation:</strong> We wanted scoring to
+              motivate players without creating stress or toxic competitiveness.
+              The solution: individual contributions are scored (who made that
+              awesome clue?), but the team's collective achievement is the main
+              goal. Scoring celebrates individual creativity within a
+              cooperative context.
+            </>,
+            <>
+              <strong>Clarity vs. Simplicity:</strong> The system needed to be
+              complex enough to feel meaningful, but simple enough that players
+              understood it instantly. We avoided nested multipliers or esoteric
+              formulas. Every point is earned through a clear, understandable
+              action.
+            </>,
+            <>
+              <strong>Intrinsic vs. Extrinsic Motivation:</strong> Research
+              shows that external rewards can sometimes undermine intrinsic
+              motivation. By deferring the score reveal until after gameplay
+              ends, players focus on the collaborative experience first, then
+              get the dopamine hit of seeing the final tally.
+            </>,
           ]}
         />
 
@@ -136,9 +203,20 @@ export default function ScoringSystemBlog({ post }: BlogPostContentProps) {
 
         <BlogList
           items={[
-            "Intercepting and connecting both earn 5 points, ensuring that the word-setter and guessers have equivalent value for their actions.",
-            "Making a successful signull earns 10 points because it requires the most creativity and risk—you're creating something that might be intercepted. This rewards initiative.",
-            "Bonus points scale with choosing words strategically, not just by length; smarter words create opportunities for the experienced players. This prevents 'trivial' games from feeling hollow.",
+            <>
+              Intercepting and connecting both earn 5 points, ensuring that the
+              word-setter and guessers have equivalent value for their actions.
+            </>,
+            <>
+              Making a successful signull earns 10 points because it requires
+              the most creativity and risk—you're creating something that might
+              be intercepted. This rewards initiative.
+            </>,
+            <>
+              Bonus points scale with choosing words strategically, not just by
+              length; smarter words create opportunities for the experienced
+              players. This prevents 'trivial' games from feeling hollow.
+            </>,
           ]}
         />
 
