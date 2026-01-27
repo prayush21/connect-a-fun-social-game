@@ -133,6 +133,23 @@ export const blogPosts: BlogPost[] = [
     },
     tags: ["design", "social", "hybrid", "mechanics"],
   },
+  {
+    slug: "scoring-system",
+    title: "Why Scoring Matters: The Psychology of Points and Engagement",
+    excerpt:
+      "It seems simple when you see a good scoring system, but like all design it takes intuition and iteration to get the mix right. Here's how we built a scoring system that drives engagement without killing the vibe.",
+    date: "January 27, 2026",
+    dateTime: "2026-01-27",
+    category: "BEHIND THE SCENES",
+    categoryColor: "text-gray-500",
+    readTime: "7 min read",
+    isNew: true,
+    author: {
+      name: "Prayush Dave",
+      role: "Lead Developer",
+    },
+    tags: ["design", "scoring", "engagement", "mechanics", "psychology"],
+  },
   // {
   //   slug: "beta-launch",
   //   title: "Launch Day: Beta is officially LIVE!",
