@@ -425,8 +425,7 @@ function BetaHomeContent() {
             </ol>
             <div className="mt-4 rounded-lg border-l-4 border-primary bg-neutral-50 p-3 text-xs text-slate-600">
               <strong className="text-primary">Pro Tip:</strong> Get creative
-              with your clues! Inside jokes and niche references are harder to
-              intercept but riskier for your team to guess.
+              with your clues! Inside jokes and niche references work the best!
             </div>
           </div>
 

@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   Minus,
   Plus,
@@ -10,6 +11,11 @@ import {
 } from "lucide-react";
 import { BaseCard } from "@/components/beta/cards/BaseCard";
 import { useShowPlayerScores } from "@/lib/posthog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface SettingsCardProps {
   connectsRequired: number;
@@ -37,6 +43,9 @@ export function SettingsCard({
   onResetScores,
 }: SettingsCardProps) {
   const showPlayerScores = useShowPlayerScores();
+  const [prefixModePopoverOpen, setPrefixModePopoverOpen] =
+    React.useState(false);
+  const [connectsPopoverOpen, setConnectsPopoverOpen] = React.useState(false);
 
   return (
     <BaseCard className="space-y-6 !p-6">
@@ -46,6 +55,29 @@ export function SettingsCard({
         <div className="flex flex-col items-center space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
             <span>Connects Required</span>
+            <Popover
+              open={connectsPopoverOpen}
+              onOpenChange={setConnectsPopoverOpen}
+            >
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center"
+                  onMouseEnter={() => setConnectsPopoverOpen(true)}
+                  onMouseLeave={() => setConnectsPopoverOpen(false)}
+                >
+                  <Info className="h-4 w-4 cursor-pointer" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="top"
+                onMouseEnter={() => setConnectsPopoverOpen(true)}
+                onMouseLeave={() => setConnectsPopoverOpen(false)}
+              >
+                <p className="text-neutral-700">
+                  Number of people who need to connect before setter
+                </p>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex w-fit items-center rounded-full border-2 border-black bg-white p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             <button
@@ -68,12 +100,29 @@ export function SettingsCard({
         <div className="flex flex-col items-center space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-neutral-600">
             <span>Prefix Mode</span>
-            <span
-              title="The signull word will share the revealed prefix with secret word"
-              className="flex items-center"
+            <Popover
+              open={prefixModePopoverOpen}
+              onOpenChange={setPrefixModePopoverOpen}
             >
-              <Info className="h-4 w-4 cursor-pointer" />
-            </span>
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center"
+                  onMouseEnter={() => setPrefixModePopoverOpen(true)}
+                  onMouseLeave={() => setPrefixModePopoverOpen(false)}
+                >
+                  <Info className="h-4 w-4 cursor-pointer" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="top"
+                onMouseEnter={() => setPrefixModePopoverOpen(true)}
+                onMouseLeave={() => setPrefixModePopoverOpen(false)}
+              >
+                <p className="text-neutral-700">
+                  Starting letters match the secret word
+                </p>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex items-center gap-3">
             {/* Custom Toggle */}

@@ -71,6 +71,14 @@ export default function HowToPlay({ post }: BlogPostContentProps) {
           might be "a green bird".
         </BlogParagraph>
 
+        <BlogCallout type="info">
+          <p>
+            Chill Out: The word can be of any length, as long as the starting
+            letters match. So "P _ _ _ _ _" could correspond to "PIZZA" or
+            "PENGUIN".
+          </p>
+        </BlogCallout>
+
         <BlogHeading level={3}>3. The Interception</BlogHeading>
         <BlogParagraph>
           Here is the catch: The Word-Setter is watching.
