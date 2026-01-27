@@ -15,6 +15,7 @@ import {
   BlogCTA,
   BlogShareButtons,
   FeatureBox,
+  BlogTags,
 } from "@/components/blog/BlogContent";
 import { BlogPost } from "@/lib/blog/posts";
 import { Zap, Users, QrCode, MessageCircle } from "lucide-react";
@@ -36,6 +37,8 @@ export default function FrictionlessOnboardingPost({
         readTime={post.readTime}
         author={post.author}
       />
+
+      <BlogTags tags={post.tags} />
 
       <BlogSection>
         <BlogParagraph>

@@ -7,6 +7,7 @@ import {
   BlogList,
   BlogCTA,
   BlogShareButtons,
+  BlogTags,
 } from "@/components/blog/BlogContent";
 import { BlogPost } from "@/lib/blog/posts";
 
@@ -25,6 +26,8 @@ export default function ScoringSystemBlog({ post }: BlogPostContentProps) {
         readTime={post.readTime}
         author={post.author}
       />
+
+      <BlogTags tags={post.tags} />
 
       <BlogSection>
         <BlogParagraph>

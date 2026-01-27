@@ -13,6 +13,7 @@ export {
 
   // Headers
   BlogHeader,
+  BlogTags,
 
   // Text Content
   BlogParagraph,

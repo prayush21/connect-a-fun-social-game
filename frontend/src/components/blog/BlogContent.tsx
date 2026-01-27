@@ -428,6 +428,33 @@ export function BlogCTA({
 }
 
 // ====================
+// Tags Component
+// ====================
+
+interface BlogTagsProps {
+  tags?: string[];
+}
+
+export function BlogTags({ tags }: BlogTagsProps) {
+  if (!tags || tags.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-8 flex flex-wrap gap-2">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="inline-block rounded-full border-2 border-black bg-gray-100 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-900 shadow-neobrutalist-sm"
+        >
+          #{tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ====================
 // Back to Blog Link
 // ====================
 

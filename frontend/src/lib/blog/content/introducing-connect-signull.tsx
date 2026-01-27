@@ -7,6 +7,7 @@ import {
   BlogCTA,
   BlogDivider,
   BlogShareButtons,
+  BlogTags,
 } from "@/components/blog/BlogContent";
 import { BlogPost } from "@/lib/blog/posts";
 
@@ -27,6 +28,8 @@ export default function IntroducingConnectSignull({
         readTime={post.readTime}
         author={post.author}
       />
+
+      <BlogTags tags={post.tags} />
 
       <BlogSection>
         <BlogQuote author="Albert Einstein, Physicist">
