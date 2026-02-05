@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X, ArrowRight } from "lucide-react";
 import { DisplayModeModal } from "@/components/beta/DisplayModeModal";
+import { NotificationBanner, useNotify } from "@/components/beta";
 import { useIsMobile } from "@/lib/hooks";
 import { Logo } from "@/components/ui/Logo";
 import { DynamicLogo } from "@/components/ui/DynamicLogo";
@@ -37,6 +38,7 @@ function BetaHomeContent() {
   const [pendingRoomCode, setPendingRoomCode] = useState<string | null>(null);
   const [modalNickname, setModalNickname] = useState("");
   const [hasProcessedJoinLink, setHasProcessedJoinLink] = useState(false);
+  const notify = useNotify();
 
   const isMobile = useIsMobile();
 
@@ -183,6 +185,7 @@ function BetaHomeContent() {
 
   const handleCreateNewGame = async () => {
     if (!username?.trim()) {
+      notify.error("Please set a nickname first");
       setError({
         code: "VALIDATION_ERROR",
         message: "Please set a nickname first",
@@ -242,6 +245,10 @@ function BetaHomeContent() {
 
   return (
     <main className="min-h-screen bg-surface px-4 py-8">
+      <NotificationBanner
+        maxVisible={3}
+        className="fixed left-1/2 top-4 z-50 -translate-x-1/2"
+      />
       <div className="mx-auto space-y-8">
         {/* Beta Badge */}
         <div className="flex justify-center">
