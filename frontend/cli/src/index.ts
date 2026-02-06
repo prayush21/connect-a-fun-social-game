@@ -109,24 +109,30 @@ function updateSignullIndexMap(signulls: { id: string }[]): void {
  * Resolve a signull reference - can be a number (shorthand) or full ID
  */
 function resolveSignullId(ref: string): string | null {
+  const normalized = ref.startsWith("#") ? ref.slice(1) : ref;
+
   // Check if it's a number (shorthand)
-  const num = parseInt(ref, 10);
-  if (!isNaN(num) && signullIndexMap.has(num)) {
-    return signullIndexMap.get(num)!;
+  const num = parseInt(normalized, 10);
+  if (!isNaN(num)) {
+    if (signullIndexMap.has(num)) {
+      return signullIndexMap.get(num)!;
+    }
+
+    return null;
   }
 
   // Otherwise treat as full or partial ID
   // Check for exact match first
   for (const id of signullIndexMap.values()) {
-    if (id === ref) return id;
+    if (id === normalized) return id;
   }
 
   // Check for partial match (starts with)
   for (const id of signullIndexMap.values()) {
-    if (id.startsWith(ref)) return id;
+    if (id.startsWith(normalized)) return id;
   }
 
-  return ref; // Return as-is, let Firebase handle validation
+  return normalized; // Return as-is, let Firebase handle validation
 }
 
 // ==================== Command Handlers ====================
@@ -515,13 +521,30 @@ Session Info:
     }
 
     const signullRef = args[0];
-    const signullId = resolveSignullId(signullRef);
+    let signullId = resolveSignullId(signullRef);
+    if (!signullId) {
+      const refreshResult = await getGameState(currentSession.roomId);
+      if (refreshResult.success && refreshResult.data) {
+        const refreshedStatus = gameStateToStatusOutput(
+          refreshResult.data,
+          currentSession.playerId
+        );
+        updateSignullIndexMap(refreshedStatus.signulls);
+        signullId = resolveSignullId(signullRef);
+      }
+    }
+    if (!signullId) {
+      output.error(
+        "Unknown signull reference. Run 'signulls' to refresh indices or use a full signull ID."
+      );
+      return;
+    }
     const guess = args[1].toUpperCase();
 
     const result = await submitConnect(
       currentSession.roomId,
       currentSession.playerId,
-      signullId!,
+      signullId,
       guess
     );
 
@@ -593,13 +616,30 @@ Session Info:
     }
 
     const signullRef = args[0];
-    const signullId = resolveSignullId(signullRef);
+    let signullId = resolveSignullId(signullRef);
+    if (!signullId) {
+      const refreshResult = await getGameState(currentSession.roomId);
+      if (refreshResult.success && refreshResult.data) {
+        const refreshedStatus = gameStateToStatusOutput(
+          refreshResult.data,
+          currentSession.playerId
+        );
+        updateSignullIndexMap(refreshedStatus.signulls);
+        signullId = resolveSignullId(signullRef);
+      }
+    }
+    if (!signullId) {
+      output.error(
+        "Unknown signull reference. Run 'signulls' to refresh indices or use a full signull ID."
+      );
+      return;
+    }
     const guess = args[1].toUpperCase();
 
     const result = await interceptSignull(
       currentSession.roomId,
       currentSession.playerId,
-      signullId!,
+      signullId,
       guess
     );
 
