@@ -107,6 +107,7 @@ function updateSignullIndexMap(signulls: { id: string }[]): void {
 
 /**
  * Resolve a signull reference - can be a number (shorthand) or full ID
+ * Returns null if an index number is provided but not found in the map
  */
 function resolveSignullId(ref: string): string | null {
   const normalized = ref.startsWith("#") ? ref.slice(1) : ref;
@@ -169,6 +170,12 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 ║  OTHER                                                        ║
 ║    help                 Show this help message                ║
 ║    quit / exit          Leave room and exit                   ║
+╠═══════════════════════════════════════════════════════════════╣
+║  INDEX-BASED SHORTCUTS                                        ║
+║    Instead of typing full signull IDs, use index numbers:     ║
+║      connect 1 CAT      → connect to signull #1               ║
+║      intercept 2 DOG    → intercept signull #2                ║
+║    Run 'status' or 'signulls' first to see index numbers.     ║
 ╚═══════════════════════════════════════════════════════════════╝
 `);
   },
@@ -346,6 +353,9 @@ Session Info:
       currentSession.role = myPlayer.role;
       saveSession(currentSession);
     }
+
+    // Update signull index map for quick reference in connect/intercept commands
+    updateSignullIndexMap(status.signulls);
 
     printGameStatus(status);
   },
@@ -541,6 +551,23 @@ Session Info:
     }
     const guess = args[1].toUpperCase();
 
+    // Show feedback if index was used
+    const usedIndex =
+      !isNaN(parseInt(signullRef, 10)) &&
+      signullIndexMap.has(parseInt(signullRef, 10));
+    if (usedIndex && signullId) {
+      output.info(
+        `Connecting to signull #${signullRef} (${signullId.slice(0, 12)}...)`
+      );
+    }
+
+    if (!signullId) {
+      output.error(
+        `Signull #${signullRef} not found. Run 'status' or 'signulls' to see available signulls.`
+      );
+      return;
+    }
+
     const result = await submitConnect(
       currentSession.roomId,
       currentSession.playerId,
@@ -636,6 +663,23 @@ Session Info:
     }
     const guess = args[1].toUpperCase();
 
+    // Show feedback if index was used
+    const usedIndex =
+      !isNaN(parseInt(signullRef, 10)) &&
+      signullIndexMap.has(parseInt(signullRef, 10));
+    if (usedIndex && signullId) {
+      output.info(
+        `Intercepting signull #${signullRef} (${signullId.slice(0, 12)}...)`
+      );
+    }
+
+    if (!signullId) {
+      output.error(
+        `Signull #${signullRef} not found. Run 'status' or 'signulls' to see available signulls.`
+      );
+      return;
+    }
+
     const result = await interceptSignull(
       currentSession.roomId,
       currentSession.playerId,
@@ -649,7 +693,7 @@ Session Info:
     }
 
     if (result.data!.isCorrect) {
-      output.success(`Intercepted! Signull "${signullId}" has been blocked.`);
+      output.success(`Intercepted! Signull #${signullRef} has been blocked.`);
     } else {
       output.info(`Wrong guess. The signull continues.`);
     }
@@ -784,9 +828,12 @@ function printGameStatus(status: GameStatusOutput): void {
     console.log(`
 ╠═══════════════════════════════════════════════════════════════╣
   SIGNULLS (${status.signulls.length}) ${status.activeSignullId ? `[Active: ${status.activeSignullId}]` : ""}
+  TIP: Use index # with connect/intercept (e.g., "connect 1 WORD")
 ╠═══════════════════════════════════════════════════════════════╣`);
 
-    for (const signull of status.signulls) {
+    for (let i = 0; i < status.signulls.length; i++) {
+      const signull = status.signulls[i];
+      const index = i + 1; // 1-indexed for user convenience
       const statusIcon = {
         pending: "⏳",
         resolved: "✅",
@@ -795,16 +842,16 @@ function printGameStatus(status: GameStatusOutput): void {
         inactive: "⚪",
       }[signull.status];
 
-      const isActive = signull.id === status.activeSignullId ? " ← ACTIVE" : "";
+      const isActive = signull.id === status.activeSignullId ? " ★ ACTIVE" : "";
       console.log(
-        `  ${statusIcon} [${signull.id.slice(0, 12)}...] by ${signull.creatorName}${isActive}`
+        `  #${index} ${statusIcon} [${signull.id.slice(0, 8)}...] by ${signull.creatorName}${isActive}`
       );
-      console.log(`     Clue: "${signull.clue}"`);
+      console.log(`      Clue: "${signull.clue}"`);
       console.log(
-        `     Connects: ${signull.correctConnectCount}/${signull.connectCount} correct`
+        `      Connects: ${signull.correctConnectCount}/${signull.connectCount} correct`
       );
       if (signull.word) {
-        console.log(`     Word: ${signull.word}`);
+        console.log(`      Word: ${signull.word}`);
       }
     }
   }
