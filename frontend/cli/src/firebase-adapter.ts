@@ -39,6 +39,12 @@ import type {
   CLIOutput,
   Player,
 } from "./types.js";
+import {
+  addSignullCore,
+  submitConnectCore,
+  submitDirectGuessCore,
+  setSecretWordCore,
+} from "@frontend/lib/beta/mutations-core";
 
 // ==================== Firebase Configuration ====================
 
@@ -585,6 +591,10 @@ export const joinRoom = async (
 
       const data = snap.data() as FirestoreGameRoom;
 
+      if (!["lobby", "setting", "signulls"].includes(data.phase)) {
+        throw new Error("INVALID_PHASE");
+      }
+
       // Check if player already exists in room
       if (data.players[playerId]) {
         // Player already in room, update online status
@@ -638,6 +648,9 @@ export const joinRoom = async (
     if (message === "ROOM_FULL") {
       return failure("ROOM_FULL", "Room is full");
     }
+    if (message === "INVALID_PHASE") {
+      return failure("INVALID_PHASE", "Invalid phase");
+    }
     return failure("FIREBASE_ERROR", message);
   }
 };
@@ -654,10 +667,10 @@ export const leaveRoom = async (
 
     await runTransaction(getDb(), async (trx) => {
       const snap = await trx.get(docRef);
-      if (!snap.exists()) return;
+      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
 
       const data = snap.data() as FirestoreGameRoom;
-      if (!data.players[playerId]) return;
+      if (!data.players[playerId]) throw new Error("PLAYER_NOT_FOUND");
 
       const isSetter = data.setterId === playerId;
       const isHost = data.hostId === playerId;
@@ -679,6 +692,8 @@ export const leaveRoom = async (
       if (isSetter && remainingIds.length > 0) {
         updates.setterId = remainingIds[0];
         updates[`players.${remainingIds[0]}.role`] = "setter";
+      } else if (isSetter && remainingIds.length === 0) {
+        updates.setterId = null;
       }
 
       trx.update(docRef, updates);
@@ -686,10 +701,15 @@ export const leaveRoom = async (
 
     return success();
   } catch (error) {
-    return failure(
-      "FIREBASE_ERROR",
-      error instanceof Error ? error.message : "Failed to leave room"
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to leave room";
+    if (message === "ROOM_NOT_FOUND") {
+      return failure("ROOM_NOT_FOUND", "Room does not exist");
+    }
+    if (message === "PLAYER_NOT_FOUND") {
+      return failure("PLAYER_NOT_FOUND", "Player not found");
+    }
+    return failure("FIREBASE_ERROR", message);
   }
 };
 
@@ -702,32 +722,7 @@ export const setSecretWord = async (
   word: string
 ): Promise<OperationResult<void>> => {
   try {
-    const docRef = doc(getRoomsCollection(), roomId);
-    const upper = word.trim().toUpperCase();
-
-    if (!/^[A-Z]+$/.test(upper)) {
-      return failure(
-        "INVALID_WORD_FORMAT",
-        "Word must contain only letters A-Z"
-      );
-    }
-
-    await runTransaction(getDb(), async (trx) => {
-      const snap = await trx.get(docRef);
-      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-
-      const data = snap.data() as FirestoreGameRoom;
-      if (data.setterId !== setterId) throw new Error("NOT_SETTER");
-      if (data.phase !== "lobby" && data.phase !== "setting") {
-        throw new Error("INVALID_PHASE");
-      }
-
-      trx.update(docRef, {
-        secretWord: upper,
-        phase: "signulls",
-        updatedAt: serverTimestamp(),
-      });
-    });
+    await setSecretWordCore({ getRoomsCollection }, roomId, setterId, word);
 
     return success();
   } catch (error) {
@@ -747,70 +742,13 @@ export const addSignull = async (
   clue: string
 ): Promise<OperationResult<SignullId>> => {
   try {
-    const docRef = doc(getRoomsCollection(), roomId);
-    const signullId = generateSignullId();
-
-    await runTransaction(getDb(), async (trx) => {
-      const snap = await trx.get(docRef);
-      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-
-      const data = snap.data() as FirestoreGameRoom;
-      if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
-
-      const player = data.players[playerId] as
-        | Record<string, unknown>
-        | undefined;
-      if (!player) throw new Error("PLAYER_NOT_FOUND");
-      if (player.role !== "guesser") throw new Error("ONLY_GUESSER_CAN_CREATE");
-
-      const upperWord = word.trim().toUpperCase();
-      const settings = data.settings as Record<string, unknown>;
-
-      if (settings.prefixMode) {
-        const revealedCount = data.revealedCount ?? 0;
-        const requiredPrefix = data.secretWord.slice(0, revealedCount);
-        if (!upperWord.startsWith(requiredPrefix)) {
-          throw new Error(`WORD_MUST_START_WITH_${requiredPrefix}`);
-        }
-      }
-
-      const isFinal = upperWord === data.secretWord;
-      const newEntry = {
-        id: signullId,
-        playerId,
-        word: upperWord,
-        clue,
-        connects: [],
-        isFinal,
-        status: "pending",
-        createdAt: serverTimestamp(),
-      };
-
-      const currentOrder = data.signullState.order || {};
-      const revealedCount = data.revealedCount ?? 0;
-      const stageKey = String(revealedCount);
-      const currentStageList = currentOrder[stageKey] || [];
-      const newStageList = [...currentStageList, signullId];
-
-      const newOrder = { ...currentOrder, [stageKey]: newStageList };
-      const sortedKeys = Object.keys(newOrder)
-        .map(Number)
-        .sort((a, b) => a - b);
-      const flattenedOrder = sortedKeys.reduce(
-        (acc, key) => acc.concat(newOrder[String(key)]),
-        [] as string[]
-      );
-
-      const activeIndex =
-        settings.playMode === "round_robin" ? flattenedOrder.length - 1 : null;
-
-      trx.update(docRef, {
-        "signullState.order": newOrder,
-        "signullState.activeIndex": activeIndex,
-        [`signullState.itemsById.${signullId}`]: newEntry,
-        updatedAt: serverTimestamp(),
-      });
-    });
+    const signullId = await addSignullCore(
+      { getRoomsCollection },
+      roomId,
+      playerId,
+      word,
+      clue
+    );
 
     return success(signullId);
   } catch (error) {
@@ -828,61 +766,17 @@ export const submitConnect = async (
   playerId: PlayerId,
   signullId: SignullId,
   guess: string
-): Promise<OperationResult<{ isCorrect: boolean }>> => {
+): Promise<OperationResult<void>> => {
   try {
-    const docRef = doc(getRoomsCollection(), roomId);
-    const upperGuess = guess.trim().toUpperCase();
-    let wasCorrect = false;
+    await submitConnectCore(
+      { getRoomsCollection },
+      roomId,
+      playerId,
+      signullId,
+      guess
+    );
 
-    await runTransaction(getDb(), async (trx) => {
-      const snap = await trx.get(docRef);
-      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-
-      const data = snap.data() as FirestoreGameRoom;
-      if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
-
-      const player = data.players[playerId] as
-        | Record<string, unknown>
-        | undefined;
-      if (!player) throw new Error("PLAYER_NOT_FOUND");
-
-      const entry = data.signullState.itemsById[signullId] as
-        | Record<string, unknown>
-        | undefined;
-      if (!entry) throw new Error("SIGNULL_NOT_FOUND");
-      if (entry.status !== "pending") throw new Error("SIGNULL_NOT_PENDING");
-
-      const connects = (entry.connects as unknown[]) || [];
-      if (
-        player.role !== "setter" &&
-        connects.some(
-          (c) => (c as Record<string, unknown>).playerId === playerId
-        )
-      ) {
-        throw new Error("ALREADY_CONNECTED");
-      }
-
-      wasCorrect = upperGuess === entry.word;
-      const newConnect = {
-        playerId,
-        guess: upperGuess,
-        timestamp: Timestamp.now(),
-        isCorrect: wasCorrect,
-      };
-
-      // Add connect to the entry
-      const updatedConnects = [...connects, newConnect];
-
-      trx.update(docRef, {
-        [`signullState.itemsById.${signullId}.connects`]: updatedConnects,
-        updatedAt: serverTimestamp(),
-      });
-
-      // Note: Full resolution logic (status changes, scoring) is handled by the main firebase.ts
-      // This is a simplified version for CLI that just adds the connect
-    });
-
-    return success({ isCorrect: wasCorrect });
+    return success();
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to submit connect";
@@ -897,62 +791,16 @@ export const submitDirectGuess = async (
   roomId: RoomId,
   playerId: PlayerId,
   guess: string
-): Promise<OperationResult<{ isCorrect: boolean; guessesLeft: number }>> => {
+): Promise<OperationResult<void>> => {
   try {
-    const docRef = doc(getRoomsCollection(), roomId);
-    const upperGuess = guess.trim().toUpperCase();
-    let wasCorrect = false;
-    let remaining = 0;
+    await submitDirectGuessCore(
+      { getRoomsCollection },
+      roomId,
+      playerId,
+      guess
+    );
 
-    await runTransaction(getDb(), async (trx) => {
-      const snap = await trx.get(docRef);
-      if (!snap.exists()) throw new Error("ROOM_NOT_FOUND");
-
-      const data = snap.data() as FirestoreGameRoom;
-      if (data.phase !== "signulls") throw new Error("INVALID_PHASE");
-
-      const player = data.players[playerId] as
-        | Record<string, unknown>
-        | undefined;
-      if (!player || player.role !== "guesser") throw new Error("NOT_GUESSER");
-      if (data.directGuessesLeft <= 0) throw new Error("NO_GUESSES_LEFT");
-
-      remaining = data.directGuessesLeft - 1;
-      wasCorrect = upperGuess === data.secretWord;
-
-      const lastDirectGuess = {
-        playerId,
-        playerName: player.name as string,
-        word: upperGuess,
-        timestamp: serverTimestamp(),
-      };
-
-      if (wasCorrect) {
-        trx.update(docRef, {
-          winner: "guessers",
-          phase: "ended",
-          directGuessesLeft: remaining,
-          lastDirectGuess,
-          updatedAt: serverTimestamp(),
-        });
-      } else if (remaining <= 0) {
-        trx.update(docRef, {
-          winner: "setter",
-          phase: "ended",
-          directGuessesLeft: 0,
-          lastDirectGuess,
-          updatedAt: serverTimestamp(),
-        });
-      } else {
-        trx.update(docRef, {
-          directGuessesLeft: remaining,
-          lastDirectGuess,
-          updatedAt: serverTimestamp(),
-        });
-      }
-    });
-
-    return success({ isCorrect: wasCorrect, guessesLeft: remaining });
+    return success();
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to submit guess";
@@ -968,7 +816,7 @@ export const interceptSignull = async (
   setterId: PlayerId,
   signullId: SignullId,
   guess: string
-): Promise<OperationResult<{ isCorrect: boolean }>> => {
+): Promise<OperationResult<void>> => {
   // Setter intercept uses the same mechanism as submitConnect
   return submitConnect(roomId, setterId, signullId, guess);
 };

@@ -386,7 +386,7 @@ export const useBetaStore = create<BetaStoreState>()(
         if (!roomId || !userId) return;
         set({ isLoading: true });
         try {
-          await fxEndGame(roomId, winner);
+          await fxEndGame(roomId, userId, winner);
         } catch (e) {
           set({ error: mapError(e) });
         } finally {
@@ -395,10 +395,10 @@ export const useBetaStore = create<BetaStoreState>()(
       },
 
       updateGameSettings: async (settings) => {
-        const { roomId } = get();
-        if (!roomId) return;
+        const { roomId, userId } = get();
+        if (!roomId || !userId) return;
         try {
-          await fxUpdateGameSettings(roomId, settings);
+          await fxUpdateGameSettings(roomId, userId, settings);
         } catch (e) {
           set({ error: mapError(e) });
         }
@@ -435,37 +435,37 @@ export const useBetaStore = create<BetaStoreState>()(
         }
       },
       startGame: async () => {
-        const { roomId } = get();
-        if (!roomId) return;
+        const { roomId, userId } = get();
+        if (!roomId || !userId) return;
         try {
-          await fxStartGame(roomId);
+          await fxStartGame(roomId, userId);
         } catch (e) {
           set({ error: mapError(e) });
         }
       },
       playAgain: async () => {
-        const { roomId } = get();
-        if (!roomId) return;
+        const { roomId, userId } = get();
+        if (!roomId || !userId) return;
         try {
-          await fxPlayAgain(roomId);
+          await fxPlayAgain(roomId, userId);
         } catch (e) {
           set({ error: mapError(e) });
         }
       },
       backToLobby: async (resetScores?: boolean) => {
-        const { roomId } = get();
-        if (!roomId) return;
+        const { roomId, userId } = get();
+        if (!roomId || !userId) return;
         try {
-          await fxBackToLobby(roomId, resetScores);
+          await fxBackToLobby(roomId, userId, resetScores);
         } catch (e) {
           set({ error: mapError(e) });
         }
       },
       resetScores: async () => {
-        const { roomId } = get();
-        if (!roomId) return;
+        const { roomId, userId } = get();
+        if (!roomId || !userId) return;
         try {
-          await fxResetScoresOnly(roomId);
+          await fxResetScoresOnly(roomId, userId);
         } catch (e) {
           set({ error: mapError(e) });
         }

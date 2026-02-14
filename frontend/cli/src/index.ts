@@ -580,11 +580,9 @@ Session Info:
       return;
     }
 
-    if (result.data!.isCorrect) {
-      output.success(`Correct! "${guess}" was the word.`);
-    } else {
-      output.info(`Incorrect. "${guess}" is not the word.`);
-    }
+    output.success(
+      "Connect submitted. Check 'status' for updates when the signull resolves."
+    );
   },
 
   guess: async (args) => {
@@ -615,13 +613,9 @@ Session Info:
       return;
     }
 
-    if (result.data!.isCorrect) {
-      output.success(`🎉 CORRECT! "${word}" is the secret word! Guessers win!`);
-    } else {
-      output.info(
-        `Wrong guess. "${word}" is not the secret word. ${result.data!.guessesLeft} guesses left.`
-      );
-    }
+    output.success(
+      "Direct guess submitted. Check 'status' for the updated game state."
+    );
   },
 
   intercept: async (args) => {

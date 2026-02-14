@@ -4,14 +4,14 @@
   "description": "CLI REPL for Signull game - AI agent compatible",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/cli/src/index.js",
   "bin": {
-    "signull": "./dist/index.js"
+    "signull": "./dist/cli/src/index.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node dist/cli/src/index.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
