@@ -355,6 +355,7 @@ export const setSecretWord = async (
       trx.update(docRef, {
         secretWord: upper,
         phase: "signulls",
+        revealedCount: 1, // Reveal first letter by default
         updatedAt: serverTimestamp(),
       });
     });
