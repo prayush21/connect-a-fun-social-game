@@ -20,7 +20,7 @@ firebase-debug.*.log
 
 #Ealier versions
 index-v1.html
-_*
+/_*
 
 # IDE files
 .vscode/
