@@ -10,7 +10,7 @@ const bricolageGrotesque = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Signull | Collaborative Word Game",
+  title: "Connect Signull | Collaborative Word Game",
   description:
     "A collaborative word guessing game where teams work together to reveal secret words through clever clues and connections.",
   manifest: "/favicon/manifest.json",
