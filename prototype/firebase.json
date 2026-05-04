@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "site": "connect-38fe1",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "index.html"
+      }
+    ]
+  }
+}
