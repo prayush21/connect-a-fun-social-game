@@ -21,6 +21,8 @@ firebase-debug.*.log
 #Ealier versions
 index-v1.html
 _*
+!frontend/src/lib/beta/v3/__tests__/
+!frontend/src/lib/beta/v3/__tests__/firebase.room.test.ts
 
 # IDE files
 .vscode/

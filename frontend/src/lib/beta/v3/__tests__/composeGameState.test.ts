@@ -27,6 +27,7 @@ const room: V3RoomDoc = {
   roomId: "ROOM42",
   phase: "signulls",
   hostId: "host",
+  setterId: "host",
   currentRoundId: "round-1",
   isDisplayMode: false,
   settings,
@@ -138,7 +139,7 @@ describe("composeV3GameState", () => {
     });
 
     expect(game.phase).toBe("lobby");
-    expect(game.setterId).toBe("");
+    expect(game.setterId).toBe("host");
     expect(game.secretWord).toBe("");
     expect(game.revealedCount).toBe(0);
     expect(game.directGuessesLeft).toBe(3);

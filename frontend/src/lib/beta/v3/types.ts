@@ -1,4 +1,6 @@
 import type {
+  FirestoreTimeValue,
+  FirestoreSignullConnect,
   GameInsight,
   GamePhase,
   GameSettings,
@@ -20,12 +22,49 @@ export interface V3RoomDoc {
   roomId: RoomId;
   phase: GamePhase;
   hostId: PlayerId | null;
+  setterId: PlayerId | null;
   currentRoundId: RoundId | null;
   isDisplayMode: boolean;
   settings: GameSettings;
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type FirestoreV3RoomDoc = Omit<V3RoomDoc, "createdAt" | "updatedAt"> & {
+  createdAt: FirestoreTimeValue;
+  updatedAt: FirestoreTimeValue;
+};
+
+export type FirestoreV3RoundDoc = Omit<
+  V3RoundDoc,
+  "startedAt" | "endedAt" | "updatedAt"
+> & {
+  startedAt: FirestoreTimeValue | null;
+  endedAt: FirestoreTimeValue | null;
+  updatedAt: FirestoreTimeValue;
+};
+
+export type FirestoreV3PlayerDoc = Omit<
+  V3PlayerDoc,
+  "lastActive" | "joinedAt" | "updatedAt"
+> & {
+  lastActive: FirestoreTimeValue;
+  joinedAt: FirestoreTimeValue;
+  updatedAt: FirestoreTimeValue;
+};
+
+export type FirestoreV3SignullDoc = Omit<
+  V3SignullDoc,
+  "connects" | "createdAt" | "resolvedAt"
+> & {
+  connects: FirestoreSignullConnect[];
+  createdAt: FirestoreTimeValue;
+  resolvedAt?: FirestoreTimeValue;
+};
+
+export type FirestoreV3ScoreEventDoc = Omit<V3ScoreEventDoc, "timestamp"> & {
+  timestamp: FirestoreTimeValue;
+};
 
 export interface V3RoundDoc {
   roundId: RoundId;
@@ -80,4 +119,3 @@ export interface V3GameStateInput {
   signulls?: V3SignullDoc[];
   scoreEvents?: V3ScoreEventDoc[];
 }
-

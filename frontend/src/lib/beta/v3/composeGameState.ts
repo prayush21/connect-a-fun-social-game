@@ -112,7 +112,7 @@ export const composeV3GameState = ({
     players: composePlayers(players),
     hostId: room.hostId,
     isDisplayMode: room.isDisplayMode,
-    setterId: round?.setterId ?? "",
+    setterId: round?.setterId ?? room.setterId ?? "",
     secretWord: round?.secretWord ?? "",
     revealedCount: round?.revealedCount ?? 0,
     signullState,
