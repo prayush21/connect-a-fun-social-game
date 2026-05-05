@@ -224,7 +224,10 @@ export default function BetaPlayPage() {
   // Derived state from store
   const roomCode = game?.roomId || "----";
   const word = game?.secretWord || "";
-  const revealedCount = game?.revealedCount || 0;
+  const revealedCount =
+    game?.phase === "signulls" && game.secretWord
+      ? Math.max(game.revealedCount ?? 1, 1)
+      : (game?.revealedCount ?? 0);
   const isWordSet = !!game?.secretWord;
   const players = useMemo(
     () => Object.values(game?.players || {}),

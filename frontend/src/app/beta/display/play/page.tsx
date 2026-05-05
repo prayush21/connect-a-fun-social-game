@@ -152,7 +152,10 @@ export default function BetaDisplayPlayPage() {
 
   const gamePhase = gameState?.phase ?? "lobby";
   const secretWord = gameState?.secretWord ?? "";
-  const revealedCount = gameState?.revealedCount ?? 0;
+  const revealedCount =
+    gameState?.phase === "signulls" && gameState.secretWord
+      ? Math.max(gameState.revealedCount ?? 1, 1)
+      : (gameState?.revealedCount ?? 0);
   const directGuessesLeft = gameState?.directGuessesLeft ?? 0;
   const lastDirectGuess = gameState?.lastDirectGuess;
   const winner = gameState?.winner;

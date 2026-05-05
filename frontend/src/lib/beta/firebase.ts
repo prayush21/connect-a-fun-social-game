@@ -44,6 +44,7 @@ import { GameErrorMessages } from "./notifications";
 
 // Collection name for beta schema
 const BETA_COLLECTION = "game_rooms_v2";
+const INITIAL_REVEALED_COUNT = 1;
 const getRoomsCollection = () => collection(getDb(), BETA_COLLECTION);
 
 // Utility generators
@@ -65,6 +66,14 @@ export const generateSignullId = (): SignullId => {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 9);
   return `sn_${ts}_${rand}`;
+};
+
+const getRevealedCount = (
+  data: Pick<FirestoreGameRoom, "phase" | "secretWord" | "revealedCount">
+) => {
+  const minimum =
+    data.phase === "signulls" && data.secretWord ? INITIAL_REVEALED_COUNT : 0;
+  return Math.max(data.revealedCount ?? minimum, minimum);
 };
 
 const handleFirebaseError = (error: unknown) => {
@@ -117,7 +126,7 @@ export const firestoreToGameState = (data: FirestoreGameRoom): GameState => {
     isDisplayMode: data.isDisplayMode ?? false,
     setterId: data.setterId,
     secretWord: data.secretWord,
-    revealedCount: data.revealedCount ?? 0,
+    revealedCount: getRevealedCount(data),
     signullState: {
       order: data.signullState.order || {},
       activeIndex: data.signullState.activeIndex ?? null,
@@ -355,7 +364,7 @@ export const setSecretWord = async (
       trx.update(docRef, {
         secretWord: upper,
         phase: "signulls",
-        revealedCount: 1, // Reveal first letter by default
+        revealedCount: INITIAL_REVEALED_COUNT,
         updatedAt: serverTimestamp(),
       });
     });
@@ -386,7 +395,7 @@ export const addSignull = async (
 
       // Prefix Mode Validation
       if (data.settings.prefixMode) {
-        const revealedCount = data.revealedCount ?? 0;
+        const revealedCount = getRevealedCount(data);
         const requiredPrefix = data.secretWord.slice(0, revealedCount);
         if (!upperWord.startsWith(requiredPrefix)) {
           throw new Error(`WORD_MUST_START_WITH_${requiredPrefix}`);
@@ -406,7 +415,7 @@ export const addSignull = async (
       };
 
       const currentOrder = data.signullState.order || {};
-      const revealedCount = data.revealedCount ?? 0;
+      const revealedCount = getRevealedCount(data);
       const stageKey = String(revealedCount);
       const currentStageList = currentOrder[stageKey] || [];
       const newStageList = [...currentStageList, signullId];
@@ -685,12 +694,12 @@ export const computeInsights = (
   if (topInsights.length < 2 && resolvedSignulls.length > 0) {
     // Find the longest word from resolved signulls
     let longestSignull = resolvedSignulls[0];
-    
+
     // Additional safety check to handle edge cases
     if (!longestSignull) {
       return topInsights.map(({ priority, ...insight }) => insight);
     }
-    
+
     for (const signull of resolvedSignulls) {
       if (signull.word.length > longestSignull.word.length) {
         longestSignull = signull;
@@ -788,7 +797,7 @@ export const submitConnect = async (
 
       // Evaluate resolution
       const resolution = evaluateResolution(entry, data);
-      let newRevealedCount = data.revealedCount ?? 0;
+      let newRevealedCount = getRevealedCount(data);
 
       if (resolution) {
         entry.status = resolution.status;
